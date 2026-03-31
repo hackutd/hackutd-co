@@ -2,23 +2,24 @@
 
 @theme inline {
   /* Brand palette */
-  --color-purple: #6C17FE;
-  --color-pink: #F31667;
-  --color-orange: #FF7A1B;
-  --color-amber: #FFA21F;
-  --color-black: #1A1A1A;
+  --color-purple: #6c17fe;
+  --color-pink: #f31667;
+  --color-orange: #ff7a1b;
+  --color-amber: #ffa21f;
+  --color-black: #1a1a1a;
 
   /* Semantic tokens */
-  --color-background: #1A1A1A;
-  --color-foreground: #FFFFFF;
-  --color-muted: #A3A3A3;
-  --color-primary: #6C17FE;
-  --color-accent: #F31667;
+  --color-background: #1a1a1a;
+  --color-foreground: #ffffff;
+  --color-muted: #a3a3a3;
+  --color-primary: #6c17fe;
+  --color-accent: #f31667;
 
   /* Font */
   --font-sans: var(--font-satoshi);
 }
 
+html,
 body {
   background: var(--color-background);
   color: var(--color-foreground);
