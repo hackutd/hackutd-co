@@ -7,10 +7,16 @@ export default function Navbar() {
         HackUTD
       </Link>
       <div className="flex items-center gap-8">
-        <Link href="#hackathons" className="text-sm text-muted hover:text-foreground transition-colors">
+        <Link
+          href="#hackathons"
+          className="text-sm  hover:text-foreground transition-colors"
+        >
           Our Hackathons
         </Link>
-        <Link href="#sponsors" className="text-sm text-muted hover:text-foreground transition-colors">
+        <Link
+          href="#sponsors"
+          className="text-sm  hover:text-foreground transition-colors"
+        >
           Sponsors
         </Link>
         <a
