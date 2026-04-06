@@ -7,8 +7,8 @@ import { useGSAP } from "@gsap/react";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { missionContent } from "@/app/data/mission";
+import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import { dispatchNavbarThemeOverride } from "../navbar/navbarThemeOverride";
-import { MOBILE_SCRUB } from "../hero/sceneConfig";
 import {
   MISSION_DECORATION_COUNT,
   MISSION_LAYOUT,
@@ -17,7 +17,7 @@ import {
   MISSION_TIMELINE,
 } from "./sceneConfig";
 
-gsap.registerPlugin(ScrollTrigger);
+configureScrollTrigger();
 
 function renderMissionStatement() {
   return (
@@ -75,72 +75,6 @@ export default function Mission() {
         return;
       }
 
-      const scrub = isMobile
-        ? MOBILE_SCRUB * MISSION_SCENE_SCROLL.mobileScrubMultiplier
-        : MISSION_SCENE_SCROLL.scrub;
-
-      gsap.set(missionContent, {
-        yPercent: MISSION_TIMELINE.intro.initialYPercent,
-        opacity: MISSION_TIMELINE.intro.initialOpacity,
-      });
-      gsap.set(directorsContent, { opacity: 0 });
-      gsap.set(darkOverlay, { opacity: 0 });
-
-      const transitionTimeline = gsap.timeline({
-        scrollTrigger: {
-          trigger: section,
-          start: MISSION_SCENE_SCROLL.start,
-          end: MISSION_SCENE_SCROLL.end,
-          scrub,
-        },
-      });
-
-      transitionTimeline.to(
-        missionContent,
-        {
-          yPercent: 0,
-          opacity: 1,
-          ease: "power2.out",
-        },
-        MISSION_TIMELINE.intro.settleAt,
-      );
-
-      transitionTimeline.to(
-        missionContent,
-        {
-          yPercent: MISSION_TIMELINE.intro.exitYPercent,
-          ease: "power2.inOut",
-        },
-        MISSION_TIMELINE.intro.exitAt,
-      );
-
-      transitionTimeline.to(
-        missionContent,
-        {
-          opacity: 0,
-          ease: "power2.out",
-        },
-        MISSION_TIMELINE.intro.fadeOutAt,
-      );
-
-      transitionTimeline.to(
-        darkOverlay,
-        {
-          opacity: 1,
-          ease: "power2.inOut",
-        },
-        MISSION_TIMELINE.overlay.fadeInAt,
-      );
-
-      transitionTimeline.to(
-        directorsContent,
-        {
-          opacity: 1,
-          ease: "power2.out",
-        },
-        MISSION_TIMELINE.directors.fadeInAt,
-      );
-
       let navbarThemeOverride: "light" | "dark" | null = null;
       const setNavbarThemeOverride = (theme: "light" | "dark" | null) => {
         if (navbarThemeOverride === theme) {
@@ -151,20 +85,114 @@ export default function Mission() {
         dispatchNavbarThemeOverride(theme);
       };
 
-      const navbarThemeTrigger = ScrollTrigger.create({
+      gsap.set(missionContent, {
+        yPercent: MISSION_TIMELINE.intro.initialYPercent,
+        autoAlpha: MISSION_TIMELINE.intro.initialOpacity,
+      });
+      gsap.set(directorsContent, {
+        autoAlpha: 0,
+        yPercent: MISSION_TIMELINE.directors.initialYPercent,
+      });
+      gsap.set(darkOverlay, { opacity: 0 });
+      const clamp01 = gsap.utils.clamp(0, 1);
+      const interpolate = gsap.utils.interpolate;
+      const progressForSegment = (
+        progress: number,
+        start: number,
+        duration: number,
+      ) => {
+        if (duration <= 0) {
+          return progress >= start ? 1 : 0;
+        }
+
+        return clamp01((progress - start) / duration);
+      };
+
+      const updateScene = (progress: number) => {
+        const settleProgress = progressForSegment(
+          progress,
+          MISSION_TIMELINE.intro.settleAt,
+          MISSION_TIMELINE.intro.settleDuration,
+        );
+        const exitProgress = progressForSegment(
+          progress,
+          MISSION_TIMELINE.intro.exitAt,
+          MISSION_TIMELINE.intro.exitDuration,
+        );
+        const fadeOutProgress = progressForSegment(
+          progress,
+          MISSION_TIMELINE.intro.fadeOutAt,
+          MISSION_TIMELINE.intro.fadeOutDuration,
+        );
+        const overlayProgress = progressForSegment(
+          progress,
+          MISSION_TIMELINE.overlay.fadeInAt,
+          MISSION_TIMELINE.overlay.fadeInDuration,
+        );
+        const directorsProgress = progressForSegment(
+          progress,
+          MISSION_TIMELINE.directors.fadeInAt,
+          MISSION_TIMELINE.directors.fadeInDuration,
+        );
+        const directorsYPercent = interpolate(
+          MISSION_TIMELINE.directors.initialYPercent,
+          0,
+          directorsProgress,
+        );
+
+        const missionOpacity =
+          interpolate(
+            MISSION_TIMELINE.intro.initialOpacity,
+            1,
+            settleProgress,
+          ) *
+          (1 - fadeOutProgress);
+        const missionYPercent =
+          exitProgress > 0
+            ? interpolate(0, MISSION_TIMELINE.intro.exitYPercent, exitProgress)
+            : interpolate(
+                MISSION_TIMELINE.intro.initialYPercent,
+                0,
+                settleProgress,
+              );
+
+        gsap.set(missionContent, {
+          yPercent: missionYPercent,
+          autoAlpha: missionOpacity,
+        });
+        gsap.set(darkOverlay, { opacity: overlayProgress });
+        gsap.set(directorsContent, {
+          autoAlpha: directorsProgress,
+          yPercent: directorsYPercent,
+        });
+        setNavbarThemeOverride(
+          progress >= MISSION_NAVBAR_THEME_TRIGGER.darkAtProgress
+            ? MISSION_NAVBAR_THEME_TRIGGER.theme
+            : null,
+        );
+      };
+
+      const sceneTrigger = ScrollTrigger.create({
         trigger: section,
-        start: MISSION_NAVBAR_THEME_TRIGGER.start,
-        end: MISSION_NAVBAR_THEME_TRIGGER.end,
-        onEnter: () =>
-          setNavbarThemeOverride(MISSION_NAVBAR_THEME_TRIGGER.theme),
-        onEnterBack: () =>
-          setNavbarThemeOverride(MISSION_NAVBAR_THEME_TRIGGER.theme),
+        start: MISSION_SCENE_SCROLL.start,
+        end: MISSION_SCENE_SCROLL.end,
+        scrub: isMobile
+          ? MISSION_SCENE_SCROLL.scrub * MISSION_SCENE_SCROLL.mobileScrubMultiplier
+          : MISSION_SCENE_SCROLL.scrub,
+        onUpdate: (self) => {
+          updateScene(self.progress);
+        },
+        onRefresh: (self) => {
+          updateScene(self.progress);
+        },
         onLeave: () => setNavbarThemeOverride(null),
         onLeaveBack: () => setNavbarThemeOverride(null),
       });
 
+      updateScene(sceneTrigger.progress);
+
       return () => {
-        navbarThemeTrigger.kill();
+        sceneTrigger.kill();
         setNavbarThemeOverride(null);
       };
     },
@@ -177,10 +205,10 @@ export default function Mission() {
         <section
           ref={sectionRef}
           data-navbar-theme="light"
-          className={`bg-(--color-surface) ${MISSION_LAYOUT.staticIntroPadding}`}
+          className={`bg-[var(--color-surface)] ${MISSION_LAYOUT.staticIntroPadding}`}
         >
           <div className="mx-auto flex min-h-[80vh] max-w-7xl items-center justify-center">
-            <p className="max-w-6xl text-center text-4xl font-normal leading-[1.2] text-(--color-surface-foreground) sm:text-5xl md:text-6xl lg:text-7xl xl:max-w-7xl">
+            <p className="max-w-6xl text-center text-4xl font-normal leading-[1.2] text-[var(--color-surface-foreground)] sm:text-5xl md:text-6xl lg:text-7xl xl:max-w-7xl">
               {renderMissionStatement()}
             </p>
           </div>
@@ -197,10 +225,12 @@ export default function Mission() {
     <section
       ref={sectionRef}
       data-navbar-theme="light"
-      className={`relative bg-(--color-surface) ${MISSION_LAYOUT.animatedSectionMinHeight}`}
+      className={`relative bg-[var(--color-surface)] ${MISSION_LAYOUT.animatedSectionMinHeight}`}
     >
-      <div className="sticky top-0 h-screen overflow-hidden isolate">
-        <div className="absolute inset-0 bg-(--color-surface)" />
+      <div
+        className={`sticky top-0 overflow-hidden isolate ${MISSION_LAYOUT.stickyViewportHeight}`}
+      >
+        <div className="absolute inset-0 bg-[var(--color-surface)]" />
         <div
           ref={darkOverlayRef}
           className="pointer-events-none absolute inset-0 z-10 bg-background opacity-0"
@@ -209,7 +239,7 @@ export default function Mission() {
           ref={missionContentRef}
           className={`absolute inset-0 z-20 flex items-center justify-center ${MISSION_LAYOUT.animatedIntroPadding}`}
         >
-          <p className="max-w-6xl text-center text-4xl font-normal leading-[1.2] text-(--color-surface-foreground) sm:text-5xl md:text-6xl lg:text-7xl xl:max-w-7xl">
+          <p className="max-w-6xl text-center text-4xl font-normal leading-[1.2] text-[var(--color-surface-foreground)] sm:text-5xl md:text-6xl lg:text-7xl xl:max-w-7xl">
             {renderMissionStatement()}
           </p>
         </div>

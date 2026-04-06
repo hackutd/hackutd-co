@@ -1,11 +1,11 @@
 "use client";
 
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { useRef } from "react";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
+import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import {
   COMET_TUNING,
   HERO_SCENE_SCROLL,
@@ -13,7 +13,7 @@ import {
   MOBILE_RIBBON_SAMPLES,
 } from "./sceneConfig";
 
-gsap.registerPlugin(ScrollTrigger);
+configureScrollTrigger();
 
 type SpineSample = {
   distance: number;

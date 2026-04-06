@@ -59,7 +59,7 @@ export default function Navbar() {
             href={link.href}
             className={`text-xs transition-colors duration-300 ${
               isLightTheme
-                ? "text-(--color-surface-foreground) hover:opacity-70"
+                ? "text-[var(--color-surface-foreground)] hover:opacity-70"
                 : "text-foreground hover:text-foreground/70"
             }`}
           >
@@ -79,35 +79,51 @@ export default function Navbar() {
       >
         <span
           className={`block h-0.5 w-4 transition-transform duration-200 ${
-            isLightTheme ? "bg-(--color-surface-foreground)" : "bg-foreground"
+            isLightTheme ? "bg-[var(--color-surface-foreground)]" : "bg-foreground"
           } ${isOpen ? "translate-y-1.5 rotate-45" : ""}`}
         />
         <span
           className={`block h-0.5 w-4 transition-opacity duration-200 ${
-            isLightTheme ? "bg-(--color-surface-foreground)" : "bg-foreground"
+            isLightTheme ? "bg-[var(--color-surface-foreground)]" : "bg-foreground"
           } ${isOpen ? "opacity-0" : ""}`}
         />
         <span
           className={`block h-0.5 w-4 transition-transform duration-200 ${
-            isLightTheme ? "bg-(--color-surface-foreground)" : "bg-foreground"
+            isLightTheme ? "bg-[var(--color-surface-foreground)]" : "bg-foreground"
           } ${isOpen ? "-translate-y-1.5 -rotate-45" : ""}`}
         />
       </button>
 
       {/* Mobile overlay */}
       {isOpen && (
-        <div className="fixed inset-0 top-13 z-40 flex flex-col items-center gap-8 bg-black/95 pt-16 backdrop-blur-sm md:hidden">
+        <div
+          className={`fixed inset-0 top-13 z-40 flex flex-col items-center gap-8 pt-16 backdrop-blur-sm md:hidden ${
+            isLightTheme
+              ? "bg-[var(--color-surface)]/95 text-[var(--color-surface-foreground)]"
+              : "bg-black/95 text-foreground"
+          }`}
+        >
           {NAV_LINKS.map((link) => (
             <Link
               key={link.label}
               href={link.href}
-              className="text-lg hover:text-foreground transition-colors"
+              className={`text-lg transition-colors ${
+                isLightTheme ? "hover:opacity-70" : "hover:text-foreground"
+              }`}
               onClick={() => setIsOpen(false)}
             >
               {link.label}
             </Link>
           ))}
-          <AccentButton>Gallery</AccentButton>
+          <AccentButton
+            className={
+              isLightTheme
+                ? "focus-visible:ring-offset-[var(--color-surface)]"
+                : undefined
+            }
+          >
+            Gallery
+          </AccentButton>
         </div>
       )}
     </nav>

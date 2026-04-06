@@ -8,6 +8,7 @@ import { useGSAP } from "@gsap/react";
 import Image from "next/image";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
+import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import AccentButton from "../ui/AccentButton";
 import { dispatchNavbarThemeOverride } from "../navbar/navbarThemeOverride";
 import CometAnimation from "./CometAnimation";
@@ -22,7 +23,7 @@ import {
   MOBILE_SCRUB,
 } from "./sceneConfig";
 
-gsap.registerPlugin(ScrollTrigger);
+configureScrollTrigger();
 
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -58,6 +59,13 @@ export default function Hero() {
 
       const scrub = isMobile ? MOBILE_SCRUB : HERO_SCENE_SCROLL.scrub;
 
+      if (whiteOverlay) {
+        gsap.set(whiteOverlay, { autoAlpha: 0 });
+      }
+      if (heroText) {
+        gsap.set(heroText, { autoAlpha: 1 });
+      }
+
       const sceneTimeline = gsap.timeline({
         scrollTrigger: {
           trigger: section,
@@ -87,7 +95,7 @@ export default function Hero() {
 
       if (heroText) {
         gsap.to(heroText, {
-          opacity: 0,
+          autoAlpha: 0,
           ease: HERO_WHITEOUT.text.ease,
           scrollTrigger: {
             trigger: section,
@@ -100,7 +108,7 @@ export default function Hero() {
 
       if (whiteOverlay) {
         gsap.to(whiteOverlay, {
-          opacity: 1,
+          autoAlpha: 1,
           ease: HERO_WHITEOUT.overlay.ease,
           scrollTrigger: {
             trigger: section,
@@ -142,8 +150,10 @@ export default function Hero() {
 
   return (
     <section ref={sectionRef} className={`relative ${HERO_LAYOUT.minHeight}`}>
-      <div className="sticky top-0 h-screen overflow-hidden isolate">
-        <div aria-hidden="true" className="absolute inset-0 z-1">
+      <div
+        className={`sticky top-0 overflow-hidden isolate ${HERO_LAYOUT.stickyViewportHeight}`}
+      >
+        <div aria-hidden="true" className="absolute inset-0 z-[1]">
           {HERO_STARS.map((star) => {
             const style = {
               top: `${star.top}%`,
@@ -158,7 +168,7 @@ export default function Hero() {
             return (
               <span
                 key={star.id}
-                className="hero-star absolute bg-(--color-amber)"
+                className="hero-star absolute bg-[var(--color-amber)]"
                 style={style}
               />
             );
@@ -198,7 +208,7 @@ export default function Hero() {
 
         <div
           ref={whiteOverlayRef}
-          className="pointer-events-none absolute inset-0 z-30 bg-(--color-surface) opacity-0"
+          className="pointer-events-none absolute inset-0 z-30 bg-[var(--color-surface)] opacity-0"
         />
 
         <div
