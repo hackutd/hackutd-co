@@ -24,3 +24,31 @@ body {
   background: var(--color-background);
   color: var(--color-foreground);
 }
+
+@keyframes hero-star-twinkle {
+  0%,
+  100% {
+    transform: scale(0.85);
+    opacity: 0.2;
+  }
+
+  50% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+}
+
+.hero-star {
+  box-shadow: 0 0 8px rgba(255, 162, 31, 0.45);
+  clip-path: polygon(
+    50% 0%,
+    60% 40%,
+    100% 50%,
+    60% 60%,
+    50% 100%,
+    40% 60%,
+    0% 50%,
+    40% 40%
+  );
+  animation: hero-star-twinkle 4s ease-in-out infinite;
+}

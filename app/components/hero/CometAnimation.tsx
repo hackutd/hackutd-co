@@ -4,55 +4,9 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { useRef } from "react";
+import { COMET_TUNING, HERO_SCENE_SCROLL } from "./sceneConfig";
 
 gsap.registerPlugin(ScrollTrigger);
-
-const COMET_TUNING = {
-  spine: `
-    M 720,870
-    C 700,760 710,650 790,545
-    C 905,395 1080,335 1260,285
-    C 1410,245 1475,130 1320,85
-    C 1020,5 690,95 435,78
-    C 230,66 40,-8 -220,-140
-  `,
-  ribbon: {
-    minWidth: 6,
-    maxWidth: 220,
-    samples: 220,
-    taperPower: 1.6,
-  },
-  animation: {
-    duration: 3,
-    scrollStart: "top top",
-    scrollEnd: "bottom bottom",
-    scrub: 0.18,
-  },
-  gradient: {
-    x1: 720,
-    y1: 870,
-    x2: -220,
-    y2: -140,
-    stops: [
-      { offset: "10%", color: "#FFA21F" },
-      { offset: "30%", color: "#FF7A1B" },
-      { offset: "55%", color: "#F31667" },
-      { offset: "100%", color: "#6C17FE" },
-    ],
-  },
-  glow: {
-    blurStdDev: 16,
-    opacity: 0.28,
-  },
-  outline: {
-    width: 1,
-    opacity: 0.9,
-  },
-  star: {
-    outer: 16,
-    inner: 4,
-  },
-} as const;
 
 type SpineSample = {
   distance: number;
@@ -175,7 +129,8 @@ function buildRibbonSegmentPath(
     const sample = interpolateSpineSample(samples, totalLength, distance);
 
     const half = ribbonWidth(u) * 0.5;
-    left[i] = `${roundCoord(sample.x + sample.nx * half)},${roundCoord(sample.y + sample.ny * half)}`;
+    left[i] =
+      `${roundCoord(sample.x + sample.nx * half)},${roundCoord(sample.y + sample.ny * half)}`;
     right[sampleCount - i] =
       `${roundCoord(sample.x - sample.nx * half)},${roundCoord(sample.y - sample.ny * half)}`;
   }
@@ -214,13 +169,20 @@ export default function CometAnimation() {
         return;
       }
 
+      const trigger =
+        wrapper.closest("section") || wrapper.parentElement;
+
       const spineLength = spine.getTotalLength();
       const spineSamples = precomputeSpineSamples(
         spine,
         spineLength,
         COMET_TUNING.ribbon.samples,
       );
-      const fullRibbonPath = buildRibbonSegmentPath(spineSamples, spineLength, 0);
+      const fullRibbonPath = buildRibbonSegmentPath(
+        spineSamples,
+        spineLength,
+        0,
+      );
       cometBody.setAttribute("d", fullRibbonPath);
       cometGlow.setAttribute("d", fullRibbonPath);
 
@@ -245,27 +207,26 @@ export default function CometAnimation() {
           "transform",
           `translate(${roundCoord(head.x)}, ${roundCoord(head.y)})`,
         );
+        star.setAttribute("opacity", p <= 0 ? "0" : "1");
       };
 
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         setReveal(1);
-        gsap.set(star, { attr: { opacity: 1 } });
         return;
       }
 
-      setReveal(0);
-      gsap.set(star, { attr: { opacity: 1 } });
+      setReveal(COMET_TUNING.animation.initialProgress);
 
-      const section = wrapper.closest("section") || wrapper.parentElement;
-      const revealState = { progress: 0 };
+      const revealState = {
+        progress: COMET_TUNING.animation.initialProgress,
+      };
 
       const tl = gsap.timeline({
         scrollTrigger: {
-          trigger: section,
-          start: COMET_TUNING.animation.scrollStart,
-          // Match sticky section lifetime so animation finishes before next section takes over.
-          end: COMET_TUNING.animation.scrollEnd,
-          scrub: COMET_TUNING.animation.scrub,
+          trigger,
+          start: HERO_SCENE_SCROLL.start,
+          end: HERO_SCENE_SCROLL.end,
+          scrub: HERO_SCENE_SCROLL.scrub,
         },
       });
 
@@ -314,6 +275,35 @@ export default function CometAnimation() {
             ))}
           </linearGradient>
 
+          <filter
+            id="cometRibbonGrain"
+            x="-20%"
+            y="-20%"
+            width="140%"
+            height="140%"
+          >
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency={COMET_TUNING.gradient.grain.baseFrequency}
+              numOctaves={COMET_TUNING.gradient.grain.numOctaves}
+              stitchTiles="stitch"
+              result="noise"
+            />
+            <feColorMatrix
+              type="saturate"
+              values="0"
+              in="noise"
+              result="grain"
+            />
+            <feComponentTransfer in="grain" result="grainAlpha">
+              <feFuncA
+                type="table"
+                tableValues={`0 ${COMET_TUNING.gradient.grain.opacity}`}
+              />
+            </feComponentTransfer>
+            <feBlend in="SourceGraphic" in2="grainAlpha" mode="overlay" />
+          </filter>
+
           <filter id="cometGlow" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation={COMET_TUNING.glow.blurStdDev} />
           </filter>
@@ -334,7 +324,12 @@ export default function CometAnimation() {
             filter="url(#cometGlow)"
             opacity={COMET_TUNING.glow.opacity}
           />
-          <path ref={cometBodyRef} d="" fill="url(#cometGradient)" />
+          <path
+            ref={cometBodyRef}
+            d=""
+            fill="url(#cometGradient)"
+            filter="url(#cometRibbonGrain)"
+          />
         </g>
         <path
           ref={cometOutlineRef}
