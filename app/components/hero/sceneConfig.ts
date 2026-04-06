@@ -11,7 +11,7 @@ export const COMET_TUNING = {
     C 920,490 1000,420 1110,345
     C 1210,285 1250,215 1140,155
     C 920,78 710,116 500,128
-    C 300,134 120,72 -140,-80
+    C 300,134 120,72 -60,-28
   `,
   ribbon: {
     minWidth: 6,
@@ -26,8 +26,8 @@ export const COMET_TUNING = {
   gradient: {
     x1: 735,
     y1: 870,
-    x2: -140,
-    y2: -80,
+    x2: -60,
+    y2: -28,
     stops: [
       { offset: "10%", color: "#FFA21F" },
       { offset: "30%", color: "#FF7A1B" },
@@ -53,3 +53,6 @@ export const COMET_TUNING = {
     inner: 3,
   },
 } as const;
+
+export const MOBILE_SCRUB = 0.6;
+export const MOBILE_RIBBON_SAMPLES = 80;

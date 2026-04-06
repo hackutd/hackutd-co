@@ -1,12 +1,12 @@
-import Navbar from "./components/Navbar";
-import Hero from "./components/Hero";
-import Mission from "./components/Mission";
-import DirectorsMessage from "./components/DirectorsMessage";
-import Constellation from "./components/Constellation";
-import Projects from "./components/Projects";
-import Timeline from "./components/Timeline";
-import Sponsors from "./components/Sponsors";
-import Footer from "./components/Footer";
+import Navbar from "./components/navbar/Navbar";
+import Hero from "./components/hero/Hero";
+import Mission from "./components/mission/Mission";
+import DirectorsMessage from "./components/mission/DirectorsMessage";
+import Teams from "./components/teams/Teams";
+import Projects from "./components/projects/Projects";
+import Timeline from "./components/timeline/Timeline";
+import Sponsors from "./components/sponsors/Sponsors";
+import Footer from "./components/footer/Footer";
 
 export default function Home() {
   return (
@@ -15,7 +15,7 @@ export default function Home() {
       <Hero />
       <Mission />
       <DirectorsMessage />
-      <Constellation />
+      <Teams />
       <Projects />
       <Timeline />
       <Sponsors />

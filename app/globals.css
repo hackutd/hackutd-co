@@ -52,3 +52,19 @@ body {
   );
   animation: hero-star-twinkle 4s ease-in-out infinite;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-star {
+    animation: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .hero-star {
+    box-shadow: none;
+  }
+
+  .hero-star:nth-child(2n) {
+    display: none;
+  }
+}
