@@ -4,7 +4,13 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { useRef } from "react";
-import { COMET_TUNING, HERO_SCENE_SCROLL } from "./sceneConfig";
+import { useIsMobile } from "@/app/hooks/useIsMobile";
+import {
+  COMET_TUNING,
+  HERO_SCENE_SCROLL,
+  MOBILE_SCRUB,
+  MOBILE_RIBBON_SAMPLES,
+} from "./sceneConfig";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -147,6 +153,8 @@ export default function CometAnimation() {
   const cometOutlineRef = useRef<SVGPathElement>(null);
   const starRef = useRef<SVGGElement>(null);
 
+  const isMobile = useIsMobile();
+
   useGSAP(
     () => {
       const spine = spineRef.current;
@@ -172,11 +180,20 @@ export default function CometAnimation() {
       const trigger =
         wrapper.closest("section") || wrapper.parentElement;
 
+      const mobile =
+        window.innerWidth < 768 ||
+        window.matchMedia("(pointer: coarse)").matches;
+
+      const sampleCount = mobile
+        ? MOBILE_RIBBON_SAMPLES
+        : COMET_TUNING.ribbon.samples;
+      const scrubValue = mobile ? MOBILE_SCRUB : HERO_SCENE_SCROLL.scrub;
+
       const spineLength = spine.getTotalLength();
       const spineSamples = precomputeSpineSamples(
         spine,
         spineLength,
-        COMET_TUNING.ribbon.samples,
+        sampleCount,
       );
       const fullRibbonPath = buildRibbonSegmentPath(
         spineSamples,
@@ -226,7 +243,7 @@ export default function CometAnimation() {
           trigger,
           start: HERO_SCENE_SCROLL.start,
           end: HERO_SCENE_SCROLL.end,
-          scrub: HERO_SCENE_SCROLL.scrub,
+          scrub: scrubValue,
         },
       });
 
@@ -275,38 +292,42 @@ export default function CometAnimation() {
             ))}
           </linearGradient>
 
-          <filter
-            id="cometRibbonGrain"
-            x="-20%"
-            y="-20%"
-            width="140%"
-            height="140%"
-          >
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency={COMET_TUNING.gradient.grain.baseFrequency}
-              numOctaves={COMET_TUNING.gradient.grain.numOctaves}
-              stitchTiles="stitch"
-              result="noise"
-            />
-            <feColorMatrix
-              type="saturate"
-              values="0"
-              in="noise"
-              result="grain"
-            />
-            <feComponentTransfer in="grain" result="grainAlpha">
-              <feFuncA
-                type="table"
-                tableValues={`0 ${COMET_TUNING.gradient.grain.opacity}`}
+          {!isMobile && (
+            <filter
+              id="cometRibbonGrain"
+              x="-20%"
+              y="-20%"
+              width="140%"
+              height="140%"
+            >
+              <feTurbulence
+                type="fractalNoise"
+                baseFrequency={COMET_TUNING.gradient.grain.baseFrequency}
+                numOctaves={COMET_TUNING.gradient.grain.numOctaves}
+                stitchTiles="stitch"
+                result="noise"
               />
-            </feComponentTransfer>
-            <feBlend in="SourceGraphic" in2="grainAlpha" mode="overlay" />
-          </filter>
+              <feColorMatrix
+                type="saturate"
+                values="0"
+                in="noise"
+                result="grain"
+              />
+              <feComponentTransfer in="grain" result="grainAlpha">
+                <feFuncA
+                  type="table"
+                  tableValues={`0 ${COMET_TUNING.gradient.grain.opacity}`}
+                />
+              </feComponentTransfer>
+              <feBlend in="SourceGraphic" in2="grainAlpha" mode="overlay" />
+            </filter>
+          )}
 
-          <filter id="cometGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation={COMET_TUNING.glow.blurStdDev} />
-          </filter>
+          {!isMobile && (
+            <filter id="cometGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation={COMET_TUNING.glow.blurStdDev} />
+            </filter>
+          )}
 
           <mask id="cometRevealMask" maskUnits="userSpaceOnUse">
             <rect x="0" y="0" width="1440" height="900" fill="black" />
@@ -321,14 +342,14 @@ export default function CometAnimation() {
             ref={cometGlowRef}
             d=""
             fill="url(#cometGradient)"
-            filter="url(#cometGlow)"
-            opacity={COMET_TUNING.glow.opacity}
+            filter={isMobile ? undefined : "url(#cometGlow)"}
+            opacity={isMobile ? 0.15 : COMET_TUNING.glow.opacity}
           />
           <path
             ref={cometBodyRef}
             d=""
             fill="url(#cometGradient)"
-            filter="url(#cometRibbonGrain)"
+            filter={isMobile ? undefined : "url(#cometRibbonGrain)"}
           />
         </g>
         <path

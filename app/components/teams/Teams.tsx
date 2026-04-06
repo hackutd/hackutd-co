@@ -1,6 +1,6 @@
 const teams = ["Marketing", "Tech"];
 
-export default function Constellation() {
+export default function Teams() {
   return (
     <section id="team" className="px-8 py-32">
       <h2 className="text-5xl font-bold leading-tight md:text-6xl">

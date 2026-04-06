@@ -6,9 +6,9 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import Image from "next/image";
-import AccentButton from "./ui/AccentButton";
-import CometAnimation from "./hero/CometAnimation";
-import { HERO_SCENE_SCROLL } from "./hero/sceneConfig";
+import AccentButton from "../ui/AccentButton";
+import CometAnimation from "./CometAnimation";
+import { HERO_SCENE_SCROLL, MOBILE_SCRUB } from "./sceneConfig";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -63,12 +63,16 @@ export default function Hero() {
         return;
       }
 
+      const mobile =
+        window.innerWidth < 768 ||
+        window.matchMedia("(pointer: coarse)").matches;
+
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: section,
           start: HERO_SCENE_SCROLL.start,
           end: HERO_SCENE_SCROLL.end,
-          scrub: HERO_SCENE_SCROLL.scrub,
+          scrub: mobile ? MOBILE_SCRUB : HERO_SCENE_SCROLL.scrub,
         },
       });
 
@@ -94,7 +98,10 @@ export default function Hero() {
   );
 
   return (
-    <section ref={sectionRef} className="relative min-h-[260vh]">
+    <section
+      ref={sectionRef}
+      className="relative min-h-[160vh] md:min-h-[260vh]"
+    >
       {/* Comet sticks in viewport, text overlays it */}
       <div className="sticky top-0 h-screen overflow-hidden isolate">
         <div aria-hidden="true" className="absolute inset-0 z-[1]">
@@ -151,8 +158,8 @@ export default function Hero() {
         </div>
 
         {/* Text content on top */}
-        <div className="relative z-20 flex h-full flex-col items-center justify-center px-8 text-center">
-          <h1 className="max-w-[10ch] text-3xl font-semibold leading-[1.1] sm:text-4xl md:max-w-4xl md:text-5xl lg:text-6xl">
+        <div className="relative z-20 flex h-full flex-col items-center justify-center px-5 text-center md:px-8">
+          <h1 className="max-w-[16ch] text-3xl font-semibold leading-[1.1] sm:max-w-[20ch] sm:text-4xl md:max-w-4xl md:text-5xl lg:text-6xl">
             The Largest 24-Hour Hackathon in Texas.
           </h1>
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted sm:max-w-lg sm:text-base md:max-w-2xl md:text-lg">
@@ -162,7 +169,7 @@ export default function Hero() {
           <AccentButton
             variant="panel"
             size="sm"
-            className="mt-8 min-w-36 p-4 md:min-w-44"
+            className="mt-6 min-w-36 p-4 md:mt-8 md:min-w-44"
           >
             Coming Soon
           </AccentButton>
