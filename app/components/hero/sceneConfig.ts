@@ -21,6 +21,7 @@ export const WHITEOUT_SCROLL = {
 
 export const HERO_LAYOUT = {
   minHeight: "min-h-[250vh] md:min-h-[400vh]",
+  stickyViewportHeight: "h-[100svh] md:h-screen",
   skylineBackTranslateX: "-translate-x-[47%]",
 } as const;
 
