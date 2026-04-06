@@ -25,6 +25,8 @@ No test runner is configured.
 
 - **GSAP + ScrollTrigger**: Hero section uses scroll-driven GSAP timelines for parallax skylines and a comet reveal animation. Animation parameters are centralized in `app/components/hero/sceneConfig.ts`. Components that use GSAP must be `"use client"` and call `gsap.registerPlugin(ScrollTrigger)`.
 - **Reduced motion**: GSAP animations check `prefers-reduced-motion` and fall back to static states.
+- **Animated section structure**: For animation-heavy sections such as Hero and Mission, keep the folder organized around a main `Section.tsx` plus a colocated `sceneConfig.ts`. Put scroll ranges, timing values, copy, layout constants, and other tunables in `sceneConfig.ts`; keep the TSX focused on refs, rendering, and timeline wiring.
+- **Motion hooks**: Prefer shared client hooks such as `useIsMobile` and `usePrefersReducedMotion` for responsive animation branching instead of repeating inline media query listeners inside section components.
 - **Seeded randomness**: Star positions use a deterministic PRNG (not `Math.random()`) so layout is consistent across renders.
 
 ## Conventions

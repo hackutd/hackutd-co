@@ -1,7 +1,57 @@
+export type HeroStar = {
+  id: number;
+  size: number;
+  top: number;
+  left: number;
+  opacity: number;
+  duration: number;
+  delay: number;
+};
+
 export const HERO_SCENE_SCROLL = {
   start: "top top",
-  end: "bottom bottom",
+  end: "65% bottom",
   scrub: 0.2,
+} as const;
+
+export const WHITEOUT_SCROLL = {
+  start: "65% bottom",
+  end: "bottom bottom",
+} as const;
+
+export const HERO_LAYOUT = {
+  minHeight: "min-h-[250vh] md:min-h-[400vh]",
+  skylineBackTranslateX: "-translate-x-[47%]",
+} as const;
+
+export const HERO_COPY = {
+  heading: "The Largest 24-Hour Hackathon in Texas.",
+  body: "Join hundreds of hackers, creators, and innovators for a weekend of coding, collaboration, and chaos where ideas become reality.",
+  ctaLabel: "Coming Soon",
+} as const;
+
+export const HERO_SKYLINE_PARALLAX = {
+  backYPercent: -6,
+  frontYPercent: -12,
+} as const;
+
+export const HERO_WHITEOUT = {
+  text: {
+    start: WHITEOUT_SCROLL.start,
+    end: "78% bottom",
+    ease: "power1.in",
+  },
+  overlay: {
+    start: "70% bottom",
+    end: WHITEOUT_SCROLL.end,
+    ease: "power2.in",
+  },
+} as const;
+
+export const HERO_NAVBAR_THEME_TRIGGER = {
+  start: "84% bottom",
+  end: "bottom top",
+  theme: "light",
 } as const;
 
 export const COMET_TUNING = {
@@ -29,10 +79,10 @@ export const COMET_TUNING = {
     x2: -60,
     y2: -28,
     stops: [
-      { offset: "10%", color: "#FFA21F" },
-      { offset: "30%", color: "#FF7A1B" },
-      { offset: "55%", color: "#F31667" },
-      { offset: "100%", color: "#6C17FE" },
+      { offset: "10%", color: "var(--color-amber)" },
+      { offset: "30%", color: "var(--color-orange)" },
+      { offset: "55%", color: "var(--color-pink)" },
+      { offset: "100%", color: "var(--color-purple)" },
     ],
     grain: {
       baseFrequency: 0.5,
@@ -56,3 +106,24 @@ export const COMET_TUNING = {
 
 export const MOBILE_SCRUB = 0.6;
 export const MOBILE_RIBBON_SAMPLES = 80;
+
+function createHeroStars(count: number): HeroStar[] {
+  let seed = 27;
+
+  const next = () => {
+    seed = (seed * 48271) % 2147483647;
+    return seed / 2147483647;
+  };
+
+  return Array.from({ length: count }, (_, index) => ({
+    id: index,
+    size: 4 + next() * 4.2,
+    top: 8 + next() * 56,
+    left: 4 + next() * 92,
+    opacity: 0.35 + next() * 0.5,
+    duration: 2.6 + next() * 3.8,
+    delay: next() * 4,
+  }));
+}
+
+export const HERO_STARS = createHeroStars(28);

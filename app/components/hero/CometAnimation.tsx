@@ -5,6 +5,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { useRef } from "react";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
+import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import {
   COMET_TUNING,
   HERO_SCENE_SCROLL,
@@ -154,6 +155,7 @@ export default function CometAnimation() {
   const starRef = useRef<SVGGElement>(null);
 
   const isMobile = useIsMobile();
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   useGSAP(
     () => {
@@ -177,17 +179,15 @@ export default function CometAnimation() {
         return;
       }
 
-      const trigger =
-        wrapper.closest("section") || wrapper.parentElement;
+      const trigger = wrapper.closest("section") ?? wrapper.parentElement;
+      if (!trigger) {
+        return;
+      }
 
-      const mobile =
-        window.innerWidth < 768 ||
-        window.matchMedia("(pointer: coarse)").matches;
-
-      const sampleCount = mobile
+      const sampleCount = isMobile
         ? MOBILE_RIBBON_SAMPLES
         : COMET_TUNING.ribbon.samples;
-      const scrubValue = mobile ? MOBILE_SCRUB : HERO_SCENE_SCROLL.scrub;
+      const scrubValue = isMobile ? MOBILE_SCRUB : HERO_SCENE_SCROLL.scrub;
 
       const spineLength = spine.getTotalLength();
       const spineSamples = precomputeSpineSamples(
@@ -227,7 +227,7 @@ export default function CometAnimation() {
         star.setAttribute("opacity", p <= 0 ? "0" : "1");
       };
 
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      if (prefersReducedMotion) {
         setReveal(1);
         return;
       }
@@ -238,7 +238,7 @@ export default function CometAnimation() {
         progress: COMET_TUNING.animation.initialProgress,
       };
 
-      const tl = gsap.timeline({
+      const revealTimeline = gsap.timeline({
         scrollTrigger: {
           trigger,
           start: HERO_SCENE_SCROLL.start,
@@ -247,7 +247,7 @@ export default function CometAnimation() {
         },
       });
 
-      tl.to(
+      revealTimeline.to(
         revealState,
         {
           progress: 1,
@@ -260,7 +260,7 @@ export default function CometAnimation() {
         0,
       );
     },
-    { scope: wrapperRef, dependencies: [] },
+    { scope: wrapperRef, dependencies: [isMobile, prefersReducedMotion] },
   );
 
   return (
@@ -356,7 +356,7 @@ export default function CometAnimation() {
           ref={cometOutlineRef}
           d=""
           fill="none"
-          stroke="#fff"
+          stroke="var(--color-foreground)"
           strokeOpacity={COMET_TUNING.outline.opacity}
           strokeWidth={COMET_TUNING.outline.width}
           strokeLinejoin="round"
@@ -373,7 +373,7 @@ export default function CometAnimation() {
               COMET_TUNING.star.outer,
               COMET_TUNING.star.inner,
             )}
-            fill="#fff"
+            fill="var(--color-foreground)"
           />
         </g>
       </svg>

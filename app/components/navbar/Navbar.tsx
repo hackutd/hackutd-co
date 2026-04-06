@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import AccentButton from "../ui/AccentButton";
+import useNavbarTheme from "./useNavbarTheme";
 
 const NAV_LINKS = [
   { href: "#hackathons", label: "WHO WE ARE" },
@@ -13,6 +14,8 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const theme = useNavbarTheme();
+  const isLightTheme = theme === "light";
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
@@ -24,14 +27,28 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 md:px-8 md:py-4">
       <Link href="/" className="flex items-center">
-        <Image
-          src="/white-hackutd-logo.svg"
-          alt="HackUTD"
-          width={2048}
-          height={585}
-          className="h-6 w-auto md:h-8"
-          priority
-        />
+        <span className="relative block h-6 w-33.5 md:h-8 md:w-44.5">
+          <Image
+            src="/white-hackutd-logo.svg"
+            alt="HackUTD"
+            width={2048}
+            height={585}
+            className={`absolute inset-0 h-6 w-auto transition-opacity duration-300 md:h-8 ${
+              isLightTheme ? "opacity-0" : "opacity-100"
+            }`}
+            priority
+          />
+          <Image
+            src="/black-hackutd-logo.svg"
+            alt="HackUTD"
+            width={2048}
+            height={585}
+            className={`absolute inset-0 h-6 w-auto transition-opacity duration-300 md:h-8 ${
+              isLightTheme ? "opacity-100" : "opacity-0"
+            }`}
+            priority
+          />
+        </span>
       </Link>
 
       {/* Desktop nav */}
@@ -40,7 +57,11 @@ export default function Navbar() {
           <Link
             key={link.label}
             href={link.href}
-            className="text-xs hover:text-foreground transition-colors"
+            className={`text-xs transition-colors duration-300 ${
+              isLightTheme
+                ? "text-(--color-surface-foreground) hover:opacity-70"
+                : "text-foreground hover:text-foreground/70"
+            }`}
           >
             {link.label}
           </Link>
@@ -57,13 +78,19 @@ export default function Navbar() {
         aria-expanded={isOpen}
       >
         <span
-          className={`block h-0.5 w-4 bg-foreground transition-transform duration-200 ${isOpen ? "translate-y-1.5 rotate-45" : ""}`}
+          className={`block h-0.5 w-4 transition-transform duration-200 ${
+            isLightTheme ? "bg-(--color-surface-foreground)" : "bg-foreground"
+          } ${isOpen ? "translate-y-1.5 rotate-45" : ""}`}
         />
         <span
-          className={`block h-0.5 w-4 bg-foreground transition-opacity duration-200 ${isOpen ? "opacity-0" : ""}`}
+          className={`block h-0.5 w-4 transition-opacity duration-200 ${
+            isLightTheme ? "bg-(--color-surface-foreground)" : "bg-foreground"
+          } ${isOpen ? "opacity-0" : ""}`}
         />
         <span
-          className={`block h-0.5 w-4 bg-foreground transition-transform duration-200 ${isOpen ? "-translate-y-1.5 -rotate-45" : ""}`}
+          className={`block h-0.5 w-4 transition-transform duration-200 ${
+            isLightTheme ? "bg-(--color-surface-foreground)" : "bg-foreground"
+          } ${isOpen ? "-translate-y-1.5 -rotate-45" : ""}`}
         />
       </button>
 
