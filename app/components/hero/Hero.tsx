@@ -6,105 +6,144 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import Image from "next/image";
+import { useIsMobile } from "@/app/hooks/useIsMobile";
+import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import AccentButton from "../ui/AccentButton";
+import { dispatchNavbarThemeOverride } from "../navbar/navbarThemeOverride";
 import CometAnimation from "./CometAnimation";
-import { HERO_SCENE_SCROLL, MOBILE_SCRUB } from "./sceneConfig";
+import {
+  HERO_COPY,
+  HERO_LAYOUT,
+  HERO_NAVBAR_THEME_TRIGGER,
+  HERO_SCENE_SCROLL,
+  HERO_SKYLINE_PARALLAX,
+  HERO_STARS,
+  HERO_WHITEOUT,
+  MOBILE_SCRUB,
+} from "./sceneConfig";
 
 gsap.registerPlugin(ScrollTrigger);
-
-type HeroStar = {
-  id: number;
-  size: number;
-  top: number;
-  left: number;
-  opacity: number;
-  duration: number;
-  delay: number;
-};
-
-function createHeroStars(count: number): HeroStar[] {
-  let seed = 27;
-
-  const next = () => {
-    seed = (seed * 48271) % 2147483647;
-    return seed / 2147483647;
-  };
-
-  return Array.from({ length: count }, (_, index) => ({
-    id: index,
-    size: 4 + next() * 4.2,
-    top: 8 + next() * 56,
-    left: 4 + next() * 92,
-    opacity: 0.35 + next() * 0.5,
-    duration: 2.6 + next() * 3.8,
-    delay: next() * 4,
-  }));
-}
-
-const HERO_STARS = createHeroStars(28);
 
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const skylineBackRef = useRef<HTMLImageElement>(null);
   const skylineFrontRef = useRef<HTMLImageElement>(null);
+  const whiteOverlayRef = useRef<HTMLDivElement>(null);
+  const heroTextRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   useGSAP(
     () => {
       const section = sectionRef.current;
       const skylineBack = skylineBackRef.current;
       const skylineFront = skylineFrontRef.current;
+      const whiteOverlay = whiteOverlayRef.current;
+      const heroText = heroTextRef.current;
 
       if (!section || !skylineBack || !skylineFront) {
         return;
       }
 
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      if (prefersReducedMotion) {
         gsap.set([skylineBack, skylineFront], { yPercent: 0 });
+        if (whiteOverlay) {
+          gsap.set(whiteOverlay, { opacity: 0 });
+        }
+        if (heroText) {
+          gsap.set(heroText, { opacity: 1 });
+        }
         return;
       }
 
-      const mobile =
-        window.innerWidth < 768 ||
-        window.matchMedia("(pointer: coarse)").matches;
+      const scrub = isMobile ? MOBILE_SCRUB : HERO_SCENE_SCROLL.scrub;
 
-      const tl = gsap.timeline({
+      const sceneTimeline = gsap.timeline({
         scrollTrigger: {
           trigger: section,
           start: HERO_SCENE_SCROLL.start,
           end: HERO_SCENE_SCROLL.end,
-          scrub: mobile ? MOBILE_SCRUB : HERO_SCENE_SCROLL.scrub,
+          scrub,
         },
       });
 
-      tl.to(
+      sceneTimeline.to(
         skylineBack,
         {
-          yPercent: -6,
+          yPercent: HERO_SKYLINE_PARALLAX.backYPercent,
           ease: "none",
         },
         0,
       );
 
-      tl.to(
+      sceneTimeline.to(
         skylineFront,
         {
-          yPercent: -12,
+          yPercent: HERO_SKYLINE_PARALLAX.frontYPercent,
           ease: "none",
         },
         0,
       );
+
+      if (heroText) {
+        gsap.to(heroText, {
+          opacity: 0,
+          ease: HERO_WHITEOUT.text.ease,
+          scrollTrigger: {
+            trigger: section,
+            start: HERO_WHITEOUT.text.start,
+            end: HERO_WHITEOUT.text.end,
+            scrub,
+          },
+        });
+      }
+
+      if (whiteOverlay) {
+        gsap.to(whiteOverlay, {
+          opacity: 1,
+          ease: HERO_WHITEOUT.overlay.ease,
+          scrollTrigger: {
+            trigger: section,
+            start: HERO_WHITEOUT.overlay.start,
+            end: HERO_WHITEOUT.overlay.end,
+            scrub,
+          },
+        });
+      }
+
+      let navbarThemeOverride: "light" | "dark" | null = null;
+      const setNavbarThemeOverride = (theme: "light" | "dark" | null) => {
+        if (navbarThemeOverride === theme) {
+          return;
+        }
+
+        navbarThemeOverride = theme;
+        dispatchNavbarThemeOverride(theme);
+      };
+
+      const navbarThemeTrigger = ScrollTrigger.create({
+        trigger: section,
+        start: HERO_NAVBAR_THEME_TRIGGER.start,
+        end: HERO_NAVBAR_THEME_TRIGGER.end,
+        onEnter: () => setNavbarThemeOverride(HERO_NAVBAR_THEME_TRIGGER.theme),
+        onEnterBack: () =>
+          setNavbarThemeOverride(HERO_NAVBAR_THEME_TRIGGER.theme),
+        onLeave: () => setNavbarThemeOverride(null),
+        onLeaveBack: () => setNavbarThemeOverride(null),
+      });
+
+      return () => {
+        navbarThemeTrigger.kill();
+        setNavbarThemeOverride(null);
+      };
     },
-    { scope: sectionRef, dependencies: [] },
+    { scope: sectionRef, dependencies: [isMobile, prefersReducedMotion] },
   );
 
   return (
-    <section
-      ref={sectionRef}
-      className="relative min-h-[160vh] md:min-h-[260vh]"
-    >
-      {/* Comet sticks in viewport, text overlays it */}
+    <section ref={sectionRef} className={`relative ${HERO_LAYOUT.minHeight}`}>
       <div className="sticky top-0 h-screen overflow-hidden isolate">
-        <div aria-hidden="true" className="absolute inset-0 z-[1]">
+        <div aria-hidden="true" className="absolute inset-0 z-1">
           {HERO_STARS.map((star) => {
             const style = {
               top: `${star.top}%`,
@@ -119,7 +158,7 @@ export default function Hero() {
             return (
               <span
                 key={star.id}
-                className="hero-star absolute bg-[var(--color-amber)]"
+                className="hero-star absolute bg-(--color-amber)"
                 style={style}
               />
             );
@@ -137,7 +176,7 @@ export default function Hero() {
             width={2431}
             height={954}
             priority
-            className="absolute bottom-0 left-1/2 h-[88%] w-auto max-w-none -translate-x-[47%] opacity-45"
+            className={`absolute bottom-0 left-1/2 h-[88%] w-auto max-w-none ${HERO_LAYOUT.skylineBackTranslateX} opacity-45`}
             sizes="100vw"
           />
           <Image
@@ -157,21 +196,27 @@ export default function Hero() {
           <CometAnimation />
         </div>
 
-        {/* Text content on top */}
-        <div className="relative z-20 flex h-full flex-col items-center justify-center px-5 text-center md:px-8">
+        <div
+          ref={whiteOverlayRef}
+          className="pointer-events-none absolute inset-0 z-30 bg-(--color-surface) opacity-0"
+        />
+
+        <div
+          ref={heroTextRef}
+          className="relative z-20 flex h-full flex-col items-center justify-center px-5 text-center md:px-8"
+        >
           <h1 className="max-w-[16ch] text-3xl font-semibold leading-[1.1] sm:max-w-[20ch] sm:text-4xl md:max-w-4xl md:text-5xl lg:text-6xl">
-            The Largest 24-Hour Hackathon in Texas.
+            {HERO_COPY.heading}
           </h1>
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted sm:max-w-lg sm:text-base md:max-w-2xl md:text-lg">
-            Join hundreds of hackers, creators, and innovators for a weekend of
-            coding, collaboration, and chaos where ideas become reality.
+            {HERO_COPY.body}
           </p>
           <AccentButton
             variant="panel"
             size="sm"
             className="mt-6 min-w-36 p-4 md:mt-8 md:min-w-44"
           >
-            Coming Soon
+            {HERO_COPY.ctaLabel}
           </AccentButton>
         </div>
       </div>
