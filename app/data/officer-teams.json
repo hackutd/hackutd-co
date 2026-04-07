@@ -1,0 +1,277 @@
+[
+  {
+    "id": "marketing",
+    "label": "Marketing",
+    "order": 0,
+    "lead": {
+      "id": "marketing-lead",
+      "name": "Olivia Tran",
+      "role": "Team Lead",
+      "linkedinUrl": "https://www.linkedin.com/in/olivia-tran-hackutd"
+    },
+    "members": [
+      {
+        "id": "marketing-1",
+        "name": "Maya Patel",
+        "role": "Content Strategy",
+        "linkedinUrl": "https://www.linkedin.com/in/maya-patel-hackutd"
+      },
+      {
+        "id": "marketing-2",
+        "name": "Ethan Nguyen",
+        "role": "Brand Design",
+        "linkedinUrl": "https://www.linkedin.com/in/ethan-nguyen-hackutd"
+      },
+      {
+        "id": "marketing-3",
+        "name": "Sofia Ramirez",
+        "role": "Social Media",
+        "linkedinUrl": "https://www.linkedin.com/in/sofia-ramirez-hackutd"
+      },
+      {
+        "id": "marketing-4",
+        "name": "Jordan Kim",
+        "role": "Photo + Video",
+        "linkedinUrl": "https://www.linkedin.com/in/jordan-kim-hackutd"
+      },
+      {
+        "id": "marketing-5",
+        "name": "Avery Brooks",
+        "role": "Copywriting",
+        "linkedinUrl": "https://www.linkedin.com/in/avery-brooks-hackutd"
+      }
+    ]
+  },
+  {
+    "id": "tech",
+    "label": "Tech",
+    "order": 1,
+    "lead": {
+      "id": "tech-lead",
+      "name": "Noah Chen",
+      "role": "Team Lead",
+      "linkedinUrl": "https://www.linkedin.com/in/noah-chen-hackutd"
+    },
+    "members": [
+      {
+        "id": "tech-1",
+        "name": "Aiden Williams",
+        "role": "Platform Engineering",
+        "linkedinUrl": "https://www.linkedin.com/in/aiden-williams-hackutd"
+      },
+      {
+        "id": "tech-2",
+        "name": "Priya Shah",
+        "role": "Infra + DevOps",
+        "linkedinUrl": "https://www.linkedin.com/in/priya-shah-hackutd"
+      },
+      {
+        "id": "tech-3",
+        "name": "Lucas Martin",
+        "role": "Registration Systems",
+        "linkedinUrl": "https://www.linkedin.com/in/lucas-martin-hackutd"
+      },
+      {
+        "id": "tech-4",
+        "name": "Grace Lee",
+        "role": "Website Experience",
+        "linkedinUrl": "https://www.linkedin.com/in/grace-lee-hackutd"
+      },
+      {
+        "id": "tech-5",
+        "name": "Mateo Garcia",
+        "role": "Internal Tooling",
+        "linkedinUrl": "https://www.linkedin.com/in/mateo-garcia-hackutd"
+      },
+      {
+        "id": "tech-6",
+        "name": "Chloe Nguyen",
+        "role": "Security + Reliability",
+        "linkedinUrl": "https://www.linkedin.com/in/chloe-nguyen-hackutd"
+      },
+      {
+        "id": "tech-7",
+        "name": "Arjun Mehta",
+        "role": "Automation",
+        "linkedinUrl": "https://www.linkedin.com/in/arjun-mehta-hackutd"
+      }
+    ]
+  },
+  {
+    "id": "industry",
+    "label": "Industry",
+    "order": 2,
+    "lead": {
+      "id": "industry-lead",
+      "name": "Leah Johnson",
+      "role": "Team Lead",
+      "linkedinUrl": "https://www.linkedin.com/in/leah-johnson-hackutd"
+    },
+    "members": [
+      {
+        "id": "industry-1",
+        "name": "Ryan Park",
+        "role": "Sponsor Outreach",
+        "linkedinUrl": "https://www.linkedin.com/in/ryan-park-hackutd"
+      },
+      {
+        "id": "industry-2",
+        "name": "Anika Singh",
+        "role": "Partner Success",
+        "linkedinUrl": "https://www.linkedin.com/in/anika-singh-hackutd"
+      },
+      {
+        "id": "industry-3",
+        "name": "Daniel Scott",
+        "role": "Relationships",
+        "linkedinUrl": "https://www.linkedin.com/in/daniel-scott-hackutd"
+      },
+      {
+        "id": "industry-4",
+        "name": "Harper Wilson",
+        "role": "Prospecting",
+        "linkedinUrl": "https://www.linkedin.com/in/harper-wilson-hackutd"
+      },
+      {
+        "id": "industry-5",
+        "name": "Kevin Flores",
+        "role": "Deliverables",
+        "linkedinUrl": "https://www.linkedin.com/in/kevin-flores-hackutd"
+      },
+      {
+        "id": "industry-6",
+        "name": "Isabella Moore",
+        "role": "Stewardship",
+        "linkedinUrl": "https://www.linkedin.com/in/isabella-moore-hackutd"
+      },
+      {
+        "id": "industry-7",
+        "name": "Nathan Davis",
+        "role": "Sponsorship Ops",
+        "linkedinUrl": "https://www.linkedin.com/in/nathan-davis-hackutd"
+      },
+      {
+        "id": "industry-8",
+        "name": "Mila Brown",
+        "role": "Activation Planning",
+        "linkedinUrl": "https://www.linkedin.com/in/mila-brown-hackutd"
+      }
+    ]
+  },
+  {
+    "id": "finance",
+    "label": "Finance",
+    "order": 3,
+    "lead": {
+      "id": "finance-lead",
+      "name": "Elena Martinez",
+      "role": "Team Lead",
+      "linkedinUrl": "https://www.linkedin.com/in/elena-martinez-hackutd"
+    },
+    "members": [
+      {
+        "id": "finance-1",
+        "name": "Caleb Adams",
+        "role": "Budgeting",
+        "linkedinUrl": "https://www.linkedin.com/in/caleb-adams-hackutd"
+      },
+      {
+        "id": "finance-2",
+        "name": "Sarah Murphy",
+        "role": "Procurement",
+        "linkedinUrl": "https://www.linkedin.com/in/sarah-murphy-hackutd"
+      },
+      {
+        "id": "finance-3",
+        "name": "Jason Perez",
+        "role": "Reimbursements",
+        "linkedinUrl": "https://www.linkedin.com/in/jason-perez-hackutd"
+      },
+      {
+        "id": "finance-4",
+        "name": "Emma Torres",
+        "role": "Forecasting",
+        "linkedinUrl": "https://www.linkedin.com/in/emma-torres-hackutd"
+      },
+      {
+        "id": "finance-5",
+        "name": "Benjamin Cox",
+        "role": "Vendor Payments",
+        "linkedinUrl": "https://www.linkedin.com/in/benjamin-cox-hackutd"
+      },
+      {
+        "id": "finance-6",
+        "name": "Lily Foster",
+        "role": "Ops Accounting",
+        "linkedinUrl": "https://www.linkedin.com/in/lily-foster-hackutd"
+      }
+    ]
+  },
+  {
+    "id": "experience",
+    "label": "Experience",
+    "order": 4,
+    "lead": {
+      "id": "experience-lead",
+      "name": "Marcus Rivera",
+      "role": "Team Lead",
+      "linkedinUrl": "https://www.linkedin.com/in/marcus-rivera-hackutd"
+    },
+    "members": [
+      {
+        "id": "experience-1",
+        "name": "Zoe Hernandez",
+        "role": "Operations",
+        "linkedinUrl": "https://www.linkedin.com/in/zoe-hernandez-hackutd"
+      },
+      {
+        "id": "experience-2",
+        "name": "Adam Walker",
+        "role": "Volunteer Coordination",
+        "linkedinUrl": "https://www.linkedin.com/in/adam-walker-hackutd"
+      },
+      {
+        "id": "experience-3",
+        "name": "Nina Robinson",
+        "role": "Check-In Flow",
+        "linkedinUrl": "https://www.linkedin.com/in/nina-robinson-hackutd"
+      },
+      {
+        "id": "experience-4",
+        "name": "Tyler Hall",
+        "role": "Venue Logistics",
+        "linkedinUrl": "https://www.linkedin.com/in/tyler-hall-hackutd"
+      },
+      {
+        "id": "experience-5",
+        "name": "Claire Lewis",
+        "role": "Swag + Merch",
+        "linkedinUrl": "https://www.linkedin.com/in/claire-lewis-hackutd"
+      },
+      {
+        "id": "experience-6",
+        "name": "Isaac Young",
+        "role": "Food + Hospitality",
+        "linkedinUrl": "https://www.linkedin.com/in/isaac-young-hackutd"
+      },
+      {
+        "id": "experience-7",
+        "name": "Julia King",
+        "role": "Community Care",
+        "linkedinUrl": "https://www.linkedin.com/in/julia-king-hackutd"
+      },
+      {
+        "id": "experience-8",
+        "name": "Henry Wright",
+        "role": "Room Flow",
+        "linkedinUrl": "https://www.linkedin.com/in/henry-wright-hackutd"
+      },
+      {
+        "id": "experience-9",
+        "name": "Stella Green",
+        "role": "Late-Night Programming",
+        "linkedinUrl": "https://www.linkedin.com/in/stella-green-hackutd"
+      }
+    ]
+  }
+]

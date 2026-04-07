@@ -57,13 +57,14 @@ export default function Navbar() {
           <Link
             key={link.label}
             href={link.href}
-            className={`text-xs transition-colors duration-300 ${
+            className={`group relative pb-1 text-xs transition-colors duration-300 ${
               isLightTheme
                 ? "text-[var(--color-surface-foreground)] hover:opacity-70"
                 : "text-foreground hover:text-foreground/70"
             }`}
           >
-            {link.label}
+            <span>{link.label}</span>
+            <span className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-pink transition-transform duration-300 group-hover:scale-x-100" />
           </Link>
         ))}
         <AccentButton>Gallery</AccentButton>
