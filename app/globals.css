@@ -40,6 +40,23 @@ body {
   }
 }
 
+@keyframes constellation-lead-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 0 4px rgba(243, 22, 103, 0.16),
+      0 0 16px rgba(243, 22, 103, 0.42);
+  }
+
+  50% {
+    transform: scale(1.12);
+    box-shadow:
+      0 0 0 8px rgba(243, 22, 103, 0.08),
+      0 0 30px rgba(243, 22, 103, 0.68);
+  }
+}
+
 .hero-star {
   box-shadow: 0 0 8px rgba(255, 162, 31, 0.45);
   clip-path: polygon(
@@ -55,8 +72,16 @@ body {
   animation: hero-star-twinkle 4s ease-in-out infinite;
 }
 
+.constellation-lead {
+  animation: constellation-lead-pulse 4.8s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-star {
+    animation: none;
+  }
+
+  .constellation-lead {
     animation: none;
   }
 }

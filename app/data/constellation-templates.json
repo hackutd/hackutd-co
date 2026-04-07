@@ -1,0 +1,237 @@
+[
+  {
+    "id": "cassiopeia",
+    "name": "Cassiopeia",
+    "starCount": 5,
+    "leadNodeId": "n0",
+    "nodes": [
+      { "id": "n0", "x": 0.48, "y": 0.12 },
+      { "id": "n1", "x": 0.16, "y": 0.3 },
+      { "id": "n2", "x": 0.04, "y": 0.66 },
+      { "id": "n3", "x": 0.7, "y": 0.44 },
+      { "id": "n4", "x": 0.96, "y": 0.72 }
+    ],
+    "edges": [
+      { "fromId": "n1", "toId": "n0" },
+      { "fromId": "n0", "toId": "n2" },
+      { "fromId": "n2", "toId": "n3" },
+      { "fromId": "n3", "toId": "n4" }
+    ],
+    "append": {
+      "fromNodeId": "n3",
+      "toNodeId": "n4",
+      "stepX": 0.16,
+      "stepY": 0.08
+    }
+  },
+  {
+    "id": "lyra",
+    "name": "Lyra",
+    "starCount": 5,
+    "leadNodeId": "n0",
+    "nodes": [
+      { "id": "n0", "x": 0.64, "y": 0.1 },
+      { "id": "n1", "x": 0.28, "y": 0.32 },
+      { "id": "n2", "x": 0.68, "y": 0.46 },
+      { "id": "n3", "x": 0.3, "y": 0.76 },
+      { "id": "n4", "x": 0.78, "y": 0.88 }
+    ],
+    "edges": [
+      { "fromId": "n0", "toId": "n1" },
+      { "fromId": "n1", "toId": "n2" },
+      { "fromId": "n2", "toId": "n3" },
+      { "fromId": "n2", "toId": "n4" }
+    ],
+    "append": {
+      "fromNodeId": "n2",
+      "toNodeId": "n4",
+      "stepX": 0.12,
+      "stepY": 0.1
+    }
+  },
+  {
+    "id": "delphinus",
+    "name": "Delphinus",
+    "starCount": 5,
+    "leadNodeId": "n0",
+    "nodes": [
+      { "id": "n0", "x": 0.52, "y": 0.1 },
+      { "id": "n1", "x": 0.18, "y": 0.4 },
+      { "id": "n2", "x": 0.5, "y": 0.5 },
+      { "id": "n3", "x": 0.82, "y": 0.42 },
+      { "id": "n4", "x": 0.64, "y": 0.86 }
+    ],
+    "edges": [
+      { "fromId": "n0", "toId": "n1" },
+      { "fromId": "n1", "toId": "n2" },
+      { "fromId": "n2", "toId": "n3" },
+      { "fromId": "n3", "toId": "n0" },
+      { "fromId": "n2", "toId": "n4" }
+    ],
+    "append": {
+      "fromNodeId": "n2",
+      "toNodeId": "n4",
+      "stepX": 0.08,
+      "stepY": 0.16
+    }
+  },
+  {
+    "id": "orion",
+    "name": "Orion",
+    "starCount": 7,
+    "leadNodeId": "n0",
+    "nodes": [
+      { "id": "n0", "x": 0.24, "y": 0.1 },
+      { "id": "n1", "x": 0.76, "y": 0.18 },
+      { "id": "n2", "x": 0.4, "y": 0.36 },
+      { "id": "n3", "x": 0.5, "y": 0.48 },
+      { "id": "n4", "x": 0.6, "y": 0.58 },
+      { "id": "n5", "x": 0.28, "y": 0.82 },
+      { "id": "n6", "x": 0.78, "y": 0.9 }
+    ],
+    "edges": [
+      { "fromId": "n0", "toId": "n2" },
+      { "fromId": "n1", "toId": "n4" },
+      { "fromId": "n2", "toId": "n3" },
+      { "fromId": "n3", "toId": "n4" },
+      { "fromId": "n2", "toId": "n5" },
+      { "fromId": "n4", "toId": "n6" }
+    ],
+    "append": {
+      "fromNodeId": "n4",
+      "toNodeId": "n6",
+      "stepX": 0.12,
+      "stepY": 0.12
+    }
+  },
+  {
+    "id": "aquila",
+    "name": "Aquila",
+    "starCount": 8,
+    "leadNodeId": "n0",
+    "nodes": [
+      { "id": "n0", "x": 0.5, "y": 0.08 },
+      { "id": "n1", "x": 0.16, "y": 0.24 },
+      { "id": "n2", "x": 0.34, "y": 0.34 },
+      { "id": "n3", "x": 0.66, "y": 0.38 },
+      { "id": "n4", "x": 0.86, "y": 0.24 },
+      { "id": "n5", "x": 0.42, "y": 0.58 },
+      { "id": "n6", "x": 0.56, "y": 0.72 },
+      { "id": "n7", "x": 0.68, "y": 0.92 }
+    ],
+    "edges": [
+      { "fromId": "n1", "toId": "n2" },
+      { "fromId": "n2", "toId": "n0" },
+      { "fromId": "n0", "toId": "n3" },
+      { "fromId": "n3", "toId": "n4" },
+      { "fromId": "n2", "toId": "n5" },
+      { "fromId": "n5", "toId": "n6" },
+      { "fromId": "n6", "toId": "n7" },
+      { "fromId": "n3", "toId": "n6" }
+    ],
+    "append": {
+      "fromNodeId": "n6",
+      "toNodeId": "n7",
+      "stepX": 0.1,
+      "stepY": 0.14
+    }
+  },
+  {
+    "id": "cepheus",
+    "name": "Cepheus",
+    "starCount": 8,
+    "leadNodeId": "n0",
+    "nodes": [
+      { "id": "n0", "x": 0.56, "y": 0.08 },
+      { "id": "n1", "x": 0.28, "y": 0.28 },
+      { "id": "n2", "x": 0.76, "y": 0.28 },
+      { "id": "n3", "x": 0.12, "y": 0.54 },
+      { "id": "n4", "x": 0.68, "y": 0.56 },
+      { "id": "n5", "x": 0.3, "y": 0.82 },
+      { "id": "n6", "x": 0.58, "y": 0.84 },
+      { "id": "n7", "x": 0.94, "y": 0.58 }
+    ],
+    "edges": [
+      { "fromId": "n1", "toId": "n0" },
+      { "fromId": "n0", "toId": "n2" },
+      { "fromId": "n1", "toId": "n3" },
+      { "fromId": "n3", "toId": "n5" },
+      { "fromId": "n5", "toId": "n6" },
+      { "fromId": "n6", "toId": "n4" },
+      { "fromId": "n4", "toId": "n2" },
+      { "fromId": "n4", "toId": "n7" }
+    ],
+    "append": {
+      "fromNodeId": "n4",
+      "toNodeId": "n7",
+      "stepX": 0.14,
+      "stepY": 0.04
+    }
+  },
+  {
+    "id": "cygnus",
+    "name": "Cygnus",
+    "starCount": 9,
+    "leadNodeId": "n0",
+    "nodes": [
+      { "id": "n0", "x": 0.5, "y": 0.06 },
+      { "id": "n1", "x": 0.5, "y": 0.24 },
+      { "id": "n2", "x": 0.5, "y": 0.44 },
+      { "id": "n3", "x": 0.5, "y": 0.68 },
+      { "id": "n4", "x": 0.5, "y": 0.92 },
+      { "id": "n5", "x": 0.18, "y": 0.42 },
+      { "id": "n6", "x": 0.32, "y": 0.5 },
+      { "id": "n7", "x": 0.68, "y": 0.5 },
+      { "id": "n8", "x": 0.82, "y": 0.42 }
+    ],
+    "edges": [
+      { "fromId": "n0", "toId": "n1" },
+      { "fromId": "n1", "toId": "n2" },
+      { "fromId": "n2", "toId": "n3" },
+      { "fromId": "n3", "toId": "n4" },
+      { "fromId": "n5", "toId": "n6" },
+      { "fromId": "n6", "toId": "n2" },
+      { "fromId": "n2", "toId": "n7" },
+      { "fromId": "n7", "toId": "n8" }
+    ],
+    "append": {
+      "fromNodeId": "n3",
+      "toNodeId": "n4",
+      "stepX": 0,
+      "stepY": 0.14
+    }
+  },
+  {
+    "id": "andromeda",
+    "name": "Andromeda",
+    "starCount": 9,
+    "leadNodeId": "n0",
+    "nodes": [
+      { "id": "n0", "x": 0.18, "y": 0.18 },
+      { "id": "n1", "x": 0.34, "y": 0.3 },
+      { "id": "n2", "x": 0.5, "y": 0.42 },
+      { "id": "n3", "x": 0.68, "y": 0.54 },
+      { "id": "n4", "x": 0.88, "y": 0.68 },
+      { "id": "n5", "x": 0.32, "y": 0.56 },
+      { "id": "n6", "x": 0.44, "y": 0.72 },
+      { "id": "n7", "x": 0.62, "y": 0.84 },
+      { "id": "n8", "x": 0.82, "y": 0.92 }
+    ],
+    "edges": [
+      { "fromId": "n0", "toId": "n1" },
+      { "fromId": "n1", "toId": "n2" },
+      { "fromId": "n2", "toId": "n3" },
+      { "fromId": "n3", "toId": "n4" },
+      { "fromId": "n1", "toId": "n5" },
+      { "fromId": "n5", "toId": "n6" },
+      { "fromId": "n6", "toId": "n7" },
+      { "fromId": "n7", "toId": "n8" }
+    ],
+    "append": {
+      "fromNodeId": "n7",
+      "toNodeId": "n8",
+      "stepX": 0.12,
+      "stepY": 0.08
+    }
+  }
+]
