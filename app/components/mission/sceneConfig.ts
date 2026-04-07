@@ -1,43 +1,32 @@
+/** Shared scrub value — keeps scroll feel consistent across all Mission animations */
+export const MISSION_SCRUB = 1;
+export const MISSION_MOBILE_SCRUB = 1;
+
 export const MISSION_LAYOUT = {
-  animatedSectionMinHeight: "min-h-[250vh] md:min-h-[310vh]",
-  stickyViewportHeight: "h-[100svh] md:h-screen",
-  staticIntroPadding: "px-8 py-32 md:px-12 md:py-40",
-  animatedIntroPadding: "px-8 py-40 md:px-12",
-  directorsPadding: "px-8 py-24 opacity-0 md:px-12",
+  sectionPadding: "px-8 py-32 md:px-12 md:py-40",
+  sectionMinHeight: "min-h-screen",
+  statementOffset: "-mt-[50svh] pt-[8svh] md:-mt-[56vh] md:pt-[10vh]",
+  statementWrapMinHeight: "min-h-[88svh] md:min-h-[92vh]",
 } as const;
 
-export const MISSION_SCENE_SCROLL = {
+/** Dark overlay fades in once mission is half-scrolled out of viewport */
+export const MISSION_OVERLAY = {
+  scrub: MISSION_SCRUB,
+  start: "center top",
+  end: "bottom top",
+} as const;
+
+/** Directors section pins at viewport top, content fades in, then unpins */
+export const DIRECTORS_PIN = {
+  scrub: MISSION_SCRUB,
   start: "top top",
-  end: "bottom bottom",
-  scrub: 0.9,
-  mobileScrubMultiplier: 1.35,
+  end: "+=500",
+  initialYPercent: 12,
 } as const;
 
-export const MISSION_TIMELINE = {
-  intro: {
-    initialYPercent: 0,
-    initialOpacity: 1,
-    settleAt: 0,
-    settleDuration: 0.1,
-    exitAt: 0.22,
-    exitDuration: 0.22,
-    fadeOutAt: 0.46,
-    fadeOutDuration: 0.14,
-    exitYPercent: -96,
-  },
-  overlay: {
-    fadeInAt: 0.38,
-    fadeInDuration: 0.22,
-  },
-  directors: {
-    fadeInAt: 0.52,
-    fadeInDuration: 0.2,
-    initialYPercent: 8,
-  },
-} as const;
-
-export const MISSION_NAVBAR_THEME_TRIGGER = {
-  darkAtProgress: 0.48,
+export const DIRECTORS_NAVBAR_THEME_TRIGGER = {
+  start: "top 60%",
+  end: "bottom top",
   theme: "dark",
 } as const;
 
