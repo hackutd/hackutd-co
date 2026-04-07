@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-HackUTD organization website — a single-page Next.js 16 App Router site for the largest 24-hour hackathon in Texas. The page is composed of sequential full-screen sections (Navbar, Hero, Mission, DirectorsMessage, Constellation, Projects, Timeline, Sponsors, Footer) assembled in `app/page.tsx`.
+HackUTD organization website — a single-page Next.js 16 App Router site for the largest 24-hour hackathon in Texas. The page is composed of sequential full-screen sections (Navbar, Hero, Mission, Teams, Projects, Timeline, Sponsors, Footer) assembled in `app/page.tsx`.
 
 ## Commands
 
@@ -20,16 +20,20 @@ No test runner is configured.
 - **Font**: Satoshi (local woff2 in `app/fonts/`, loaded via `next/font/local`, exposed as `--font-satoshi`)
 - **Design tokens**: brand palette and semantic colors defined as `@theme inline` in `app/globals.css` — not in a Tailwind config file
 - **Import alias**: `@/*` maps to project root
+- **Static data**: Content for sections lives in `app/data/` (teams, events, sponsors, projects, mission)
+- **Shared hooks**: `app/hooks/useIsMobile.ts` and `app/hooks/usePrefersReducedMotion.ts`
 
 ## Key Patterns
 
-- **GSAP + ScrollTrigger**: Hero section uses scroll-driven GSAP timelines for parallax skylines and a comet reveal animation. Animation parameters are centralized in `app/components/hero/sceneConfig.ts`. Components that use GSAP must be `"use client"` and call `gsap.registerPlugin(ScrollTrigger)`.
-- **Reduced motion**: GSAP animations check `prefers-reduced-motion` and fall back to static states.
+- **GSAP + ScrollTrigger**: Animated sections (Hero, Mission) use scroll-driven GSAP tweens/timelines via `@gsap/react`'s `useGSAP` hook. Animation parameters are centralized in per-section `sceneConfig.ts` files. ScrollTrigger is registered once via `app/lib/scrollTrigger.ts` (`configureScrollTrigger()`). Components that use GSAP must be `"use client"`.
+- **GSAP best practices**: Use top-level scrubbed tweens/timelines — never put ScrollTrigger on child tweens inside a timeline. Prefer `gsap.to()`/`gsap.fromTo()` with `scrollTrigger` config over manual `gsap.set()` inside `onUpdate` callbacks. Always pass `scope` or direct refs in `useGSAP`.
+- **Navbar theme coordination**: Sections communicate navbar color theme via `dispatchNavbarThemeOverride()` custom events (in `app/components/navbar/navbarThemeOverride.ts`), triggered by ScrollTrigger callbacks (`onEnter`/`onLeave`/`onEnterBack`/`onLeaveBack`).
+- **Reduced motion**: GSAP animations check `prefers-reduced-motion` and fall back to static states. The reduced-motion path renders plain HTML without any GSAP setup.
 - **Seeded randomness**: Star positions use a deterministic PRNG (not `Math.random()`) so layout is consistent across renders.
 
 ## Conventions
 
 - TypeScript strict mode, 2-space indent, semicolons, double quotes
-- PascalCase component files, one component per file in `app/components/`
+- PascalCase component files, one component per file in `app/components/<section>/`
 - Conventional Commits: `feat:`, `fix:`, `chore:`, etc.
 - Utility-first Tailwind in JSX; custom CSS only for keyframes/animations in `globals.css`

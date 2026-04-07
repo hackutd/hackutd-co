@@ -149,9 +149,9 @@ export default function Hero() {
   );
 
   return (
-    <section ref={sectionRef} className={`relative ${HERO_LAYOUT.minHeight}`}>
+    <section ref={sectionRef} className={`relative bg-[var(--color-surface)] ${HERO_LAYOUT.minHeight}`}>
       <div
-        className={`sticky top-0 overflow-hidden isolate ${HERO_LAYOUT.stickyViewportHeight}`}
+        className={`sticky top-0 overflow-hidden isolate bg-background ${HERO_LAYOUT.stickyViewportHeight}`}
       >
         <div aria-hidden="true" className="absolute inset-0 z-[1]">
           {HERO_STARS.map((star) => {

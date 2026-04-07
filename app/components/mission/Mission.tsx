@@ -4,17 +4,16 @@ import { useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
-import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { missionContent } from "@/app/data/mission";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import { dispatchNavbarThemeOverride } from "../navbar/navbarThemeOverride";
 import {
+  DIRECTORS_NAVBAR_THEME_TRIGGER,
+  DIRECTORS_PIN,
   MISSION_DECORATION_COUNT,
   MISSION_LAYOUT,
-  MISSION_NAVBAR_THEME_TRIGGER,
-  MISSION_SCENE_SCROLL,
-  MISSION_TIMELINE,
+  MISSION_OVERLAY,
 } from "./sceneConfig";
 
 configureScrollTrigger();
@@ -53,159 +52,108 @@ function renderDirectorsPanel() {
 }
 
 export default function Mission() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const missionContentRef = useRef<HTMLDivElement>(null);
-  const directorsContentRef = useRef<HTMLDivElement>(null);
+  const missionSectionRef = useRef<HTMLElement>(null);
   const darkOverlayRef = useRef<HTMLDivElement>(null);
-  const isMobile = useIsMobile();
+  const directorsSectionRef = useRef<HTMLElement>(null);
+  const directorsContentRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
 
   useGSAP(
     () => {
-      const section = sectionRef.current;
-      const missionContent = missionContentRef.current;
-      const directorsContent = directorsContentRef.current;
+      const missionSection = missionSectionRef.current;
       const darkOverlay = darkOverlayRef.current;
-      if (!section || !missionContent || !directorsContent || !darkOverlay) {
+      const directorsSection = directorsSectionRef.current;
+      const directorsContent = directorsContentRef.current;
+
+      if (
+        !missionSection ||
+        !darkOverlay ||
+        !directorsSection ||
+        !directorsContent
+      ) {
         return;
       }
 
       if (prefersReducedMotion) {
-        dispatchNavbarThemeOverride(null);
         return;
       }
 
+      // Dark overlay crossfade — begins when mission is half-scrolled out
+      gsap.set(darkOverlay, { autoAlpha: 0 });
+      gsap.to(darkOverlay, {
+        autoAlpha: 1,
+        ease: "power1.in",
+        scrollTrigger: {
+          trigger: missionSection,
+          start: MISSION_OVERLAY.start,
+          end: MISSION_OVERLAY.end,
+          scrub: MISSION_OVERLAY.scrub,
+        },
+      });
+
+      // Directors section — pin at viewport top, fade content in, then unpin
+      //    Animate children of the pinned element, not the pinned element itself.
+      gsap.set(directorsContent, {
+        autoAlpha: 0,
+        yPercent: DIRECTORS_PIN.initialYPercent,
+      });
+
+      gsap.to(directorsContent, {
+        autoAlpha: 1,
+        yPercent: 0,
+        ease: "power1.out",
+        scrollTrigger: {
+          trigger: directorsSection,
+          start: DIRECTORS_PIN.start,
+          end: DIRECTORS_PIN.end,
+          pin: true,
+          scrub: DIRECTORS_PIN.scrub,
+        },
+      });
+
+      // Navbar theme — switch to dark when directors section enters
       let navbarThemeOverride: "light" | "dark" | null = null;
       const setNavbarThemeOverride = (theme: "light" | "dark" | null) => {
         if (navbarThemeOverride === theme) {
           return;
         }
-
         navbarThemeOverride = theme;
         dispatchNavbarThemeOverride(theme);
       };
 
-      gsap.set(missionContent, {
-        yPercent: MISSION_TIMELINE.intro.initialYPercent,
-        autoAlpha: MISSION_TIMELINE.intro.initialOpacity,
-      });
-      gsap.set(directorsContent, {
-        autoAlpha: 0,
-        yPercent: MISSION_TIMELINE.directors.initialYPercent,
-      });
-      gsap.set(darkOverlay, { opacity: 0 });
-      const clamp01 = gsap.utils.clamp(0, 1);
-      const interpolate = gsap.utils.interpolate;
-      const progressForSegment = (
-        progress: number,
-        start: number,
-        duration: number,
-      ) => {
-        if (duration <= 0) {
-          return progress >= start ? 1 : 0;
-        }
-
-        return clamp01((progress - start) / duration);
-      };
-
-      const updateScene = (progress: number) => {
-        const settleProgress = progressForSegment(
-          progress,
-          MISSION_TIMELINE.intro.settleAt,
-          MISSION_TIMELINE.intro.settleDuration,
-        );
-        const exitProgress = progressForSegment(
-          progress,
-          MISSION_TIMELINE.intro.exitAt,
-          MISSION_TIMELINE.intro.exitDuration,
-        );
-        const fadeOutProgress = progressForSegment(
-          progress,
-          MISSION_TIMELINE.intro.fadeOutAt,
-          MISSION_TIMELINE.intro.fadeOutDuration,
-        );
-        const overlayProgress = progressForSegment(
-          progress,
-          MISSION_TIMELINE.overlay.fadeInAt,
-          MISSION_TIMELINE.overlay.fadeInDuration,
-        );
-        const directorsProgress = progressForSegment(
-          progress,
-          MISSION_TIMELINE.directors.fadeInAt,
-          MISSION_TIMELINE.directors.fadeInDuration,
-        );
-        const directorsYPercent = interpolate(
-          MISSION_TIMELINE.directors.initialYPercent,
-          0,
-          directorsProgress,
-        );
-
-        const missionOpacity =
-          interpolate(
-            MISSION_TIMELINE.intro.initialOpacity,
-            1,
-            settleProgress,
-          ) *
-          (1 - fadeOutProgress);
-        const missionYPercent =
-          exitProgress > 0
-            ? interpolate(0, MISSION_TIMELINE.intro.exitYPercent, exitProgress)
-            : interpolate(
-                MISSION_TIMELINE.intro.initialYPercent,
-                0,
-                settleProgress,
-              );
-
-        gsap.set(missionContent, {
-          yPercent: missionYPercent,
-          autoAlpha: missionOpacity,
-        });
-        gsap.set(darkOverlay, { opacity: overlayProgress });
-        gsap.set(directorsContent, {
-          autoAlpha: directorsProgress,
-          yPercent: directorsYPercent,
-        });
-        setNavbarThemeOverride(
-          progress >= MISSION_NAVBAR_THEME_TRIGGER.darkAtProgress
-            ? MISSION_NAVBAR_THEME_TRIGGER.theme
-            : null,
-        );
-      };
-
-      const sceneTrigger = ScrollTrigger.create({
-        trigger: section,
-        start: MISSION_SCENE_SCROLL.start,
-        end: MISSION_SCENE_SCROLL.end,
-        scrub: isMobile
-          ? MISSION_SCENE_SCROLL.scrub * MISSION_SCENE_SCROLL.mobileScrubMultiplier
-          : MISSION_SCENE_SCROLL.scrub,
-        onUpdate: (self) => {
-          updateScene(self.progress);
-        },
-        onRefresh: (self) => {
-          updateScene(self.progress);
-        },
+      const navbarThemeTrigger = ScrollTrigger.create({
+        trigger: directorsSection,
+        start: DIRECTORS_NAVBAR_THEME_TRIGGER.start,
+        end: DIRECTORS_NAVBAR_THEME_TRIGGER.end,
+        onEnter: () =>
+          setNavbarThemeOverride(
+            DIRECTORS_NAVBAR_THEME_TRIGGER.theme as "dark",
+          ),
+        onEnterBack: () =>
+          setNavbarThemeOverride(
+            DIRECTORS_NAVBAR_THEME_TRIGGER.theme as "dark",
+          ),
         onLeave: () => setNavbarThemeOverride(null),
         onLeaveBack: () => setNavbarThemeOverride(null),
       });
 
-      updateScene(sceneTrigger.progress);
-
       return () => {
-        sceneTrigger.kill();
+        navbarThemeTrigger.kill();
         setNavbarThemeOverride(null);
       };
     },
-    { scope: sectionRef, dependencies: [isMobile, prefersReducedMotion] },
+    {
+      dependencies: [prefersReducedMotion],
+    },
   );
 
   if (prefersReducedMotion) {
     return (
       <>
         <section
-          ref={sectionRef}
+          ref={missionSectionRef}
           data-navbar-theme="light"
-          className={`bg-[var(--color-surface)] ${MISSION_LAYOUT.staticIntroPadding}`}
+          className={`bg-[var(--color-surface)] ${MISSION_LAYOUT.sectionPadding}`}
         >
           <div className="mx-auto flex min-h-[80vh] max-w-7xl items-center justify-center">
             <p className="max-w-6xl text-center text-4xl font-normal leading-[1.2] text-[var(--color-surface-foreground)] sm:text-5xl md:text-6xl lg:text-7xl xl:max-w-7xl">
@@ -214,42 +162,58 @@ export default function Mission() {
           </div>
         </section>
 
-        <section className="flex flex-col items-center bg-background px-8 py-32">
-          {renderDirectorsPanel()}
+        <section
+          ref={directorsSectionRef}
+          className="bg-background px-8 py-24 md:px-12 md:py-32"
+        >
+          <div
+            ref={directorsContentRef}
+            className="flex flex-col items-center"
+          >
+            {renderDirectorsPanel()}
+          </div>
         </section>
       </>
     );
   }
 
   return (
-    <section
-      ref={sectionRef}
-      data-navbar-theme="light"
-      className={`relative bg-[var(--color-surface)] ${MISSION_LAYOUT.animatedSectionMinHeight}`}
-    >
+    <div className="relative bg-[var(--color-surface)]">
+      {/* Shared dark overlay — covers both sections for seamless transition */}
       <div
-        className={`sticky top-0 overflow-hidden isolate ${MISSION_LAYOUT.stickyViewportHeight}`}
+        ref={darkOverlayRef}
+        className="pointer-events-none absolute inset-0 z-10 bg-background"
+      />
+
+      {/* Mission statement — naturally scrolling, no pin */}
+      <section
+        ref={missionSectionRef}
+        data-navbar-theme="light"
+        className={`relative z-20 ${MISSION_LAYOUT.sectionPadding} ${MISSION_LAYOUT.sectionMinHeight}`}
       >
-        <div className="absolute inset-0 bg-[var(--color-surface)]" />
         <div
-          ref={darkOverlayRef}
-          className="pointer-events-none absolute inset-0 z-10 bg-background opacity-0"
-        />
-        <div
-          ref={missionContentRef}
-          className={`absolute inset-0 z-20 flex items-center justify-center ${MISSION_LAYOUT.animatedIntroPadding}`}
+          className={`mx-auto flex max-w-7xl items-start justify-center ${MISSION_LAYOUT.statementWrapMinHeight} ${MISSION_LAYOUT.statementOffset}`}
         >
           <p className="max-w-6xl text-center text-4xl font-normal leading-[1.2] text-[var(--color-surface-foreground)] sm:text-5xl md:text-6xl lg:text-7xl xl:max-w-7xl">
             {renderMissionStatement()}
           </p>
         </div>
-        <div
-          ref={directorsContentRef}
-          className={`absolute inset-0 z-20 flex items-center justify-center ${MISSION_LAYOUT.directorsPadding}`}
-        >
-          {renderDirectorsPanel()}
+      </section>
+
+      {/* Directors message — pins at viewport top, content fades in centered, then unpins */}
+      <section
+        ref={directorsSectionRef}
+        className="relative z-20"
+      >
+        <div className="flex h-screen items-center justify-center px-8 md:px-12">
+          <div
+            ref={directorsContentRef}
+            className="flex flex-col items-center"
+          >
+            {renderDirectorsPanel()}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }

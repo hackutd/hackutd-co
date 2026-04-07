@@ -35,6 +35,32 @@ function roundCoord(value: number) {
   return Math.round(value * 100) / 100;
 }
 
+type GradientOrbitAxis = Readonly<{
+  amplitude: number;
+  frequency: number;
+  phase: number;
+  rippleAmplitude: number;
+  rippleFrequency: number;
+  ripplePhase: number;
+}>;
+
+function orbitGradientCoord(
+  origin: number,
+  angle: number,
+  axis: GradientOrbitAxis,
+) {
+  // Offset the harmonics so each loop begins at the authored gradient origin.
+  const primary =
+    Math.sin(angle * axis.frequency + axis.phase) * axis.amplitude -
+    Math.sin(axis.phase) * axis.amplitude;
+  const ripple =
+    Math.cos(angle * axis.rippleFrequency + axis.ripplePhase) *
+      axis.rippleAmplitude -
+    Math.cos(axis.ripplePhase) * axis.rippleAmplitude;
+
+  return origin + primary + ripple;
+}
+
 function precomputeSpineSamples(
   path: SVGPathElement,
   totalLength: number,
@@ -153,6 +179,7 @@ export default function CometAnimation() {
   const cometGlowRef = useRef<SVGPathElement>(null);
   const cometOutlineRef = useRef<SVGPathElement>(null);
   const starRef = useRef<SVGGElement>(null);
+  const gradientRef = useRef<SVGLinearGradientElement>(null);
 
   const isMobile = useIsMobile();
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -259,8 +286,66 @@ export default function CometAnimation() {
         },
         0,
       );
+
     },
     { scope: wrapperRef, dependencies: [isMobile, prefersReducedMotion] },
+  );
+
+  useGSAP(
+    () => {
+      const gradientEl = gradientRef.current;
+      if (!gradientEl) {
+        return;
+      }
+
+      const { x1, y1, x2, y2, drift } = COMET_TUNING.gradient;
+
+      const setGradientEndpoints = (
+        nextX1: number,
+        nextY1: number,
+        nextX2: number,
+        nextY2: number,
+      ) => {
+        gradientEl.setAttribute("x1", String(roundCoord(nextX1)));
+        gradientEl.setAttribute("y1", String(roundCoord(nextY1)));
+        gradientEl.setAttribute("x2", String(roundCoord(nextX2)));
+        gradientEl.setAttribute("y2", String(roundCoord(nextY2)));
+      };
+
+      const resetGradientEndpoints = () => {
+        setGradientEndpoints(x1, y1, x2, y2);
+      };
+
+      if (prefersReducedMotion) {
+        resetGradientEndpoints();
+        return;
+      }
+
+      const setGradientOrbit = (progress: number) => {
+        const angle = progress * Math.PI * 2;
+
+        setGradientEndpoints(
+          orbitGradientCoord(x1, angle, drift.x1),
+          orbitGradientCoord(y1, angle, drift.y1),
+          orbitGradientCoord(x2, angle, drift.x2),
+          orbitGradientCoord(y2, angle, drift.y2),
+        );
+      };
+
+      setGradientOrbit(0);
+
+      const orbitState = { progress: 0 };
+      gsap.to(orbitState, {
+        progress: 1,
+        duration: drift.duration,
+        ease: "none",
+        repeat: -1,
+        onUpdate: () => {
+          setGradientOrbit(orbitState.progress);
+        },
+      });
+    },
+    { scope: wrapperRef, dependencies: [prefersReducedMotion] },
   );
 
   return (
@@ -276,6 +361,7 @@ export default function CometAnimation() {
       >
         <defs>
           <linearGradient
+            ref={gradientRef}
             id="cometGradient"
             x1={COMET_TUNING.gradient.x1}
             y1={COMET_TUNING.gradient.y1}
