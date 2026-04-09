@@ -119,9 +119,7 @@ function TeamConstellation({
     },
   );
   const graphWidth = graphBounds.maxX - graphBounds.minX;
-  const captionWidth = 240;
-  const layoutWidth = Math.max(graphWidth + 16, captionWidth);
-  const graphOffsetX = (layoutWidth - graphWidth) / 2 - graphBounds.minX;
+  const graphOffsetX = (box.width - graphWidth) / 2 - graphBounds.minX;
   const shiftedNodes = layout.nodes.map((node) => ({
     ...node,
     shiftedX: node.renderX + graphOffsetX,
@@ -154,7 +152,7 @@ function TeamConstellation({
   return (
     <article
       className="relative flex shrink-0 flex-col items-center transition-opacity duration-300"
-      style={{ opacity: teamOpacity, width: `${layoutWidth}px` }}
+      style={{ opacity: teamOpacity, width: `${box.width}px` }}
       onMouseEnter={
         interactive
           ? () => {
@@ -167,12 +165,12 @@ function TeamConstellation({
     >
       <div
         className="relative"
-        style={{ width: `${layoutWidth}px`, height: `${box.height}px` }}
+        style={{ width: `${box.width}px`, height: `${box.height}px` }}
       >
         <svg
           aria-hidden="true"
           className="absolute inset-0 h-full w-full overflow-visible"
-          viewBox={`0 0 ${layoutWidth} ${box.height}`}
+          viewBox={`0 0 ${box.width} ${box.height}`}
         >
           {layout.edges.map((edge, index) => {
             const trimmedEdge = trimEdge(edge.fromId, edge.toId);
@@ -203,7 +201,7 @@ function TeamConstellation({
           const tooltipPlacement = getTooltipPlacement(
             node.shiftedX,
             node.renderY,
-            { ...box, width: layoutWidth },
+            box,
           );
           const nodePositionStyle: CSSProperties = {
             left: `${node.shiftedX}px`,
@@ -382,22 +380,6 @@ function buildLayouts(teams: OfficerTeam[], box: ConstellationBox) {
   );
 }
 
-function TeamSeparator() {
-  return (
-    <div
-      aria-hidden="true"
-      className="flex shrink-0 flex-col items-center justify-center gap-3"
-      style={{ width: `${TEAMS_SCROLL.separatorWidth}px`, minHeight: "18rem" }}
-    >
-      {Array.from({ length: 3 }).map((_, index) => (
-        <span
-          key={index}
-          className="h-1.5 w-1.5 rounded-full bg-white/38"
-        />
-      ))}
-    </div>
-  );
-}
 
 export default function Teams() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -603,7 +585,7 @@ export default function Teams() {
           <p className="text-[0.62rem] uppercase tracking-[0.2em] text-white/26">
             {TEAMS_COPY.eyebrow}
           </p>
-          <h2 className="mt-5 text-4xl font-semibold leading-none text-foreground sm:text-5xl">
+          <h2 className={TEAMS_LAYOUT.mobileHeading}>
             {TEAMS_COPY.heading[0]}
             <br />
             {TEAMS_COPY.heading[1]}
@@ -658,7 +640,7 @@ export default function Teams() {
           <p className="text-[0.62rem] uppercase tracking-[0.2em] text-white/26">
             {TEAMS_COPY.eyebrow}
           </p>
-          <h2 className="mt-5 text-4xl font-semibold leading-none text-foreground sm:text-5xl md:text-6xl">
+          <h2 className={TEAMS_LAYOUT.mobileHeading}>
             {TEAMS_COPY.heading[0]}
             <br />
             {TEAMS_COPY.heading[1]}
@@ -722,7 +704,7 @@ export default function Teams() {
             <p className="text-[0.62rem] uppercase tracking-[0.2em] text-white/26">
               {TEAMS_COPY.eyebrow}
             </p>
-            <h2 className="mt-6 text-5xl font-semibold leading-none text-foreground lg:text-7xl">
+            <h2 className={TEAMS_LAYOUT.desktopHeading}>
               {TEAMS_COPY.heading[0]}
               <br />
               {TEAMS_COPY.heading[1]}
@@ -763,7 +745,6 @@ export default function Teams() {
                     scheduleTooltipClose={scheduleTooltipClose}
                     interactive
                   />
-                  {index < desktopLayouts.length - 1 ? <TeamSeparator /> : null}
                 </div>
               ))}
             </div>
