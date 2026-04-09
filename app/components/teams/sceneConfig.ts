@@ -24,8 +24,10 @@ export const TEAMS_LAYOUT = {
   desktopSectionMinHeight: "min-h-[560vh]",
   mobileSectionPadding: "px-5 py-24 sm:px-6",
   desktopViewportHeight: "h-[100svh] md:h-screen",
-  desktopContainer: "mx-auto flex h-full w-full max-w-[1800px] items-center gap-8 px-5 md:px-8 lg:gap-10 lg:px-12",
+  desktopContainer: "mx-auto flex h-full w-full max-w-[1800px] items-start pt-28 gap-8 px-5 md:px-8 lg:gap-10 lg:px-12",
   introWidth: "w-[240px] shrink-0 lg:w-[300px]",
+  desktopHeading: "mt-6 text-3xl font-semibold leading-none text-foreground lg:text-4xl",
+  mobileHeading: "mt-5 text-2xl font-semibold leading-none text-foreground sm:text-3xl",
   desktopTrackViewport: "relative min-w-0 flex-1 overflow-x-hidden overflow-y-visible",
 } as const;
 
@@ -34,8 +36,8 @@ export const TEAMS_SCROLL = {
   desktopGap: 10,
   desktopTrailingSpace: 180,
   desktopPeekWidth: 150,
-  separatorWidth: 170,
-  firstConstellationOffset: 320,
+  separatorWidth: 380,
+  firstConstellationOffset: 160,
   tooltipCloseDelayMs: 140,
 } as const;
 
@@ -67,12 +69,12 @@ export function getDesktopConstellationBox(
   viewportHeight: number,
 ): ConstellationBox {
   return {
-    width: clamp(trackViewportWidth * 0.78, 760, 1240),
-    height: clamp(viewportHeight * 0.5, 340, 500),
-    padding: clamp(trackViewportWidth * 0.028, 34, 52),
-    verticalBias: 22,
-    leadNodeSize: 72,
-    nodeSize: 50,
+    width: clamp(trackViewportWidth * 0.95, 820, 1380),
+    height: clamp(viewportHeight * 0.66, 420, 600),
+    padding: clamp(trackViewportWidth * 0.028, 60, 80),
+    verticalBias: 50,
+    leadNodeSize: 74,
+    nodeSize: 56,
   };
 }
 

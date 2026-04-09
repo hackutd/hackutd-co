@@ -159,9 +159,28 @@
     ]
   },
   {
+    "id": "logistics",
+    "label": "Logistics",
+    "order": 4,
+    "lead": {
+      "id": "logistics-lead",
+      "name": "TBD",
+      "role": "Team Lead",
+      "linkedinUrl": "https://www.linkedin.com/in/"
+    },
+    "members": [
+      { "id": "logistics-1", "name": "TBD", "role": "TBD", "linkedinUrl": "https://www.linkedin.com/in/" },
+      { "id": "logistics-2", "name": "TBD", "role": "TBD", "linkedinUrl": "https://www.linkedin.com/in/" },
+      { "id": "logistics-3", "name": "TBD", "role": "TBD", "linkedinUrl": "https://www.linkedin.com/in/" },
+      { "id": "logistics-4", "name": "TBD", "role": "TBD", "linkedinUrl": "https://www.linkedin.com/in/" },
+      { "id": "logistics-5", "name": "TBD", "role": "TBD", "linkedinUrl": "https://www.linkedin.com/in/" },
+      { "id": "logistics-6", "name": "TBD", "role": "TBD", "linkedinUrl": "https://www.linkedin.com/in/" }
+    ]
+  },
+  {
     "id": "finance",
     "label": "Finance",
-    "order": 3,
+    "order": 5,
     "lead": {
       "id": "finance-lead",
       "name": "Elena Martinez",
@@ -210,7 +229,7 @@
   {
     "id": "experience",
     "label": "Experience",
-    "order": 4,
+    "order": 3,
     "lead": {
       "id": "experience-lead",
       "name": "Marcus Rivera",
