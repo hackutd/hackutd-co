@@ -229,7 +229,7 @@ function TeamConstellation({
             >
               {isActive ? (
                 <div
-                  className={`absolute z-40 w-56 rounded-2xl border border-white/12 bg-black/92 px-4 py-3 text-left shadow-[0_20px_60px_rgba(0,0,0,0.44)] backdrop-blur ${tooltipPlacement}`}
+                  className={`absolute z-40 w-72 rounded-2xl border border-white/12 bg-black/95 px-5 py-4 text-left shadow-[0_24px_64px_rgba(0,0,0,0.6)] backdrop-blur-md ${tooltipPlacement}`}
                   onMouseEnter={() => {
                     clearTooltipClose();
                     setActiveTeamId(layout.team.id);
@@ -252,20 +252,41 @@ function TeamConstellation({
                     scheduleTooltipClose();
                   }}
                 >
-                  <p className="text-sm font-medium text-foreground">
+                  <button
+                    type="button"
+                    aria-label="Close"
+                    className="absolute right-3 top-3 text-white/30 hover:text-white/70 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      scheduleTooltipClose();
+                    }}
+                  >
+                    ✕
+                  </button>
+                  <p className="text-base font-semibold text-foreground pr-5">
                     {node.person.name}
                   </p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.2em] text-muted">
+                  <p className="mt-0.5 text-[0.7rem] uppercase tracking-[0.18em] text-white/40">
                     {node.person.role}
                   </p>
-                  <a
-                    href={node.person.linkedinUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-3 inline-flex text-xs font-medium text-pink transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/70"
-                  >
-                    LinkedIn
-                  </a>
+                  {node.person.quote ? (
+                    <p className="mt-3 text-sm italic leading-snug text-white/60 border-l-2 border-pink/40 pl-3">
+                      &ldquo;{node.person.quote}&rdquo;
+                    </p>
+                  ) : null}
+                  <div className="mt-4 flex items-center gap-3">
+                    <a
+                      href={node.person.linkedinUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-white/6 px-3 py-1.5 text-xs font-medium text-white/70 transition-colors hover:bg-white/12 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/70"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                      </svg>
+                      LinkedIn
+                    </a>
+                  </div>
                 </div>
               ) : null}
 

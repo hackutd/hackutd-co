@@ -6,6 +6,7 @@ export type OfficerMember = {
   name: string;
   role: string;
   linkedinUrl: string;
+  quote?: string;
 };
 
 export type OfficerTeam = {
