@@ -7,39 +7,15 @@
       "id": "marketing-lead",
       "name": "Olivia Tran",
       "role": "Team Lead",
-      "linkedinUrl": "https://www.linkedin.com/in/olivia-tran-hackutd"
+      "linkedinUrl": "https://www.linkedin.com/in/olivia-tran-hackutd",
+      "quote": "Building the story behind HackUTD one campaign at a time."
     },
     "members": [
-      {
-        "id": "marketing-1",
-        "name": "Maya Patel",
-        "role": "Content Strategy",
-        "linkedinUrl": "https://www.linkedin.com/in/maya-patel-hackutd"
-      },
-      {
-        "id": "marketing-2",
-        "name": "Ethan Nguyen",
-        "role": "Brand Design",
-        "linkedinUrl": "https://www.linkedin.com/in/ethan-nguyen-hackutd"
-      },
-      {
-        "id": "marketing-3",
-        "name": "Sofia Ramirez",
-        "role": "Social Media",
-        "linkedinUrl": "https://www.linkedin.com/in/sofia-ramirez-hackutd"
-      },
-      {
-        "id": "marketing-4",
-        "name": "Jordan Kim",
-        "role": "Photo + Video",
-        "linkedinUrl": "https://www.linkedin.com/in/jordan-kim-hackutd"
-      },
-      {
-        "id": "marketing-5",
-        "name": "Avery Brooks",
-        "role": "Copywriting",
-        "linkedinUrl": "https://www.linkedin.com/in/avery-brooks-hackutd"
-      }
+      { "id": "marketing-1", "name": "Maya Patel", "role": "Content Strategy", "linkedinUrl": "https://www.linkedin.com/in/maya-patel-hackutd", "quote": "Good content makes people feel something." },
+      { "id": "marketing-2", "name": "Ethan Nguyen", "role": "Brand Design", "linkedinUrl": "https://www.linkedin.com/in/ethan-nguyen-hackutd", "quote": "Design is the silent ambassador of your brand." },
+      { "id": "marketing-3", "name": "Sofia Ramirez", "role": "Social Media", "linkedinUrl": "https://www.linkedin.com/in/sofia-ramirez-hackutd", "quote": "Every post is a chance to spark curiosity." },
+      { "id": "marketing-4", "name": "Jordan Kim", "role": "Photo + Video", "linkedinUrl": "https://www.linkedin.com/in/jordan-kim-hackutd", "quote": "A frame can capture a feeling words can't." },
+      { "id": "marketing-5", "name": "Avery Brooks", "role": "Copywriting", "linkedinUrl": "https://www.linkedin.com/in/avery-brooks-hackutd", "quote": "Words are the architecture of ideas." }
     ]
   },
   {
@@ -50,51 +26,17 @@
       "id": "tech-lead",
       "name": "Noah Chen",
       "role": "Team Lead",
-      "linkedinUrl": "https://www.linkedin.com/in/noah-chen-hackutd"
+      "linkedinUrl": "https://www.linkedin.com/in/noah-chen-hackutd",
+      "quote": "The best infrastructure is the kind nobody notices."
     },
     "members": [
-      {
-        "id": "tech-1",
-        "name": "Aiden Williams",
-        "role": "Platform Engineering",
-        "linkedinUrl": "https://www.linkedin.com/in/aiden-williams-hackutd"
-      },
-      {
-        "id": "tech-2",
-        "name": "Priya Shah",
-        "role": "Infra + DevOps",
-        "linkedinUrl": "https://www.linkedin.com/in/priya-shah-hackutd"
-      },
-      {
-        "id": "tech-3",
-        "name": "Lucas Martin",
-        "role": "Registration Systems",
-        "linkedinUrl": "https://www.linkedin.com/in/lucas-martin-hackutd"
-      },
-      {
-        "id": "tech-4",
-        "name": "Grace Lee",
-        "role": "Website Experience",
-        "linkedinUrl": "https://www.linkedin.com/in/grace-lee-hackutd"
-      },
-      {
-        "id": "tech-5",
-        "name": "Mateo Garcia",
-        "role": "Internal Tooling",
-        "linkedinUrl": "https://www.linkedin.com/in/mateo-garcia-hackutd"
-      },
-      {
-        "id": "tech-6",
-        "name": "Chloe Nguyen",
-        "role": "Security + Reliability",
-        "linkedinUrl": "https://www.linkedin.com/in/chloe-nguyen-hackutd"
-      },
-      {
-        "id": "tech-7",
-        "name": "Arjun Mehta",
-        "role": "Automation",
-        "linkedinUrl": "https://www.linkedin.com/in/arjun-mehta-hackutd"
-      }
+      { "id": "tech-1", "name": "Aiden Williams", "role": "Platform Engineering", "linkedinUrl": "https://www.linkedin.com/in/aiden-williams-hackutd", "quote": "Scalability isn't an afterthought — it's a mindset." },
+      { "id": "tech-2", "name": "Priya Shah", "role": "Infra + DevOps", "linkedinUrl": "https://www.linkedin.com/in/priya-shah-hackutd", "quote": "Automate the boring so humans can do the interesting." },
+      { "id": "tech-3", "name": "Lucas Martin", "role": "Registration Systems", "linkedinUrl": "https://www.linkedin.com/in/lucas-martin-hackutd", "quote": "A smooth check-in sets the tone for everything after." },
+      { "id": "tech-4", "name": "Grace Lee", "role": "Website Experience", "linkedinUrl": "https://www.linkedin.com/in/grace-lee-hackutd", "quote": "The website is every hacker's first impression of us." },
+      { "id": "tech-5", "name": "Mateo Garcia", "role": "Internal Tooling", "linkedinUrl": "https://www.linkedin.com/in/mateo-garcia-hackutd", "quote": "Tools that work quietly keep teams moving fast." },
+      { "id": "tech-6", "name": "Chloe Nguyen", "role": "Security + Reliability", "linkedinUrl": "https://www.linkedin.com/in/chloe-nguyen-hackutd", "quote": "Security is a feature, not a fix." },
+      { "id": "tech-7", "name": "Arjun Mehta", "role": "Automation", "linkedinUrl": "https://www.linkedin.com/in/arjun-mehta-hackutd", "quote": "If you do it twice, automate it." }
     ]
   },
   {
@@ -105,125 +47,18 @@
       "id": "industry-lead",
       "name": "Leah Johnson",
       "role": "Team Lead",
-      "linkedinUrl": "https://www.linkedin.com/in/leah-johnson-hackutd"
+      "linkedinUrl": "https://www.linkedin.com/in/leah-johnson-hackutd",
+      "quote": "Great partnerships start with a genuine conversation."
     },
     "members": [
-      {
-        "id": "industry-1",
-        "name": "Ryan Park",
-        "role": "Sponsor Outreach",
-        "linkedinUrl": "https://www.linkedin.com/in/ryan-park-hackutd"
-      },
-      {
-        "id": "industry-2",
-        "name": "Anika Singh",
-        "role": "Partner Success",
-        "linkedinUrl": "https://www.linkedin.com/in/anika-singh-hackutd"
-      },
-      {
-        "id": "industry-3",
-        "name": "Daniel Scott",
-        "role": "Relationships",
-        "linkedinUrl": "https://www.linkedin.com/in/daniel-scott-hackutd"
-      },
-      {
-        "id": "industry-4",
-        "name": "Harper Wilson",
-        "role": "Prospecting",
-        "linkedinUrl": "https://www.linkedin.com/in/harper-wilson-hackutd"
-      },
-      {
-        "id": "industry-5",
-        "name": "Kevin Flores",
-        "role": "Deliverables",
-        "linkedinUrl": "https://www.linkedin.com/in/kevin-flores-hackutd"
-      },
-      {
-        "id": "industry-6",
-        "name": "Isabella Moore",
-        "role": "Stewardship",
-        "linkedinUrl": "https://www.linkedin.com/in/isabella-moore-hackutd"
-      },
-      {
-        "id": "industry-7",
-        "name": "Nathan Davis",
-        "role": "Sponsorship Ops",
-        "linkedinUrl": "https://www.linkedin.com/in/nathan-davis-hackutd"
-      },
-      {
-        "id": "industry-8",
-        "name": "Mila Brown",
-        "role": "Activation Planning",
-        "linkedinUrl": "https://www.linkedin.com/in/mila-brown-hackutd"
-      }
-    ]
-  },
-  {
-    "id": "logistics",
-    "label": "Logistics",
-    "order": 4,
-    "lead": {
-      "id": "logistics-lead",
-      "name": "TBD",
-      "role": "Team Lead",
-      "linkedinUrl": "https://www.linkedin.com/in/"
-    },
-    "members": [
-      { "id": "logistics-1", "name": "TBD", "role": "TBD", "linkedinUrl": "https://www.linkedin.com/in/" },
-      { "id": "logistics-2", "name": "TBD", "role": "TBD", "linkedinUrl": "https://www.linkedin.com/in/" },
-      { "id": "logistics-3", "name": "TBD", "role": "TBD", "linkedinUrl": "https://www.linkedin.com/in/" },
-      { "id": "logistics-4", "name": "TBD", "role": "TBD", "linkedinUrl": "https://www.linkedin.com/in/" },
-      { "id": "logistics-5", "name": "TBD", "role": "TBD", "linkedinUrl": "https://www.linkedin.com/in/" },
-      { "id": "logistics-6", "name": "TBD", "role": "TBD", "linkedinUrl": "https://www.linkedin.com/in/" }
-    ]
-  },
-  {
-    "id": "finance",
-    "label": "Finance",
-    "order": 5,
-    "lead": {
-      "id": "finance-lead",
-      "name": "Elena Martinez",
-      "role": "Team Lead",
-      "linkedinUrl": "https://www.linkedin.com/in/elena-martinez-hackutd"
-    },
-    "members": [
-      {
-        "id": "finance-1",
-        "name": "Caleb Adams",
-        "role": "Budgeting",
-        "linkedinUrl": "https://www.linkedin.com/in/caleb-adams-hackutd"
-      },
-      {
-        "id": "finance-2",
-        "name": "Sarah Murphy",
-        "role": "Procurement",
-        "linkedinUrl": "https://www.linkedin.com/in/sarah-murphy-hackutd"
-      },
-      {
-        "id": "finance-3",
-        "name": "Jason Perez",
-        "role": "Reimbursements",
-        "linkedinUrl": "https://www.linkedin.com/in/jason-perez-hackutd"
-      },
-      {
-        "id": "finance-4",
-        "name": "Emma Torres",
-        "role": "Forecasting",
-        "linkedinUrl": "https://www.linkedin.com/in/emma-torres-hackutd"
-      },
-      {
-        "id": "finance-5",
-        "name": "Benjamin Cox",
-        "role": "Vendor Payments",
-        "linkedinUrl": "https://www.linkedin.com/in/benjamin-cox-hackutd"
-      },
-      {
-        "id": "finance-6",
-        "name": "Lily Foster",
-        "role": "Ops Accounting",
-        "linkedinUrl": "https://www.linkedin.com/in/lily-foster-hackutd"
-      }
+      { "id": "industry-1", "name": "Ryan Park", "role": "Sponsor Outreach", "linkedinUrl": "https://www.linkedin.com/in/ryan-park-hackutd", "quote": "Every cold email is a door waiting to open." },
+      { "id": "industry-2", "name": "Anika Singh", "role": "Partner Success", "linkedinUrl": "https://www.linkedin.com/in/anika-singh-hackutd", "quote": "Success is when sponsors come back year after year." },
+      { "id": "industry-3", "name": "Daniel Scott", "role": "Relationships", "linkedinUrl": "https://www.linkedin.com/in/daniel-scott-hackutd", "quote": "Long-term relationships outlast any single event." },
+      { "id": "industry-4", "name": "Harper Wilson", "role": "Prospecting", "linkedinUrl": "https://www.linkedin.com/in/harper-wilson-hackutd", "quote": "Find the companies that believe in what we build." },
+      { "id": "industry-5", "name": "Kevin Flores", "role": "Deliverables", "linkedinUrl": "https://www.linkedin.com/in/kevin-flores-hackutd", "quote": "Under-promise, over-deliver — every single time." },
+      { "id": "industry-6", "name": "Isabella Moore", "role": "Stewardship", "linkedinUrl": "https://www.linkedin.com/in/isabella-moore-hackutd", "quote": "Gratitude is how you turn a sponsor into a partner." },
+      { "id": "industry-7", "name": "Nathan Davis", "role": "Sponsorship Ops", "linkedinUrl": "https://www.linkedin.com/in/nathan-davis-hackutd", "quote": "The details are what make sponsors feel valued." },
+      { "id": "industry-8", "name": "Mila Brown", "role": "Activation Planning", "linkedinUrl": "https://www.linkedin.com/in/mila-brown-hackutd", "quote": "A great activation is one hackers actually remember." }
     ]
   },
   {
@@ -234,63 +69,59 @@
       "id": "experience-lead",
       "name": "Marcus Rivera",
       "role": "Team Lead",
-      "linkedinUrl": "https://www.linkedin.com/in/marcus-rivera-hackutd"
+      "linkedinUrl": "https://www.linkedin.com/in/marcus-rivera-hackutd",
+      "quote": "The best hackathon is the one people can't stop talking about."
     },
     "members": [
-      {
-        "id": "experience-1",
-        "name": "Zoe Hernandez",
-        "role": "Operations",
-        "linkedinUrl": "https://www.linkedin.com/in/zoe-hernandez-hackutd"
-      },
-      {
-        "id": "experience-2",
-        "name": "Adam Walker",
-        "role": "Volunteer Coordination",
-        "linkedinUrl": "https://www.linkedin.com/in/adam-walker-hackutd"
-      },
-      {
-        "id": "experience-3",
-        "name": "Nina Robinson",
-        "role": "Check-In Flow",
-        "linkedinUrl": "https://www.linkedin.com/in/nina-robinson-hackutd"
-      },
-      {
-        "id": "experience-4",
-        "name": "Tyler Hall",
-        "role": "Venue Logistics",
-        "linkedinUrl": "https://www.linkedin.com/in/tyler-hall-hackutd"
-      },
-      {
-        "id": "experience-5",
-        "name": "Claire Lewis",
-        "role": "Swag + Merch",
-        "linkedinUrl": "https://www.linkedin.com/in/claire-lewis-hackutd"
-      },
-      {
-        "id": "experience-6",
-        "name": "Isaac Young",
-        "role": "Food + Hospitality",
-        "linkedinUrl": "https://www.linkedin.com/in/isaac-young-hackutd"
-      },
-      {
-        "id": "experience-7",
-        "name": "Julia King",
-        "role": "Community Care",
-        "linkedinUrl": "https://www.linkedin.com/in/julia-king-hackutd"
-      },
-      {
-        "id": "experience-8",
-        "name": "Henry Wright",
-        "role": "Room Flow",
-        "linkedinUrl": "https://www.linkedin.com/in/henry-wright-hackutd"
-      },
-      {
-        "id": "experience-9",
-        "name": "Stella Green",
-        "role": "Late-Night Programming",
-        "linkedinUrl": "https://www.linkedin.com/in/stella-green-hackutd"
-      }
+      { "id": "experience-1", "name": "Zoe Hernandez", "role": "Operations", "linkedinUrl": "https://www.linkedin.com/in/zoe-hernandez-hackutd", "quote": "Chaos is just a plan that hasn't been written yet." },
+      { "id": "experience-2", "name": "Adam Walker", "role": "Volunteer Coordination", "linkedinUrl": "https://www.linkedin.com/in/adam-walker-hackutd", "quote": "Volunteers are the heartbeat of every event." },
+      { "id": "experience-3", "name": "Nina Robinson", "role": "Check-In Flow", "linkedinUrl": "https://www.linkedin.com/in/nina-robinson-hackutd", "quote": "First impressions are made at the door." },
+      { "id": "experience-4", "name": "Tyler Hall", "role": "Venue Logistics", "linkedinUrl": "https://www.linkedin.com/in/tyler-hall-hackutd", "quote": "The space shapes the experience." },
+      { "id": "experience-5", "name": "Claire Lewis", "role": "Swag + Merch", "linkedinUrl": "https://www.linkedin.com/in/claire-lewis-hackutd", "quote": "Good swag is something you actually want to keep." },
+      { "id": "experience-6", "name": "Isaac Young", "role": "Food + Hospitality", "linkedinUrl": "https://www.linkedin.com/in/isaac-young-hackutd", "quote": "Feed the hackers, fuel the ideas." },
+      { "id": "experience-7", "name": "Julia King", "role": "Community Care", "linkedinUrl": "https://www.linkedin.com/in/julia-king-hackutd", "quote": "Everyone deserves to feel welcome here." },
+      { "id": "experience-8", "name": "Henry Wright", "role": "Room Flow", "linkedinUrl": "https://www.linkedin.com/in/henry-wright-hackutd", "quote": "A room that works is one people don't think about." },
+      { "id": "experience-9", "name": "Stella Green", "role": "Late-Night Programming", "linkedinUrl": "https://www.linkedin.com/in/stella-green-hackutd", "quote": "2am is when the best ideas happen." }
+    ]
+  },
+  {
+    "id": "logistics",
+    "label": "Logistics",
+    "order": 4,
+    "lead": {
+      "id": "logistics-lead",
+      "name": "TBD",
+      "role": "Team Lead",
+      "linkedinUrl": "https://www.linkedin.com/in/",
+      "quote": "Coming soon."
+    },
+    "members": [
+      { "id": "logistics-1", "name": "TBD", "role": "TBD", "linkedinUrl": "https://www.linkedin.com/in/", "quote": "Coming soon." },
+      { "id": "logistics-2", "name": "TBD", "role": "TBD", "linkedinUrl": "https://www.linkedin.com/in/", "quote": "Coming soon." },
+      { "id": "logistics-3", "name": "TBD", "role": "TBD", "linkedinUrl": "https://www.linkedin.com/in/", "quote": "Coming soon." },
+      { "id": "logistics-4", "name": "TBD", "role": "TBD", "linkedinUrl": "https://www.linkedin.com/in/", "quote": "Coming soon." },
+      { "id": "logistics-5", "name": "TBD", "role": "TBD", "linkedinUrl": "https://www.linkedin.com/in/", "quote": "Coming soon." },
+      { "id": "logistics-6", "name": "TBD", "role": "TBD", "linkedinUrl": "https://www.linkedin.com/in/", "quote": "Coming soon." }
+    ]
+  },
+  {
+    "id": "finance",
+    "label": "Finance",
+    "order": 5,
+    "lead": {
+      "id": "finance-lead",
+      "name": "Elena Martinez",
+      "role": "Team Lead",
+      "linkedinUrl": "https://www.linkedin.com/in/elena-martinez-hackutd",
+      "quote": "Every dollar we spend is a decision about our priorities."
+    },
+    "members": [
+      { "id": "finance-1", "name": "Caleb Adams", "role": "Budgeting", "linkedinUrl": "https://www.linkedin.com/in/caleb-adams-hackutd", "quote": "A budget is your vision translated into numbers." },
+      { "id": "finance-2", "name": "Sarah Murphy", "role": "Procurement", "linkedinUrl": "https://www.linkedin.com/in/sarah-murphy-hackutd", "quote": "Getting the right things at the right price is an art." },
+      { "id": "finance-3", "name": "Jason Perez", "role": "Reimbursements", "linkedinUrl": "https://www.linkedin.com/in/jason-perez-hackutd", "quote": "Fast reimbursements keep teams happy and moving." },
+      { "id": "finance-4", "name": "Emma Torres", "role": "Forecasting", "linkedinUrl": "https://www.linkedin.com/in/emma-torres-hackutd", "quote": "Good forecasts mean no surprises on event day." },
+      { "id": "finance-5", "name": "Benjamin Cox", "role": "Vendor Payments", "linkedinUrl": "https://www.linkedin.com/in/benjamin-cox-hackutd", "quote": "Paying on time is how you build trust with vendors." },
+      { "id": "finance-6", "name": "Lily Foster", "role": "Ops Accounting", "linkedinUrl": "https://www.linkedin.com/in/lily-foster-hackutd", "quote": "Clarity in the books means clarity in the mission." }
     ]
   }
 ]
