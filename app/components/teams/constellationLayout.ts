@@ -7,12 +7,14 @@ export type OfficerMember = {
   role: string;
   linkedinUrl: string;
   quote?: string;
+  imageUrl?: string;
 };
 
 export type OfficerTeam = {
   id: string;
   label: string;
   order: number;
+  description?: string;
   lead: OfficerMember;
   members: OfficerMember[];
 };
