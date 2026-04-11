@@ -1,6 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
@@ -263,12 +264,29 @@ function TeamConstellation({
                   >
                     ✕
                   </button>
-                  <p className="text-base font-semibold text-foreground pr-5">
-                    {node.person.name}
-                  </p>
-                  <p className="mt-0.5 text-[0.7rem] uppercase tracking-[0.18em] text-white/40">
-                    {node.person.role}
-                  </p>
+                  <div className="flex items-center gap-3">
+                    {node.person.imageUrl ? (
+                      <Image
+                        src={node.person.imageUrl}
+                        alt={node.person.name}
+                        width={48}
+                        height={48}
+                        className="h-12 w-12 rounded-full object-cover shrink-0 border border-white/10"
+                      />
+                    ) : (
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/6 text-sm font-medium text-white/40">
+                        {getInitials(node.person.name)}
+                      </div>
+                    )}
+                    <div className="min-w-0 pr-5">
+                      <p className="text-base font-semibold text-foreground truncate">
+                        {node.person.name}
+                      </p>
+                      <p className="mt-0.5 text-[0.7rem] uppercase tracking-[0.18em] text-white/40 truncate">
+                        {node.person.role}
+                      </p>
+                    </div>
+                  </div>
                   {node.person.quote ? (
                     <p className="mt-3 text-sm italic leading-snug text-white/60 border-l-2 border-pink/40 pl-3">
                       &ldquo;{node.person.quote}&rdquo;
@@ -407,8 +425,12 @@ export default function Teams() {
   const trackViewportRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const tooltipCloseTimeoutRef = useRef<number | null>(null);
+  const descTransitionRef = useRef<number | null>(null);
+  const activeTeamIndexRef = useRef(0);
   const isMobile = useIsMobile();
   const prefersReducedMotion = usePrefersReducedMotion();
+  const [displayedTeamIndex, setDisplayedTeamIndex] = useState(0);
+  const [descVisible, setDescVisible] = useState(true);
   const [desktopBox, setDesktopBox] = useState<ConstellationBox>(
     TEAM_CLUSTER_BOX.desktop,
   );
@@ -482,6 +504,27 @@ export default function Teams() {
       );
       targetX = progress * maxTranslate;
 
+      if (maxTranslate > 0) {
+        const slotWidth = track.scrollWidth / ORDERED_OFFICER_TEAMS.length;
+        const nextIndex = clamp(
+          Math.round((progress * maxTranslate) / slotWidth),
+          0,
+          ORDERED_OFFICER_TEAMS.length - 1,
+        );
+        if (nextIndex !== activeTeamIndexRef.current) {
+          activeTeamIndexRef.current = nextIndex;
+          setDescVisible(false);
+          if (descTransitionRef.current !== null) {
+            window.clearTimeout(descTransitionRef.current);
+          }
+          descTransitionRef.current = window.setTimeout(() => {
+            setDisplayedTeamIndex(nextIndex);
+            setDescVisible(true);
+            descTransitionRef.current = null;
+          }, 200);
+        }
+      }
+
       if (progress <= 0.001 || progress >= 0.999) {
         currentX = targetX;
         track.style.transform = `translate3d(${-currentX}px, 0, 0)`;
@@ -545,6 +588,9 @@ export default function Teams() {
     return () => {
       if (tooltipCloseTimeoutRef.current !== null) {
         window.clearTimeout(tooltipCloseTimeoutRef.current);
+      }
+      if (descTransitionRef.current !== null) {
+        window.clearTimeout(descTransitionRef.current);
       }
     };
   }, []);
@@ -730,6 +776,12 @@ export default function Teams() {
               <br />
               {TEAMS_COPY.heading[1]}
             </h2>
+            <p
+              className="mt-5 text-lg leading-relaxed text-white/50 transition-opacity duration-200"
+              style={{ opacity: descVisible ? 1 : 0 }}
+            >
+              {ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.description ?? ""}
+            </p>
           </div>
 
           <div

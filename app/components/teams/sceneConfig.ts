@@ -25,9 +25,9 @@ export const TEAMS_LAYOUT = {
   mobileSectionPadding: "px-5 py-24 sm:px-6",
   desktopViewportHeight: "h-[100svh] md:h-screen",
   desktopContainer: "mx-auto flex h-full w-full max-w-[1800px] items-start pt-28 gap-8 px-5 md:px-8 lg:gap-10 lg:px-12",
-  introWidth: "w-[240px] shrink-0 lg:w-[300px]",
-  desktopHeading: "mt-6 text-3xl font-semibold leading-none text-foreground lg:text-4xl",
-  mobileHeading: "mt-5 text-2xl font-semibold leading-none text-foreground sm:text-3xl",
+  introWidth: "w-[320px] shrink-0 lg:w-[400px]",
+  desktopHeading: "mt-6 text-5xl font-semibold leading-none text-foreground lg:text-6xl",
+  mobileHeading: "mt-5 text-4xl font-semibold leading-none text-foreground sm:text-5xl",
   desktopTrackViewport: "relative min-w-0 flex-1 overflow-x-hidden overflow-y-visible",
 } as const;
 
