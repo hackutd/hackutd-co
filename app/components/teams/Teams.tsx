@@ -3,6 +3,7 @@
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { useIsAndroid } from "@/app/hooks/useIsAndroid";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import {
@@ -378,7 +379,7 @@ function MobileTeamCard({
   const memberCountLabel = getMemberCountLabel(layout.nodes.length);
 
   return (
-    <div className="min-w-[85vw] snap-center rounded-[28px] border border-white/10 bg-white/[0.03] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.22)] sm:min-w-[23rem]">
+    <div className="flex shrink-0 flex-col rounded-[28px] border border-white/10 bg-white/[0.03] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.22)]" style={{ width: `${box.width + 40}px` }}>
       <p className="text-[0.62rem] uppercase tracking-[0.2em] text-white/26">
         HACKUTD
       </p>
@@ -422,18 +423,22 @@ function buildLayouts(teams: OfficerTeam[], box: ConstellationBox) {
 
 export default function Teams() {
   const sectionRef = useRef<HTMLElement>(null);
+  const mobileSectionRef = useRef<HTMLElement>(null);
+  const mobileTrackRef = useRef<HTMLDivElement>(null);
   const trackViewportRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const tooltipCloseTimeoutRef = useRef<number | null>(null);
   const descTransitionRef = useRef<number | null>(null);
   const activeTeamIndexRef = useRef(0);
   const isMobile = useIsMobile();
+  const isAndroid = useIsAndroid();
   const prefersReducedMotion = usePrefersReducedMotion();
   const [displayedTeamIndex, setDisplayedTeamIndex] = useState(0);
   const [descVisible, setDescVisible] = useState(true);
   const [desktopBox, setDesktopBox] = useState<ConstellationBox>(
     TEAM_CLUSTER_BOX.desktop,
   );
+  const [mobileBox, setMobileBox] = useState<ConstellationBox>(TEAM_CLUSTER_BOX.mobile);
   const [activeTeamId, setActiveTeamId] = useState<string | null>(null);
   const [activeNode, setActiveNode] = useState<ActiveNodeState>(null);
 
@@ -470,6 +475,47 @@ export default function Teams() {
       window.removeEventListener("resize", updateDesktopBox);
     };
   }, [isMobile]);
+
+  useEffect(() => {
+    if (!isMobile) return;
+
+    const update = () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      if (isAndroid) {
+        // Android Chrome reserves space for system nav bar and address bar.
+        // Use a more conservative height fraction and clamp node sizes so
+        // constellations stay fully visible on common 360–412 px wide screens.
+        const clampedW = Math.min(w, 412);
+        const nodeSize = Math.round(Math.min(44 + (clampedW - 360) * 0.06, 50));
+        const leadNodeSize = Math.round(nodeSize * 1.3);
+        setMobileBox({
+          width: w,
+          // 0.46 leaves room for address bar + bottom nav (≈ 80–100 px combined)
+          height: Math.round(h * 0.46),
+          padding: Math.round(w * 0.1),
+          verticalBias: 12,
+          leadNodeSize,
+          nodeSize,
+        });
+      } else {
+        // iOS Safari — 100svh already accounts for browser chrome
+        setMobileBox({
+          width: w,
+          height: Math.round(h * 0.54),
+          padding: Math.round(w * 0.09),
+          verticalBias: 18,
+          leadNodeSize: 68,
+          nodeSize: 52,
+        });
+      }
+    };
+
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [isMobile, isAndroid]);
 
   useEffect(() => {
     if (isMobile || prefersReducedMotion) {
@@ -585,6 +631,81 @@ export default function Teams() {
   }, [desktopBox.height, desktopBox.width, isMobile, prefersReducedMotion]);
 
   useEffect(() => {
+    if (!isMobile || prefersReducedMotion) {
+      return;
+    }
+
+    const section = mobileSectionRef.current;
+    const track = mobileTrackRef.current;
+
+    if (!section || !track) {
+      return;
+    }
+
+    let frame = 0;
+    let currentX = 0;
+    let targetX = 0;
+
+    const clamp = (value: number, min: number, max: number) =>
+      Math.min(Math.max(value, min), max);
+
+    const updateTarget = () => {
+      const maxTranslate = Math.max(track.scrollWidth - window.innerWidth, 0);
+      const scrollableDistance = Math.max(
+        section.offsetHeight - window.innerHeight,
+        1,
+      );
+      const progress = clamp(
+        (window.scrollY - section.offsetTop) / scrollableDistance,
+        0,
+        1,
+      );
+      targetX = progress * maxTranslate;
+
+      if (progress <= 0.001 || progress >= 0.999) {
+        currentX = targetX;
+        track.style.transform = `translate3d(${-currentX}px, 0, 0)`;
+        return;
+      }
+
+      queueRender();
+    };
+
+    const renderTrack = () => {
+      currentX += (targetX - currentX) * TEAMS_SCROLL.smoothing;
+
+      if (Math.abs(targetX - currentX) < 0.12) {
+        currentX = targetX;
+      }
+
+      track.style.transform = `translate3d(${-currentX}px, 0, 0)`;
+
+      if (currentX !== targetX) {
+        frame = window.requestAnimationFrame(renderTrack);
+        return;
+      }
+
+      frame = 0;
+    };
+
+    const queueRender = () => {
+      if (frame !== 0) return;
+      frame = window.requestAnimationFrame(renderTrack);
+    };
+
+    window.addEventListener("scroll", updateTarget, { passive: true });
+    window.addEventListener("resize", updateTarget);
+    updateTarget();
+
+    return () => {
+      if (frame !== 0) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", updateTarget);
+      window.removeEventListener("resize", updateTarget);
+      track.style.transform = "";
+    };
+  }, [isMobile, prefersReducedMotion]);
+
+  useEffect(() => {
     return () => {
       if (tooltipCloseTimeoutRef.current !== null) {
         window.clearTimeout(tooltipCloseTimeoutRef.current);
@@ -620,57 +741,117 @@ export default function Teams() {
   };
 
   const desktopLayouts = buildLayouts(ORDERED_OFFICER_TEAMS, desktopBox);
-  const mobileLayouts = buildLayouts(ORDERED_OFFICER_TEAMS, TEAM_CLUSTER_BOX.mobile);
+  const mobileLayouts = buildLayouts(ORDERED_OFFICER_TEAMS, mobileBox);
 
   if (isMobile) {
+    if (prefersReducedMotion) {
+      return (
+        <section
+          id="team"
+          className={`relative overflow-hidden bg-background ${TEAMS_LAYOUT.mobileSectionPadding}`}
+        >
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+            {TEAMS_BACKGROUND_STARS.map((star) => {
+              const starStyle: CSSProperties = {
+                top: `${star.top}%`,
+                left: `${star.left}%`,
+                width: `${star.size}px`,
+                height: `${star.size}px`,
+                opacity: star.opacity,
+              };
+              return (
+                <span key={star.id} className="absolute rounded-full bg-white" style={starStyle} />
+              );
+            })}
+          </div>
+          <div className="relative mx-auto max-w-6xl">
+            <p className="text-[0.62rem] uppercase tracking-[0.2em] text-white/26">
+              {TEAMS_COPY.eyebrow}
+            </p>
+            <h2 className={TEAMS_LAYOUT.mobileHeading}>
+              {TEAMS_COPY.heading[0]}
+              <br />
+              {TEAMS_COPY.heading[1]}
+            </h2>
+            <div className="mt-10 flex snap-x snap-mandatory overflow-x-auto pb-6">
+              {mobileLayouts.map((layout) => (
+                <TeamConstellation
+                  key={layout.team.id}
+                  layout={layout}
+                  box={mobileBox}
+                  activeTeamId={activeTeamId}
+                  setActiveTeamId={setActiveTeamId}
+                  activeNode={activeNode}
+                  openNode={openNode}
+                  clearTooltipClose={clearTooltipClose}
+                  scheduleTooltipClose={scheduleTooltipClose}
+                  interactive
+                  showCaption
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      );
+    }
+
     return (
       <section
         id="team"
-        className={`relative overflow-hidden bg-background ${TEAMS_LAYOUT.mobileSectionPadding}`}
+        ref={mobileSectionRef}
+        className={`relative bg-background ${isAndroid ? TEAMS_LAYOUT.mobileSectionMinHeightAndroid : TEAMS_LAYOUT.mobileSectionMinHeight}`}
       >
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-          {TEAMS_BACKGROUND_STARS.map((star) => {
-            const starStyle: CSSProperties = {
-              top: `${star.top}%`,
-              left: `${star.left}%`,
-              width: `${star.size}px`,
-              height: `${star.size}px`,
-              opacity: star.opacity,
-            };
+        <div className={`sticky top-0 overflow-hidden ${isAndroid ? TEAMS_LAYOUT.mobileViewportHeightAndroid : TEAMS_LAYOUT.mobileViewportHeight}`}>
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+            {TEAMS_BACKGROUND_STARS.map((star) => {
+              const starStyle: CSSProperties = {
+                top: `${star.top}%`,
+                left: `${star.left}%`,
+                width: `${star.size}px`,
+                height: `${star.size}px`,
+                opacity: star.opacity,
+              };
+              return (
+                <span key={star.id} className="absolute rounded-full bg-white" style={starStyle} />
+              );
+            })}
+          </div>
 
-            return (
-              <span
-                key={star.id}
-                className="absolute rounded-full bg-white"
-                style={starStyle}
-              />
-            );
-          })}
-        </div>
+          <div className="relative flex h-full flex-col pt-16 pb-6">
+            <div className="px-5">
+              <p className="text-[0.62rem] uppercase tracking-[0.2em] text-white/26">
+                {TEAMS_COPY.eyebrow}
+              </p>
+              <h2 className={TEAMS_LAYOUT.mobileHeading}>
+                {TEAMS_COPY.heading[0]}
+                <br />
+                {TEAMS_COPY.heading[1]}
+              </h2>
+            </div>
 
-        <div className="relative mx-auto max-w-6xl">
-          <p className="text-[0.62rem] uppercase tracking-[0.2em] text-white/26">
-            {TEAMS_COPY.eyebrow}
-          </p>
-          <h2 className={TEAMS_LAYOUT.mobileHeading}>
-            {TEAMS_COPY.heading[0]}
-            <br />
-            {TEAMS_COPY.heading[1]}
-          </h2>
-
-          <div className="mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-6">
-            {mobileLayouts.map((layout) => (
-              <MobileTeamCard
-                key={layout.team.id}
-                layout={layout}
-                box={TEAM_CLUSTER_BOX.mobile}
-                activeNode={activeNode}
-                setActiveTeamId={setActiveTeamId}
-                openNode={openNode}
-                clearTooltipClose={clearTooltipClose}
-                scheduleTooltipClose={scheduleTooltipClose}
-              />
-            ))}
+            <div className="relative mt-6 flex-1 overflow-hidden">
+              <div
+                ref={mobileTrackRef}
+                className="flex h-full w-max items-start will-change-transform"
+                style={{ gap: "0px" }}
+              >
+                {mobileLayouts.map((layout) => (
+                  <TeamConstellation
+                    key={layout.team.id}
+                    layout={layout}
+                    box={mobileBox}
+                    activeTeamId={activeTeamId}
+                    setActiveTeamId={setActiveTeamId}
+                    activeNode={activeNode}
+                    openNode={openNode}
+                    clearTooltipClose={clearTooltipClose}
+                    scheduleTooltipClose={scheduleTooltipClose}
+                    interactive
+                    showCaption
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>

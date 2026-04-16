@@ -22,7 +22,11 @@ export const TEAMS_COPY = {
 
 export const TEAMS_LAYOUT = {
   desktopSectionMinHeight: "min-h-[560vh]",
+  mobileSectionMinHeight: "min-h-[420vh]",
+  mobileSectionMinHeightAndroid: "min-h-[480vh]",
   mobileSectionPadding: "px-5 py-24 sm:px-6",
+  mobileViewportHeight: "h-[100svh]",
+  mobileViewportHeightAndroid: "h-[100dvh]",
   desktopViewportHeight: "h-[100svh] md:h-screen",
   desktopContainer: "mx-auto flex h-full w-full max-w-[1800px] items-start pt-28 gap-8 px-5 md:px-8 lg:gap-10 lg:px-12",
   introWidth: "w-[320px] shrink-0 lg:w-[400px]",
@@ -51,12 +55,12 @@ export const TEAM_CLUSTER_BOX = {
     nodeSize: 50,
   },
   mobile: {
-    width: 272,
-    height: 208,
-    padding: 24,
-    verticalBias: 10,
-    leadNodeSize: 52,
-    nodeSize: 38,
+    width: 310,
+    height: 260,
+    padding: 30,
+    verticalBias: 14,
+    leadNodeSize: 62,
+    nodeSize: 46,
   },
 } as const;
 
