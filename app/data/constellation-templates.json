@@ -233,5 +233,182 @@
       "stepX": 0.12,
       "stepY": 0.08
     }
+  },
+  {
+    "id": "perseus",
+    "name": "Perseus",
+    "starCount": 7,
+    "leadNodeId": "n0",
+    "nodes": [
+      { "id": "n0", "x": 0.46, "y": 0.46 },
+      { "id": "n1", "x": 0.10, "y": 0.14 },
+      { "id": "n2", "x": 0.28, "y": 0.20 },
+      { "id": "n3", "x": 0.50, "y": 0.14 },
+      { "id": "n4", "x": 0.70, "y": 0.22 },
+      { "id": "n5", "x": 0.78, "y": 0.54 },
+      { "id": "n6", "x": 0.64, "y": 0.80 }
+    ],
+    "edges": [
+      { "fromId": "n1", "toId": "n2" },
+      { "fromId": "n2", "toId": "n3" },
+      { "fromId": "n3", "toId": "n4" },
+      { "fromId": "n2", "toId": "n0" },
+      { "fromId": "n4", "toId": "n0" },
+      { "fromId": "n0", "toId": "n5" },
+      { "fromId": "n5", "toId": "n6" }
+    ],
+    "append": {
+      "fromNodeId": "n5",
+      "toNodeId": "n6",
+      "stepX": -0.10,
+      "stepY": 0.14
+    }
+  },
+  {
+    "id": "bootes",
+    "name": "Boötes",
+    "starCount": 7,
+    "leadNodeId": "n0",
+    "nodes": [
+      { "id": "n0", "x": 0.50, "y": 0.90 },
+      { "id": "n1", "x": 0.50, "y": 0.60 },
+      { "id": "n2", "x": 0.30, "y": 0.76 },
+      { "id": "n3", "x": 0.28, "y": 0.28 },
+      { "id": "n4", "x": 0.50, "y": 0.08 },
+      { "id": "n5", "x": 0.72, "y": 0.28 },
+      { "id": "n6", "x": 0.12, "y": 0.48 }
+    ],
+    "edges": [
+      { "fromId": "n0", "toId": "n2" },
+      { "fromId": "n2", "toId": "n1" },
+      { "fromId": "n1", "toId": "n0" },
+      { "fromId": "n1", "toId": "n3" },
+      { "fromId": "n3", "toId": "n4" },
+      { "fromId": "n4", "toId": "n5" },
+      { "fromId": "n5", "toId": "n1" },
+      { "fromId": "n3", "toId": "n6" }
+    ],
+    "append": {
+      "fromNodeId": "n3",
+      "toNodeId": "n6",
+      "stepX": -0.12,
+      "stepY": 0.10
+    }
+  },
+  {
+    "id": "castor",
+    "name": "Castor System",
+    "starCount": 6,
+    "leadNodeId": "n0",
+    "nodes": [
+      { "id": "n0", "x": 0.38, "y": 0.14 },
+      { "id": "n1", "x": 0.58, "y": 0.22 },
+      { "id": "n2", "x": 0.14, "y": 0.50 },
+      { "id": "n3", "x": 0.34, "y": 0.62 },
+      { "id": "n4", "x": 0.66, "y": 0.72 },
+      { "id": "n5", "x": 0.84, "y": 0.58 }
+    ],
+    "edges": [
+      { "fromId": "n0", "toId": "n1" },
+      { "fromId": "n2", "toId": "n3" },
+      { "fromId": "n4", "toId": "n5" },
+      { "fromId": "n0", "toId": "n2" },
+      { "fromId": "n1", "toId": "n4" },
+      { "fromId": "n3", "toId": "n4" }
+    ],
+    "append": {
+      "fromNodeId": "n4",
+      "toNodeId": "n5",
+      "stepX": 0.12,
+      "stepY": -0.10
+    }
+  },
+  {
+    "id": "cetus",
+    "name": "Cetus",
+    "starCount": 14,
+    "leadNodeId": "n0",
+    "nodes": [
+      { "id": "n0",  "x": 0.18, "y": 0.10 },
+      { "id": "n1",  "x": 0.06, "y": 0.26 },
+      { "id": "n2",  "x": 0.24, "y": 0.36 },
+      { "id": "n3",  "x": 0.38, "y": 0.22 },
+      { "id": "n4",  "x": 0.44, "y": 0.36 },
+      { "id": "n5",  "x": 0.54, "y": 0.46 },
+      { "id": "n6",  "x": 0.62, "y": 0.28 },
+      { "id": "n7",  "x": 0.76, "y": 0.38 },
+      { "id": "n8",  "x": 0.88, "y": 0.52 },
+      { "id": "n9",  "x": 0.78, "y": 0.66 },
+      { "id": "n10", "x": 0.60, "y": 0.72 },
+      { "id": "n11", "x": 0.48, "y": 0.80 },
+      { "id": "n12", "x": 0.36, "y": 0.90 },
+      { "id": "n13", "x": 0.52, "y": 0.94 }
+    ],
+    "edges": [
+      { "fromId": "n1",  "toId": "n0"  },
+      { "fromId": "n0",  "toId": "n3"  },
+      { "fromId": "n3",  "toId": "n2"  },
+      { "fromId": "n2",  "toId": "n1"  },
+      { "fromId": "n3",  "toId": "n4"  },
+      { "fromId": "n4",  "toId": "n5"  },
+      { "fromId": "n5",  "toId": "n6"  },
+      { "fromId": "n6",  "toId": "n7"  },
+      { "fromId": "n7",  "toId": "n8"  },
+      { "fromId": "n8",  "toId": "n9"  },
+      { "fromId": "n9",  "toId": "n10" },
+      { "fromId": "n5",  "toId": "n10" },
+      { "fromId": "n10", "toId": "n11" },
+      { "fromId": "n11", "toId": "n12" },
+      { "fromId": "n12", "toId": "n13" }
+    ],
+    "append": {
+      "fromNodeId": "n12",
+      "toNodeId": "n13",
+      "stepX": 0.10,
+      "stepY": 0.08
+    }
+  },
+  {
+    "id": "ophiuchus",
+    "name": "Ophiuchus",
+    "starCount": 13,
+    "leadNodeId": "n0",
+    "nodes": [
+      { "id": "n0",  "x": 0.50, "y": 0.06 },
+      { "id": "n1",  "x": 0.72, "y": 0.20 },
+      { "id": "n2",  "x": 0.28, "y": 0.18 },
+      { "id": "n3",  "x": 0.68, "y": 0.40 },
+      { "id": "n4",  "x": 0.32, "y": 0.38 },
+      { "id": "n5",  "x": 0.50, "y": 0.50 },
+      { "id": "n6",  "x": 0.64, "y": 0.62 },
+      { "id": "n7",  "x": 0.36, "y": 0.60 },
+      { "id": "n8",  "x": 0.74, "y": 0.74 },
+      { "id": "n9",  "x": 0.24, "y": 0.74 },
+      { "id": "n10", "x": 0.78, "y": 0.88 },
+      { "id": "n11", "x": 0.18, "y": 0.88 },
+      { "id": "n12", "x": 0.50, "y": 0.94 }
+    ],
+    "edges": [
+      { "fromId": "n0",  "toId": "n1"  },
+      { "fromId": "n0",  "toId": "n2"  },
+      { "fromId": "n1",  "toId": "n3"  },
+      { "fromId": "n2",  "toId": "n4"  },
+      { "fromId": "n3",  "toId": "n5"  },
+      { "fromId": "n4",  "toId": "n5"  },
+      { "fromId": "n5",  "toId": "n6"  },
+      { "fromId": "n5",  "toId": "n7"  },
+      { "fromId": "n6",  "toId": "n8"  },
+      { "fromId": "n7",  "toId": "n9"  },
+      { "fromId": "n8",  "toId": "n10" },
+      { "fromId": "n9",  "toId": "n11" },
+      { "fromId": "n10", "toId": "n12" },
+      { "fromId": "n11", "toId": "n12" }
+    ],
+    "append": {
+      "fromNodeId": "n10",
+      "toNodeId": "n12",
+      "stepX": 0.0,
+      "stepY": 0.10
+    }
   }
 ]

@@ -14,7 +14,9 @@ export type OfficerTeam = {
   id: string;
   label: string;
   order: number;
+  templateId?: string;
   description?: string;
+  groupPhotoUrl?: string;
   lead: OfficerMember;
   members: OfficerMember[];
 };
@@ -89,7 +91,12 @@ function hashString(input: string) {
   return hash;
 }
 
-function pickTemplate(teamId: string, peopleCount: number) {
+function pickTemplate(teamId: string, peopleCount: number, templateId?: string) {
+  if (templateId) {
+    const explicit = constellationTemplates.find((t) => t.id === templateId);
+    if (explicit) return explicit;
+  }
+
   const availableCounts = Array.from(
     new Set(constellationTemplates.map((template) => template.starCount)),
   ).sort((left, right) => left - right);
@@ -154,7 +161,7 @@ export function resolveConstellationLayout(
   verticalBias = 0,
 ): ResolvedConstellationLayout {
   const people = [team.lead, ...team.members];
-  const template = pickTemplate(team.id, people.length);
+  const template = pickTemplate(team.id, people.length, team.templateId);
   const assignmentOrder = getAssignmentOrder(template);
   const selectedNodeIds = assignmentOrder.slice(
     0,
