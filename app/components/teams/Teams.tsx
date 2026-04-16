@@ -359,54 +359,6 @@ function TeamConstellation({
   );
 }
 
-function MobileTeamCard({
-  layout,
-  box,
-  activeNode,
-  setActiveTeamId,
-  openNode,
-  clearTooltipClose,
-  scheduleTooltipClose,
-}: {
-  layout: ResolvedConstellationLayout;
-  box: ConstellationBox;
-  activeNode: ActiveNodeState;
-  setActiveTeamId: (teamId: string | null) => void;
-  openNode: (teamId: string, personId: string) => void;
-  clearTooltipClose: () => void;
-  scheduleTooltipClose: () => void;
-}) {
-  const memberCountLabel = getMemberCountLabel(layout.nodes.length);
-
-  return (
-    <div className="flex shrink-0 flex-col rounded-[28px] border border-white/10 bg-white/[0.03] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.22)]" style={{ width: `${box.width + 40}px` }}>
-      <p className="text-[0.62rem] uppercase tracking-[0.2em] text-white/26">
-        HACKUTD
-      </p>
-      <p className="mt-3 text-[0.72rem] uppercase tracking-[0.18em] text-white/30">
-        {layout.template.name}
-      </p>
-      <h3 className="mt-2 text-xl font-medium text-foreground">{layout.team.label}</h3>
-      <p className="mt-2 text-[0.78rem] uppercase tracking-[0.1em] text-white/34">
-        {memberCountLabel}
-      </p>
-      <div className="mt-6">
-        <TeamConstellation
-          layout={layout}
-          box={box}
-          activeTeamId={layout.team.id}
-          setActiveTeamId={setActiveTeamId}
-          activeNode={activeNode}
-          openNode={openNode}
-          clearTooltipClose={clearTooltipClose}
-          scheduleTooltipClose={scheduleTooltipClose}
-          interactive
-          showCaption={false}
-        />
-      </div>
-    </div>
-  );
-}
 
 function buildLayouts(teams: OfficerTeam[], box: ConstellationBox) {
   return teams.map((team) =>
@@ -944,7 +896,6 @@ export default function Teams() {
               />
             );
           })}
-          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-pink/25 to-transparent" />
         </div>
 
         <div className={TEAMS_LAYOUT.desktopContainer}>
@@ -963,6 +914,32 @@ export default function Teams() {
             >
               {ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.description ?? ""}
             </p>
+
+            <div
+              className="mt-8 transition-opacity duration-200"
+              style={{ opacity: descVisible ? 1 : 0 }}
+            >
+              {ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.groupPhotoUrl ? (
+                <Image
+                  key={ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.id}
+                  src={ORDERED_OFFICER_TEAMS[displayedTeamIndex]!.groupPhotoUrl!}
+                  alt={`${ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.label} team`}
+                  width={320}
+                  height={200}
+                  className="w-full rounded-2xl object-cover border border-white/10"
+                  style={{ maxWidth: "320px" }}
+                />
+              ) : (
+                <div
+                  className="flex w-full items-center justify-center rounded-2xl border border-white/8 bg-white/[0.02]"
+                  style={{ maxWidth: "320px", height: "200px" }}
+                >
+                  <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/20">
+                    Group photo coming soon
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           <div

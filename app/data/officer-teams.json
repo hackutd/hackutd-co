@@ -3,11 +3,12 @@
     "id": "marketing",
     "label": "Marketing",
     "order": 0,
+    "templateId": "cetus",
     "lead": {
       "id": "marketing-lead",
-      "name": "Olivia Tran",
+      "name": "Dhivyesh Prithiviraj",
       "role": "Team Lead",
-      "linkedinUrl": "https://www.linkedin.com/in/olivia-tran-hackutd",
+      "linkedinUrl": "https://www.linkedin.com/in/dhivyeshprithiviraj/",
       "quote": "Building the story behind HackUTD one campaign at a time.",
       "imageUrl": ""
     },
@@ -51,6 +52,70 @@
         "linkedinUrl": "https://www.linkedin.com/in/avery-brooks-hackutd",
         "quote": "Words are the architecture of ideas.",
         "imageUrl": ""
+      },
+      {
+        "id": "marketing-6",
+        "name": "Maya Patel",
+        "role": "Content Strategy",
+        "linkedinUrl": "https://www.linkedin.com/in/maya-patel-hackutd",
+        "quote": "Good content makes people feel something.",
+        "imageUrl": ""
+      },
+      {
+        "id": "marketing-7",
+        "name": "Maya Patel",
+        "role": "Content Strategy",
+        "linkedinUrl": "https://www.linkedin.com/in/maya-patel-hackutd",
+        "quote": "Good content makes people feel something.",
+        "imageUrl": ""
+      },
+      {
+        "id": "marketing-8",
+        "name": "Maya Patel",
+        "role": "Content Strategy",
+        "linkedinUrl": "https://www.linkedin.com/in/maya-patel-hackutd",
+        "quote": "Good content makes people feel something.",
+        "imageUrl": ""
+      },
+      {
+        "id": "marketing-9",
+        "name": "Maya Patel",
+        "role": "Content Strategy",
+        "linkedinUrl": "https://www.linkedin.com/in/maya-patel-hackutd",
+        "quote": "Good content makes people feel something.",
+        "imageUrl": ""
+      },
+      {
+        "id": "marketing-10",
+        "name": "Maya Patel",
+        "role": "Content Strategy",
+        "linkedinUrl": "https://www.linkedin.com/in/maya-patel-hackutd",
+        "quote": "Good content makes people feel something.",
+        "imageUrl": ""
+      },
+      {
+        "id": "marketing-11",
+        "name": "Maya Patel",
+        "role": "Content Strategy",
+        "linkedinUrl": "https://www.linkedin.com/in/maya-patel-hackutd",
+        "quote": "Good content makes people feel something.",
+        "imageUrl": ""
+      },
+      {
+        "id": "marketing-12",
+        "name": "Maya Patel",
+        "role": "Content Strategy",
+        "linkedinUrl": "https://www.linkedin.com/in/maya-patel-hackutd",
+        "quote": "Good content makes people feel something.",
+        "imageUrl": ""
+      },
+      {
+        "id": "marketing-13",
+        "name": "Maya Patel",
+        "role": "Content Strategy",
+        "linkedinUrl": "https://www.linkedin.com/in/maya-patel-hackutd",
+        "quote": "Good content makes people feel something.",
+        "imageUrl": ""
       }
     ],
     "description": "Crafting the visual identity and story of HackUTD — from social campaigns to brand design, they make sure the world knows we exist."
@@ -59,11 +124,12 @@
     "id": "tech",
     "label": "Tech",
     "order": 1,
+    "templateId": "orion",
     "lead": {
       "id": "tech-lead",
-      "name": "Noah Chen",
+      "name": "Caleb Bae",
       "role": "Team Lead",
-      "linkedinUrl": "https://www.linkedin.com/in/noah-chen-hackutd",
+      "linkedinUrl": "https://www.linkedin.com/in/baecal000/",
       "quote": "The best infrastructure is the kind nobody notices.",
       "imageUrl": ""
     },
@@ -115,14 +181,6 @@
         "linkedinUrl": "https://www.linkedin.com/in/chloe-nguyen-hackutd",
         "quote": "Security is a feature, not a fix.",
         "imageUrl": ""
-      },
-      {
-        "id": "tech-7",
-        "name": "Arjun Mehta",
-        "role": "Automation",
-        "linkedinUrl": "https://www.linkedin.com/in/arjun-mehta-hackutd",
-        "quote": "If you do it twice, automate it.",
-        "imageUrl": ""
       }
     ],
     "description": "Building the platform that powers HackUTD — registration, infrastructure, and every line of code that keeps 1,000+ hackers online."
@@ -131,11 +189,12 @@
     "id": "industry",
     "label": "Industry",
     "order": 2,
+    "templateId": "perseus",
     "lead": {
       "id": "industry-lead",
-      "name": "Leah Johnson",
+      "name": "Sachi Hansalia",
       "role": "Team Lead",
-      "linkedinUrl": "https://www.linkedin.com/in/leah-johnson-hackutd",
+      "linkedinUrl": "https://www.linkedin.com/in/sachi-hansalia/",
       "quote": "Great partnerships start with a genuine conversation.",
       "imageUrl": ""
     },
@@ -187,22 +246,6 @@
         "linkedinUrl": "https://www.linkedin.com/in/isabella-moore-hackutd",
         "quote": "Gratitude is how you turn a sponsor into a partner.",
         "imageUrl": ""
-      },
-      {
-        "id": "industry-7",
-        "name": "Nathan Davis",
-        "role": "Sponsorship Ops",
-        "linkedinUrl": "https://www.linkedin.com/in/nathan-davis-hackutd",
-        "quote": "The details are what make sponsors feel valued.",
-        "imageUrl": ""
-      },
-      {
-        "id": "industry-8",
-        "name": "Mila Brown",
-        "role": "Activation Planning",
-        "linkedinUrl": "https://www.linkedin.com/in/mila-brown-hackutd",
-        "quote": "A great activation is one hackers actually remember.",
-        "imageUrl": ""
       }
     ],
     "description": "The bridge between HackUTD and the companies that believe in what we build. They turn cold outreach into lasting partnerships."
@@ -211,11 +254,12 @@
     "id": "experience",
     "label": "Experience",
     "order": 3,
+    "templateId": "bootes",
     "lead": {
       "id": "experience-lead",
-      "name": "Marcus Rivera",
+      "name": "Liana Forster",
       "role": "Team Lead",
-      "linkedinUrl": "https://www.linkedin.com/in/marcus-rivera-hackutd",
+      "linkedinUrl": "https://www.linkedin.com/in/liana-forster/",
       "quote": "The best hackathon is the one people can't stop talking about.",
       "imageUrl": ""
     },
@@ -267,30 +311,6 @@
         "linkedinUrl": "https://www.linkedin.com/in/isaac-young-hackutd",
         "quote": "Feed the hackers, fuel the ideas.",
         "imageUrl": ""
-      },
-      {
-        "id": "experience-7",
-        "name": "Julia King",
-        "role": "Community Care",
-        "linkedinUrl": "https://www.linkedin.com/in/julia-king-hackutd",
-        "quote": "Everyone deserves to feel welcome here.",
-        "imageUrl": ""
-      },
-      {
-        "id": "experience-8",
-        "name": "Henry Wright",
-        "role": "Room Flow",
-        "linkedinUrl": "https://www.linkedin.com/in/henry-wright-hackutd",
-        "quote": "A room that works is one people don't think about.",
-        "imageUrl": ""
-      },
-      {
-        "id": "experience-9",
-        "name": "Stella Green",
-        "role": "Late-Night Programming",
-        "linkedinUrl": "https://www.linkedin.com/in/stella-green-hackutd",
-        "quote": "2am is when the best ideas happen.",
-        "imageUrl": ""
       }
     ],
     "description": "Turning 24 hours into an unforgettable experience — from the moment hackers walk in to the moment they leave inspired."
@@ -299,11 +319,12 @@
     "id": "logistics",
     "label": "Logistics",
     "order": 4,
+    "templateId": "castor",
     "lead": {
       "id": "logistics-lead",
-      "name": "TBD",
+      "name": "Sofia Thomas",
       "role": "Team Lead",
-      "linkedinUrl": "https://www.linkedin.com/in/",
+      "linkedinUrl": "https://www.linkedin.com/in/sofia-thomas-82055832b/",
       "quote": "Coming soon.",
       "imageUrl": ""
     },
@@ -347,14 +368,6 @@
         "linkedinUrl": "https://www.linkedin.com/in/",
         "quote": "Coming soon.",
         "imageUrl": ""
-      },
-      {
-        "id": "logistics-6",
-        "name": "TBD",
-        "role": "TBD",
-        "linkedinUrl": "https://www.linkedin.com/in/",
-        "quote": "Coming soon.",
-        "imageUrl": ""
       }
     ],
     "description": "The backbone of the event. They handle the details nobody sees so that everything everyone does see runs flawlessly."
@@ -365,9 +378,9 @@
     "order": 5,
     "lead": {
       "id": "finance-lead",
-      "name": "Elena Martinez",
+      "name": "Aatish Bommisetty",
       "role": "Team Lead",
-      "linkedinUrl": "https://www.linkedin.com/in/elena-martinez-hackutd",
+      "linkedinUrl": "https://www.linkedin.com/in/aatishbommisetty/",
       "quote": "Every dollar we spend is a decision about our priorities.",
       "imageUrl": ""
     },
@@ -386,38 +399,6 @@
         "role": "Procurement",
         "linkedinUrl": "https://www.linkedin.com/in/sarah-murphy-hackutd",
         "quote": "Getting the right things at the right price is an art.",
-        "imageUrl": ""
-      },
-      {
-        "id": "finance-3",
-        "name": "Jason Perez",
-        "role": "Reimbursements",
-        "linkedinUrl": "https://www.linkedin.com/in/jason-perez-hackutd",
-        "quote": "Fast reimbursements keep teams happy and moving.",
-        "imageUrl": ""
-      },
-      {
-        "id": "finance-4",
-        "name": "Emma Torres",
-        "role": "Forecasting",
-        "linkedinUrl": "https://www.linkedin.com/in/emma-torres-hackutd",
-        "quote": "Good forecasts mean no surprises on event day.",
-        "imageUrl": ""
-      },
-      {
-        "id": "finance-5",
-        "name": "Benjamin Cox",
-        "role": "Vendor Payments",
-        "linkedinUrl": "https://www.linkedin.com/in/benjamin-cox-hackutd",
-        "quote": "Paying on time is how you build trust with vendors.",
-        "imageUrl": ""
-      },
-      {
-        "id": "finance-6",
-        "name": "Lily Foster",
-        "role": "Ops Accounting",
-        "linkedinUrl": "https://www.linkedin.com/in/lily-foster-hackutd",
-        "quote": "Clarity in the books means clarity in the mission.",
         "imageUrl": ""
       }
     ],
