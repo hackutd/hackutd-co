@@ -1,31 +1,42 @@
 import Link from "next/link";
 
 const links = [
-  { label: "Instagram", href: "#" },
+  { label: "Instagram", href: "https://www.instagram.com/hackutd/" },
   { label: "Twitter", href: "#" },
   { label: "Discord", href: "#" },
-  { label: "GitHub", href: "#" },
+  { label: "LinkedIn", href: "#" },
 ];
 
 export default function Footer() {
   return (
-    <footer className="border-t border-white/10 px-8 py-12">
+    <footer className="bg-surface text-surface-foreground border-t border-muted/20 px-8 py-12">
       <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+        {/* Left: Branding */}
         <div>
-          <p className="text-2xl font-bold">HackUTD</p>
-          <p className="mt-1 text-sm text-muted">Happy Hacking</p>
+          <p className="text-5xl font-light tracking-tight">HackUTD</p>
+          <p className="mt-1 text-base italic text-muted">Happy Hacking</p>
+          <p className="mt-4 text-xs font-medium uppercase tracking-widest text-muted">
+            Made with love in Dallas, TX
+          </p>
         </div>
-        <nav className="flex gap-6">
-          {links.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className="text-sm text-muted hover:text-foreground transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+
+        {/* Right: Connect + Links */}
+        <div className="flex flex-col items-start gap-2 md:items-end">
+          <p className="text-xs font-medium uppercase tracking-widest text-muted">
+            Connect
+          </p>
+          <nav className="flex gap-6">
+            {links.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="text-xs font-medium uppercase tracking-widest text-muted hover:text-surface-foreground transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
       </div>
     </footer>
   );
