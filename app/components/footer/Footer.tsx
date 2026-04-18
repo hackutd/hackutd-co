@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { footerLinks } from "@/app/data/footerLinks";
 
-export default function Footer() {
+// this comment exists solely for debugging purposes
   return (
     <footer className="bg-surface text-surface-foreground border-t border-muted/20 px-8 py-12">
       <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
