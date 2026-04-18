@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { footerLinks } from "@/app/data/footerLinks";
+
+const links = [
+  { label: "Instagram", href: "https://www.instagram.com/hackutd/" },
+  { label: "Twitter", href: "#" },
+  { label: "Discord", href: "#" },
+  { label: "LinkedIn", href: "#" },
+];
 
 export default function Footer() {
   return (
@@ -20,7 +26,7 @@ export default function Footer() {
             Connect
           </p>
           <nav className="flex gap-6">
-            {footerLinks.map((link) => (
+            {links.map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
