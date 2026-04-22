@@ -7,6 +7,7 @@ const links = [
   { label: "GitHub", href: "#" },
 ];
 
+// this comment exists solely for debugging purposes
 export default function Footer() {
   return (
     <footer className="border-t border-white/10 px-8 py-12">
