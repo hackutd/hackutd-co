@@ -13,47 +13,109 @@ import { dispatchNavbarThemeOverride } from "../navbar/navbarThemeOverride";
 
 configureScrollTrigger();
 
-// ── Fibonacci sphere distribution ────────────────────────────
-function fibonacciPoint(i: number, total: number, radius: number) {
-  // Wider vertical belt so logos spread across more of the sphere
-  const verticalLimit = 0.55;
-  const h = verticalLimit - (i + 0.5) * (2 * verticalLimit) / total;
-  const phi = Math.acos(h);
-  const theta = Math.PI * (1 + Math.sqrt(5)) * i;
-  return new THREE.Vector3(
-    radius * Math.sin(phi) * Math.cos(theta),
-    radius * Math.cos(phi),
-    radius * Math.sin(phi) * Math.sin(theta)
-  );
-}
+const SPHERE_RADIUS = 3.8;
 
-// ── Quaternion: logo lies FLAT tangent to the sphere surface ─
-// A THREE.PlaneGeometry lives in the XY plane with its normal along +Z.
-// We want the plane to be tangent to the sphere, meaning its normal should
-// point RADIALLY outward. So we simply rotate +Z → outward normal.
-// To keep logos upright, we compute a stable "up" from world-up projected
-// onto the tangent plane, then build the full basis.
-function tangentQuaternion(position: THREE.Vector3): THREE.Quaternion {
-  const normal = position.clone().normalize(); // radially outward = desired plane normal
-  const worldUp = new THREE.Vector3(0, 1, 0);
+// ── Structured grid distribution ─────────────────────────────
+function gridPoints(total: number, radius: number): THREE.Vector3[] {
+  const numRows: number = 3;
+  const latMin = -Math.PI * 0.18;
+  const latMax = Math.PI * 0.18;
 
-  // Project worldUp onto the tangent plane (remove component along normal)
-  const up = worldUp.clone().sub(normal.clone().multiplyScalar(worldUp.dot(normal))).normalize();
-
-  // Fallback if near pole (worldUp ≈ normal)
-  if (up.lengthSq() < 0.001) {
-    up.set(1, 0, 0).sub(normal.clone().multiplyScalar(normal.x)).normalize();
+  const lats: number[] = [];
+  for (let r = 0; r < numRows; r++) {
+    const t = numRows === 1 ? 0.5 : r / (numRows - 1);
+    lats.push(latMin + t * (latMax - latMin));
   }
 
-  const right = new THREE.Vector3().crossVectors(up, normal).normalize(); // complete the basis
+  const weights = lats.map((lat) => Math.cos(lat));
+  const weightSum = weights.reduce((a, b) => a + b, 0);
+  const itemsPerRow = weights.map((w) => Math.max(1, Math.round((w / weightSum) * total)));
 
-  // Columns: right=X, up=Y, normal=Z  → plane's +Z now points radially outward
-  const m = new THREE.Matrix4().makeBasis(right, up, normal);
-  return new THREE.Quaternion().setFromRotationMatrix(m);
+  let assigned = itemsPerRow.reduce((a, b) => a + b, 0);
+  let ri = Math.floor(numRows / 2);
+  while (assigned !== total) {
+    const delta = assigned < total ? 1 : -1;
+    itemsPerRow[ri] = Math.max(1, itemsPerRow[ri] + delta);
+    assigned += delta;
+    ri = (ri + 1) % numRows;
+  }
+
+  const points: THREE.Vector3[] = [];
+  for (let r = 0; r < numRows; r++) {
+    const lat = lats[r];
+    const count = itemsPerRow[r];
+    const offset = r % 2 === 0 ? 0 : Math.PI / count;
+    for (let c = 0; c < count; c++) {
+      const lon = offset + (c / count) * Math.PI * 2;
+      const x = radius * Math.cos(lat) * Math.cos(lon);
+      const y = radius * Math.sin(lat);
+      const z = radius * Math.cos(lat) * Math.sin(lon);
+      points.push(new THREE.Vector3(x, y, z));
+    }
+  }
+  return points;
 }
 
-// ── Single sponsor plane ──────────────────────────────────────
-function SponsorLogo({
+// ── Build a curved spherical-cap patch geometry ───────────────
+// Creates a small curved patch of sphere surface at a given lat/lon,
+// spanning angularW radians in longitude and angularH in latitude.
+// The mesh curves in BOTH axes to conform to the globe surface.
+function makeSphericalPatch(
+  centerLat: number,
+  centerLon: number,
+  angularW: number,
+  angularH: number,
+  radius: number,
+  segments = 16
+): THREE.BufferGeometry {
+  const positions: number[] = [];
+  const uvs: number[] = [];
+  const indices: number[] = [];
+
+  // Logos on the back hemisphere (cos(lon) < 0) get mirror-flipped by the
+  // spherical winding. Detect that and flip U to compensate.
+  const isBackFacing = Math.cos(centerLon) < 0;
+
+  for (let row = 0; row <= segments; row++) {
+    const v = row / segments;
+    const lat = (centerLat - angularH) + v * angularH * 2;
+    for (let col = 0; col <= segments; col++) {
+      const u = col / segments;
+      const lon = (centerLon - angularW) + u * angularW * 2;
+      const x = radius * Math.cos(lat) * Math.cos(lon);
+      const y = radius * Math.sin(lat);
+      const z = radius * Math.cos(lat) * Math.sin(lon);
+      positions.push(x, y, z);
+      // Flip V for right-side-up; flip U on back hemisphere to un-mirror
+      const finalU = isBackFacing ? 1-u : 1-u;
+      uvs.push(finalU, v);
+    }
+  }
+
+  for (let row = 0; row < segments; row++) {
+    for (let col = 0; col < segments; col++) {
+      const stride = segments + 1;
+      const a = row * stride + col;
+      const b = a + 1;
+      const c = a + stride;
+      const d = c + 1;
+      indices.push(a, c, b);
+      indices.push(b, c, d);
+    }
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+// ── Single curved sponsor patch ───────────────────────────────
+// Normalized: every logo gets the same angular height on the sphere.
+// Width is scaled by aspect ratio so images are never squished.
+function SponsorPatch({
   url,
   position,
   href,
@@ -63,46 +125,66 @@ function SponsorLogo({
   href: string;
 }) {
   const texture = useTexture(url);
-  const quaternion = useMemo(() => tangentQuaternion(position), [position]);
 
-  const aspect = (texture.image as HTMLImageElement)?.width
-    ? (texture.image as HTMLImageElement).width / (texture.image as HTMLImageElement).height
-    : 1;
+  // Max angular size in each axis — logo hits whichever limit comes first
+  const maxAngularH = 0.05; // radians (~2.9°)
+  const maxAngularW = 0.20; // radians (~6.9°) — caps wide logos
 
-  // Slightly larger logos to be more readable
-  const height = 0.28;
-  const width = height * aspect;
+  const aspect = useMemo(() => {
+    const img = texture.image as HTMLImageElement | undefined;
+    return img?.width && img?.height ? img.width / img.height : 1;
+  }, [texture]);
+
+  // Scale from height, then clamp width; if width hits its cap, scale height back down
+  const { angularH, angularW } = useMemo(() => {
+    let h = maxAngularH;
+    let w = h * aspect;
+    if (w > maxAngularW) {
+      w = maxAngularW;
+      h = w / aspect;
+    }
+    return { angularH: h, angularW: w };
+  }, [aspect]);
+
+  const { lat, lon } = useMemo(() => {
+    const r = position.length();
+    const lat = Math.asin(THREE.MathUtils.clamp(position.y / r, -1, 1));
+    const lon = Math.atan2(position.z, position.x);
+    return { lat, lon };
+  }, [position]);
+
+  // Offset radius slightly beyond sphere to avoid z-fighting with occluder
+  const patchRadius = SPHERE_RADIUS + 0.012;
+
+  const patchGeo = useMemo(
+    () => makeSphericalPatch(lat, lon, angularW, angularH, patchRadius, 16),
+    [lat, lon, angularW, angularH, patchRadius]
+  );
 
   return (
     <mesh
-      position={position}
-      quaternion={quaternion}
+      geometry={patchGeo}
       onClick={() => window.open(href, "_blank")}
       onPointerEnter={() => { document.body.style.cursor = "pointer"; }}
       onPointerLeave={() => { document.body.style.cursor = "auto"; }}
     >
-      <planeGeometry args={[width, height]} />
       <meshBasicMaterial
         map={texture}
         transparent
         opacity={0.95}
         depthWrite={false}
-        side={THREE.DoubleSide}
+        side={THREE.FrontSide}
       />
     </mesh>
   );
 }
 
-// ── Thick wireframe sphere using EdgesGeometry + Line ─────────
-// drei's <Line> component uses three/addons LineSegments2 which supports lineWidth > 1
+// ── Thick wireframe sphere ────────────────────────────────────
 function ThickWireframeSphere({ radius }: { radius: number }) {
   const edgePoints = useMemo(() => {
-    // Build icosahedron edges explicitly so we can pass them to <Line>
     const geo = new THREE.IcosahedronGeometry(radius, 4);
     const edgeGeo = new THREE.EdgesGeometry(geo);
     const pos = edgeGeo.attributes.position;
-
-    // EdgesGeometry stores pairs of vertices (each edge = 2 consecutive vertices)
     const segments: [THREE.Vector3, THREE.Vector3][] = [];
     for (let i = 0; i < pos.count; i += 2) {
       segments.push([
@@ -115,31 +197,19 @@ function ThickWireframeSphere({ radius }: { radius: number }) {
 
   return (
     <>
-      {/* Invisible solid sphere — occludes logos on the back */}
+      {/* Solid occluder — hides back-facing logos cleanly */}
       <mesh>
         <sphereGeometry args={[radius - 0.04, 32, 32]} />
-        <meshBasicMaterial
-          color="#f2f2f2"
-          toneMapped={false}
-          opacity={1}
-          depthWrite={true}
-        />
+        <meshBasicMaterial color="#f2f2f2" toneMapped={false} depthWrite={true} />
       </mesh>
-
-      {/* Thick wireframe edges */}
       {edgePoints.map((pts, i) => (
-        <Line
-          key={i}
-          points={pts}
-          color="#000000"
-          lineWidth={5}
-        />
+        <Line key={i} points={pts} color="#000000" lineWidth={5} />
       ))}
     </>
   );
 }
 
-// ── 2D Reunion Tower SVG overlay ──────────────────────────────
+// ── Tower SVG overlay ─────────────────────────────────────────
 function TowerSVG() {
   return (
     <svg
@@ -168,14 +238,12 @@ function TowerSVG() {
   );
 }
 
-// ── Rotating group (sphere + logos) ──────────────────────────
-const SPHERE_RADIUS = 2.4; // Bigger globe
-
+// ── Rotating globe ────────────────────────────────────────────
 function RotatingGlobe() {
   const groupRef = useRef<THREE.Group>(null!);
 
   const positions = useMemo(
-    () => SPONSORS.map((_, i) => fibonacciPoint(i, SPONSORS.length, SPHERE_RADIUS)),
+    () => gridPoints(SPONSORS.length, SPHERE_RADIUS),
     []
   );
 
@@ -187,7 +255,7 @@ function RotatingGlobe() {
     <group ref={groupRef}>
       <ThickWireframeSphere radius={SPHERE_RADIUS} />
       {SPONSORS.map((s, i) => (
-        <SponsorLogo
+        <SponsorPatch
           key={s.name}
           url={s.logo || ""}
           href={s.url || "#"}
@@ -206,7 +274,6 @@ export default function Sponsors() {
   useGsapReact(() => {
     const section = sectionRef.current;
     const overlay = overlayRef.current;
-
     if (!section || !overlay) return;
 
     gsap.set(overlay, { autoAlpha: 0 });
@@ -237,8 +304,12 @@ export default function Sponsors() {
   return (
     <div className="relative bg-surface">
       <div ref={overlayRef} className="pointer-events-none absolute inset-0 z-10 bg-background" />
-
-      <section ref={sectionRef} id="sponsors" className="relative z-20 px-8 py-32 text-surface-foreground" data-navbar-theme="light">
+      <section
+        ref={sectionRef}
+        id="sponsors"
+        className="relative z-20 px-8 py-32 text-surface-foreground"
+        data-navbar-theme="light"
+      >
         <div className="flex items-end justify-between">
           <h2 className="text-4xl font-bold md:text-5xl">Our Sponsors</h2>
           <a
@@ -249,11 +320,11 @@ export default function Sponsors() {
           </a>
         </div>
 
-        <div className="mt-16 h-[700px] w-full relative">
+        <div className="mt-16 h-[900px] w-full relative">
           <TowerSVG />
           <Canvas
             style={{ position: "relative", zIndex: 1 }}
-            camera={{ position: [0, 1, 8], fov: 42 }}
+            camera={{ position: [0, 1, 12], fov: 42 }}
           >
             <ambientLight intensity={0.6} />
             <RotatingGlobe />
