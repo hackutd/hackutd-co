@@ -9,11 +9,9 @@ import { missionContent } from "@/app/data/mission";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import { dispatchNavbarThemeOverride } from "../navbar/navbarThemeOverride";
 import {
+  DIRECTORS_CARD,
   DIRECTORS_NAVBAR_THEME_TRIGGER,
-  DIRECTORS_PIN,
-  MISSION_DECORATION_COUNT,
   MISSION_LAYOUT,
-  MISSION_OVERLAY,
 } from "./sceneConfig";
 
 configureScrollTrigger();
@@ -34,43 +32,46 @@ function renderMissionStatement() {
 
 function renderDirectorsPanel() {
   return (
-    <div className="flex flex-col items-center">
-      <div className="h-64 w-full max-w-lg rounded-lg bg-white/5" />
-      <blockquote className="mt-8 max-w-lg text-center text-muted">
-        <p>{missionContent.directorsMessage.quote}</p>
-        <footer className="mt-4 font-medium text-foreground">
-          — {missionContent.directorsMessage.authors}
-        </footer>
+    <div className="flex w-full max-w-[620px] flex-col items-center rounded-2xl bg-[#FAFAFA] px-8 py-10 shadow-[0_2px_24px_rgba(0,0,0,0.06)] md:px-12 md:py-14">
+      {/* Photo placeholder */}
+      <div className="h-44 w-full max-w-[460px] rounded-xl bg-[#E0E0E0] sm:h-52 md:h-56" />
+
+      {/* Label */}
+      <p className="mt-8 text-xs tracking-[0.15em] text-[#999]">
+        {missionContent.directorsMessage.label}
+      </p>
+
+      {/* Quote — Satoshi Italic 400 */}
+      <blockquote className="mt-5 max-w-md text-center font-[family-name:var(--font-satoshi)] text-base font-normal italic leading-relaxed text-[#333] md:text-lg">
+        {missionContent.directorsMessage.quote}
       </blockquote>
-      <div className="mt-8 flex gap-2">
-        {Array.from({ length: MISSION_DECORATION_COUNT }).map((_, i) => (
-          <div key={i} className="h-10 w-10 rounded-full bg-white/10" />
-        ))}
-      </div>
+
+      {/* Divider */}
+      <div className="mt-8 h-px w-full max-w-[460px] bg-[#E5E5E5]" />
+
+      {/* Directors names — Inter Regular 400 */}
+      <p className="mt-6 font-[family-name:var(--font-inter)] text-sm font-normal tracking-wide text-[#222]">
+        {missionContent.directorsMessage.authors}
+      </p>
+      <p className="mt-1 font-[family-name:var(--font-inter)] text-[10px] tracking-[0.18em] text-[#999]">
+        {missionContent.directorsMessage.subtitle}
+      </p>
     </div>
   );
 }
 
 export default function Mission() {
   const missionSectionRef = useRef<HTMLElement>(null);
-  const darkOverlayRef = useRef<HTMLDivElement>(null);
   const directorsSectionRef = useRef<HTMLElement>(null);
-  const directorsContentRef = useRef<HTMLDivElement>(null);
+  const directorsCardRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
 
   useGSAP(
     () => {
-      const missionSection = missionSectionRef.current;
-      const darkOverlay = darkOverlayRef.current;
       const directorsSection = directorsSectionRef.current;
-      const directorsContent = directorsContentRef.current;
+      const directorsCard = directorsCardRef.current;
 
-      if (
-        !missionSection ||
-        !darkOverlay ||
-        !directorsSection ||
-        !directorsContent
-      ) {
+      if (!directorsSection || !directorsCard) {
         return;
       }
 
@@ -78,40 +79,27 @@ export default function Mission() {
         return;
       }
 
-      // Dark overlay crossfade — begins when mission is half-scrolled out
-      gsap.set(darkOverlay, { autoAlpha: 0 });
-      gsap.to(darkOverlay, {
-        autoAlpha: 1,
-        ease: "power1.in",
-        scrollTrigger: {
-          trigger: missionSection,
-          start: MISSION_OVERLAY.start,
-          end: MISSION_OVERLAY.end,
-          scrub: MISSION_OVERLAY.scrub,
+      // Card scale-up on scroll entry
+      gsap.fromTo(
+        directorsCard,
+        {
+          scale: DIRECTORS_CARD.initialScale,
+          autoAlpha: DIRECTORS_CARD.initialOpacity,
         },
-      });
-
-      // Directors section — pin at viewport top, fade content in, then unpin
-      //    Animate children of the pinned element, not the pinned element itself.
-      gsap.set(directorsContent, {
-        autoAlpha: 0,
-        yPercent: DIRECTORS_PIN.initialYPercent,
-      });
-
-      gsap.to(directorsContent, {
-        autoAlpha: 1,
-        yPercent: 0,
-        ease: "power1.out",
-        scrollTrigger: {
-          trigger: directorsSection,
-          start: DIRECTORS_PIN.start,
-          end: DIRECTORS_PIN.end,
-          pin: true,
-          scrub: DIRECTORS_PIN.scrub,
+        {
+          scale: 1,
+          autoAlpha: 1,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: directorsCard,
+            start: DIRECTORS_CARD.start,
+            end: DIRECTORS_CARD.end,
+            scrub: DIRECTORS_CARD.scrub,
+          },
         },
-      });
+      );
 
-      // Navbar theme — switch to dark when directors section enters
+      // Navbar theme — light since directors section is now light bg
       let navbarThemeOverride: "light" | "dark" | null = null;
       const setNavbarThemeOverride = (theme: "light" | "dark" | null) => {
         if (navbarThemeOverride === theme) {
@@ -127,11 +115,11 @@ export default function Mission() {
         end: DIRECTORS_NAVBAR_THEME_TRIGGER.end,
         onEnter: () =>
           setNavbarThemeOverride(
-            DIRECTORS_NAVBAR_THEME_TRIGGER.theme as "dark",
+            DIRECTORS_NAVBAR_THEME_TRIGGER.theme as "light",
           ),
         onEnterBack: () =>
           setNavbarThemeOverride(
-            DIRECTORS_NAVBAR_THEME_TRIGGER.theme as "dark",
+            DIRECTORS_NAVBAR_THEME_TRIGGER.theme as "light",
           ),
         onLeave: () => setNavbarThemeOverride(null),
         onLeaveBack: () => setNavbarThemeOverride(null),
@@ -164,12 +152,9 @@ export default function Mission() {
 
         <section
           ref={directorsSectionRef}
-          className="bg-background px-8 py-24 md:px-12 md:py-32"
+          className="bg-[#F2F2F2] px-8 py-24 md:px-12 md:py-32"
         >
-          <div
-            ref={directorsContentRef}
-            className="flex flex-col items-center"
-          >
+          <div className="flex flex-col items-center">
             {renderDirectorsPanel()}
           </div>
         </section>
@@ -179,17 +164,11 @@ export default function Mission() {
 
   return (
     <div className="relative bg-[var(--color-surface)]">
-      {/* Shared dark overlay — covers both sections for seamless transition */}
-      <div
-        ref={darkOverlayRef}
-        className="pointer-events-none absolute inset-0 z-10 bg-background"
-      />
-
       {/* Mission statement — naturally scrolling, no pin */}
       <section
         ref={missionSectionRef}
         data-navbar-theme="light"
-        className={`relative z-20 ${MISSION_LAYOUT.sectionPadding} ${MISSION_LAYOUT.sectionMinHeight}`}
+        className={`relative ${MISSION_LAYOUT.sectionPadding} ${MISSION_LAYOUT.sectionMinHeight}`}
       >
         <div
           className={`mx-auto flex max-w-7xl items-start justify-center ${MISSION_LAYOUT.statementWrapMinHeight} ${MISSION_LAYOUT.statementOffset}`}
@@ -200,16 +179,14 @@ export default function Mission() {
         </div>
       </section>
 
-      {/* Directors message — pins at viewport top, content fades in centered, then unpins */}
+      {/* Directors message — light bg, card scales up on scroll */}
       <section
         ref={directorsSectionRef}
-        className="relative z-20"
+        data-navbar-theme="light"
+        className="bg-[#F2F2F2] px-8 py-24 md:px-12 md:py-32"
       >
-        <div className="flex h-screen items-center justify-center px-8 md:px-12">
-          <div
-            ref={directorsContentRef}
-            className="flex flex-col items-center"
-          >
+        <div className="flex flex-col items-center">
+          <div ref={directorsCardRef}>
             {renderDirectorsPanel()}
           </div>
         </div>

@@ -9,25 +9,19 @@ export const MISSION_LAYOUT = {
   statementWrapMinHeight: "min-h-[88svh] md:min-h-[92vh]",
 } as const;
 
-/** Dark overlay fades in once mission is half-scrolled out of viewport */
-export const MISSION_OVERLAY = {
+/** Directors card scales up from 92% to 100% and fades in */
+export const DIRECTORS_CARD = {
   scrub: MISSION_SCRUB,
-  start: "center top",
-  end: "bottom top",
-} as const;
-
-/** Directors section pins at viewport top, content fades in, then unpins */
-export const DIRECTORS_PIN = {
-  scrub: MISSION_SCRUB,
-  start: "top top",
-  end: "+=500",
-  initialYPercent: 12,
+  start: "top 85%",
+  end: "top 30%",
+  initialScale: 0.92,
+  initialOpacity: 0.4,
 } as const;
 
 export const DIRECTORS_NAVBAR_THEME_TRIGGER = {
   start: "top 60%",
   end: "bottom top",
-  theme: "dark",
+  theme: "light",
 } as const;
 
 export const MISSION_DECORATION_COUNT = 6;
