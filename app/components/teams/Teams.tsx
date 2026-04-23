@@ -436,30 +436,27 @@ export default function Teams() {
       const h = window.innerHeight;
 
       if (isAndroid) {
-        // Android Chrome reserves space for system nav bar and address bar.
-        // Use a more conservative height fraction and clamp node sizes so
-        // constellations stay fully visible on common 360–412 px wide screens.
         const clampedW = Math.min(w, 412);
-        const nodeSize = Math.round(Math.min(44 + (clampedW - 360) * 0.06, 50));
+        const nodeSize = Math.round(Math.min(38 + (clampedW - 360) * 0.05, 44));
         const leadNodeSize = Math.round(nodeSize * 1.3);
         setMobileBox({
           width: w,
-          // 0.46 leaves room for address bar + bottom nav (≈ 80–100 px combined)
-          height: Math.round(h * 0.46),
-          padding: Math.round(w * 0.1),
+          // reduced from 0.46 to leave room for photo + description panel above
+          height: Math.round(h * 0.38),
+          padding: Math.round(w * 0.08),
           verticalBias: 12,
           leadNodeSize,
           nodeSize,
         });
       } else {
-        // iOS Safari — 100svh already accounts for browser chrome
         setMobileBox({
           width: w,
-          height: Math.round(h * 0.54),
-          padding: Math.round(w * 0.09),
-          verticalBias: 18,
-          leadNodeSize: 68,
-          nodeSize: 52,
+          // reduced from 0.54 to leave room for photo + description panel above
+          height: Math.round(h * 0.40),
+          padding: Math.round(w * 0.07),
+          verticalBias: 16,
+          leadNodeSize: 58,
+          nodeSize: 44,
         });
       }
     };
@@ -468,6 +465,98 @@ export default function Teams() {
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, [isMobile, isAndroid]);
+
+  useEffect(() => {
+    if (!isMobile || prefersReducedMotion) return;
+
+    const section = mobileSectionRef.current;
+    const track = mobileTrackRef.current;
+
+    if (!section || !track) return;
+
+    let frame = 0;
+    let currentX = 0;
+    let targetX = 0;
+
+    const clamp = (value: number, min: number, max: number) =>
+      Math.min(Math.max(value, min), max);
+
+    const updateTarget = () => {
+      const maxTranslate = Math.max(track.scrollWidth - window.innerWidth, 0);
+      const scrollableDistance = Math.max(
+        section.offsetHeight - window.innerHeight,
+        1,
+      );
+      const progress = clamp(
+        (window.scrollY - section.offsetTop) / scrollableDistance,
+        0,
+        1,
+      );
+      targetX = progress * maxTranslate;
+
+      if (maxTranslate > 0) {
+        const slotWidth = track.scrollWidth / ORDERED_OFFICER_TEAMS.length;
+        const nextIndex = clamp(
+          Math.round((progress * maxTranslate) / slotWidth),
+          0,
+          ORDERED_OFFICER_TEAMS.length - 1,
+        );
+        if (nextIndex !== activeTeamIndexRef.current) {
+          activeTeamIndexRef.current = nextIndex;
+          setDescVisible(false);
+          if (descTransitionRef.current !== null) {
+            window.clearTimeout(descTransitionRef.current);
+          }
+          descTransitionRef.current = window.setTimeout(() => {
+            setDisplayedTeamIndex(nextIndex);
+            setDescVisible(true);
+            descTransitionRef.current = null;
+          }, 200);
+        }
+      }
+
+      if (progress <= 0.001 || progress >= 0.999) {
+        currentX = targetX;
+        track.style.transform = `translate3d(${-currentX}px, 0, 0)`;
+        return;
+      }
+
+      queueRender();
+    };
+
+    const renderTrack = () => {
+      currentX += (targetX - currentX) * TEAMS_SCROLL.smoothing;
+
+      if (Math.abs(targetX - currentX) < 0.12) {
+        currentX = targetX;
+      }
+
+      track.style.transform = `translate3d(${-currentX}px, 0, 0)`;
+
+      if (currentX !== targetX) {
+        frame = window.requestAnimationFrame(renderTrack);
+        return;
+      }
+
+      frame = 0;
+    };
+
+    const queueRender = () => {
+      if (frame !== 0) return;
+      frame = window.requestAnimationFrame(renderTrack);
+    };
+
+    window.addEventListener("scroll", updateTarget, { passive: true });
+    window.addEventListener("resize", updateTarget);
+    updateTarget();
+
+    return () => {
+      if (frame !== 0) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", updateTarget);
+      window.removeEventListener("resize", updateTarget);
+      track.style.transform = "";
+    };
+  }, [isMobile, prefersReducedMotion]);
 
   useEffect(() => {
     if (isMobile || prefersReducedMotion) {
@@ -583,81 +672,6 @@ export default function Teams() {
   }, [desktopBox.height, desktopBox.width, isMobile, prefersReducedMotion]);
 
   useEffect(() => {
-    if (!isMobile || prefersReducedMotion) {
-      return;
-    }
-
-    const section = mobileSectionRef.current;
-    const track = mobileTrackRef.current;
-
-    if (!section || !track) {
-      return;
-    }
-
-    let frame = 0;
-    let currentX = 0;
-    let targetX = 0;
-
-    const clamp = (value: number, min: number, max: number) =>
-      Math.min(Math.max(value, min), max);
-
-    const updateTarget = () => {
-      const maxTranslate = Math.max(track.scrollWidth - window.innerWidth, 0);
-      const scrollableDistance = Math.max(
-        section.offsetHeight - window.innerHeight,
-        1,
-      );
-      const progress = clamp(
-        (window.scrollY - section.offsetTop) / scrollableDistance,
-        0,
-        1,
-      );
-      targetX = progress * maxTranslate;
-
-      if (progress <= 0.001 || progress >= 0.999) {
-        currentX = targetX;
-        track.style.transform = `translate3d(${-currentX}px, 0, 0)`;
-        return;
-      }
-
-      queueRender();
-    };
-
-    const renderTrack = () => {
-      currentX += (targetX - currentX) * TEAMS_SCROLL.smoothing;
-
-      if (Math.abs(targetX - currentX) < 0.12) {
-        currentX = targetX;
-      }
-
-      track.style.transform = `translate3d(${-currentX}px, 0, 0)`;
-
-      if (currentX !== targetX) {
-        frame = window.requestAnimationFrame(renderTrack);
-        return;
-      }
-
-      frame = 0;
-    };
-
-    const queueRender = () => {
-      if (frame !== 0) return;
-      frame = window.requestAnimationFrame(renderTrack);
-    };
-
-    window.addEventListener("scroll", updateTarget, { passive: true });
-    window.addEventListener("resize", updateTarget);
-    updateTarget();
-
-    return () => {
-      if (frame !== 0) window.cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", updateTarget);
-      window.removeEventListener("resize", updateTarget);
-      track.style.transform = "";
-    };
-  }, [isMobile, prefersReducedMotion]);
-
-  useEffect(() => {
     return () => {
       if (tooltipCloseTimeoutRef.current !== null) {
         window.clearTimeout(tooltipCloseTimeoutRef.current);
@@ -696,26 +710,63 @@ export default function Teams() {
   const mobileLayouts = buildLayouts(ORDERED_OFFICER_TEAMS, mobileBox);
 
   if (isMobile) {
+    const mobileStars = (
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        {TEAMS_BACKGROUND_STARS.map((star) => {
+          const starStyle: CSSProperties = {
+            top: `${star.top}%`,
+            left: `${star.left}%`,
+            width: `${star.size}px`,
+            height: `${star.size}px`,
+            opacity: star.opacity,
+          };
+          return (
+            <span key={star.id} className="absolute rounded-full bg-white" style={starStyle} />
+          );
+        })}
+      </div>
+    );
+
+    const mobilePhotoPanel = (
+      <div
+        className="px-5 mt-4 transition-opacity duration-200"
+        style={{ opacity: descVisible ? 1 : 0 }}
+      >
+        {ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.groupPhotoUrl ? (
+          <Image
+            key={ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.id}
+            src={ORDERED_OFFICER_TEAMS[displayedTeamIndex]!.groupPhotoUrl!}
+            alt={`${ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.label} team`}
+            width={400}
+            height={160}
+            className="w-full rounded-xl object-cover border border-white/10"
+            style={{ maxHeight: "140px" }}
+          />
+        ) : (
+          <div
+            className="flex w-full items-center justify-center rounded-xl border border-white/8 bg-white/[0.02]"
+            style={{ height: "100px" }}
+          >
+            <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/20">
+              Group photo coming soon
+            </p>
+          </div>
+        )}
+        {ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.description ? (
+          <p className="mt-2 text-sm leading-snug text-white/50 line-clamp-2">
+            {ORDERED_OFFICER_TEAMS[displayedTeamIndex]!.description}
+          </p>
+        ) : null}
+      </div>
+    );
+
     if (prefersReducedMotion) {
       return (
         <section
           id="team"
           className={`relative overflow-hidden bg-background ${TEAMS_LAYOUT.mobileSectionPadding}`}
         >
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-            {TEAMS_BACKGROUND_STARS.map((star) => {
-              const starStyle: CSSProperties = {
-                top: `${star.top}%`,
-                left: `${star.left}%`,
-                width: `${star.size}px`,
-                height: `${star.size}px`,
-                opacity: star.opacity,
-              };
-              return (
-                <span key={star.id} className="absolute rounded-full bg-white" style={starStyle} />
-              );
-            })}
-          </div>
+          {mobileStars}
           <div className="relative mx-auto max-w-6xl">
             <p className="text-[0.62rem] uppercase tracking-[0.2em] text-white/26">
               {TEAMS_COPY.eyebrow}
@@ -754,20 +805,7 @@ export default function Teams() {
         className={`relative bg-background ${isAndroid ? TEAMS_LAYOUT.mobileSectionMinHeightAndroid : TEAMS_LAYOUT.mobileSectionMinHeight}`}
       >
         <div className={`sticky top-0 overflow-hidden ${isAndroid ? TEAMS_LAYOUT.mobileViewportHeightAndroid : TEAMS_LAYOUT.mobileViewportHeight}`}>
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-            {TEAMS_BACKGROUND_STARS.map((star) => {
-              const starStyle: CSSProperties = {
-                top: `${star.top}%`,
-                left: `${star.left}%`,
-                width: `${star.size}px`,
-                height: `${star.size}px`,
-                opacity: star.opacity,
-              };
-              return (
-                <span key={star.id} className="absolute rounded-full bg-white" style={starStyle} />
-              );
-            })}
-          </div>
+          {mobileStars}
 
           <div className="relative flex h-full flex-col pt-16 pb-6">
             <div className="px-5">
@@ -781,7 +819,9 @@ export default function Teams() {
               </h2>
             </div>
 
-            <div className="relative mt-6 flex-1 overflow-hidden">
+            {mobilePhotoPanel}
+
+            <div className="relative mt-4 flex-1 overflow-hidden">
               <div
                 ref={mobileTrackRef}
                 className="flex h-full w-max items-start will-change-transform"
