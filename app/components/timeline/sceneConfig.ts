@@ -43,6 +43,10 @@ export const TIMELINE_SCROLL = {
   scrub: 0.3,
 } as const;
 
+// Cubic Bezier for the rocket slide: fast entry from the right, smooth deceleration
+// Equivalent to CSS cubic-bezier(0.22, 1, 0.36, 1)
+export const ROCKET_SLIDE_EASE = "M0,0 C0.22,1,0.36,1,1,1";
+
 export const TIMELINE_LAYOUT = {
   minHeight: "min-h-[300vh]",
   stickyViewportHeight: "h-[100svh]",

@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import gsap from "gsap";
+import { CustomEase } from "gsap/CustomEase";
 import { useGSAP } from "@gsap/react";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
@@ -10,6 +11,7 @@ import {
   MOBILE_TIMELINE_SCRUB,
   ROCKET_FILL_PATH,
   ROCKET_STROKE_PATH,
+  ROCKET_SLIDE_EASE,
   TIMELINE_SCROLL,
   TRAIL_GRADIENT_STOPS,
   TRAIL_PATH,
@@ -21,6 +23,7 @@ configureScrollTrigger();
 export default function RocketTrailAnimation() {
   const clipRef = useRef<HTMLDivElement>(null);
   const assemblyRef = useRef<HTMLDivElement>(null);
+  const markersRef = useRef<SVGGElement>(null);
 
   const isMobile = useIsMobile();
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -28,8 +31,9 @@ export default function RocketTrailAnimation() {
   useGSAP(
     () => {
       const assembly = assemblyRef.current;
+      const markers = markersRef.current;
       const clip = clipRef.current;
-      if (!assembly || !clip) return;
+      if (!assembly || !markers || !clip) return;
 
       const trigger = clip.closest("section") ?? clip.parentElement;
       if (!trigger) return;
@@ -38,14 +42,16 @@ export default function RocketTrailAnimation() {
 
       if (prefersReducedMotion) {
         gsap.set(assembly, { x: 0 });
+        gsap.set(markers, { opacity: 1 });
         return;
       }
 
-      // Start fully off-screen right; end with rocket near the left edge
+      // Markers hidden until the rocket finishes sliding in
       gsap.set(assembly, { x: "100vw" });
-      gsap.to(assembly, {
-        x: 0,
-        ease: "none",
+      gsap.set(markers, { opacity: 0 });
+
+      // Single scrubbed timeline: rocket slides in for 88%, then markers fade in
+      const tl = gsap.timeline({
         scrollTrigger: {
           trigger,
           start: TIMELINE_SCROLL.start,
@@ -53,6 +59,9 @@ export default function RocketTrailAnimation() {
           scrub,
         },
       });
+
+      tl.to(assembly, { x: 0, ease: CustomEase.create("rocketSlide", ROCKET_SLIDE_EASE), duration: 0.88 }, 0);
+      tl.to(markers, { opacity: 1, ease: "power2.out", duration: 0.12 }, 0.88);
     },
     { scope: clipRef, dependencies: [isMobile, prefersReducedMotion] },
   );
@@ -157,40 +166,42 @@ export default function RocketTrailAnimation() {
             strokeLinejoin="round"
           />
 
-          {/* Year markers — white ellipses with year + edition name */}
-          {YEAR_MARKERS.map((marker) => (
-            <g key={marker.year}>
-              <ellipse
-                cx={marker.x}
-                cy={marker.y}
-                rx={marker.rx}
-                ry={marker.ry}
-                fill="white"
-              />
-              <text
-                x={marker.x}
-                y={marker.y + marker.ry + yearFontSize * 1.2}
-                textAnchor="middle"
-                fill="white"
-                fontSize={yearFontSize}
-                fontWeight="600"
-                fontFamily="var(--font-satoshi, sans-serif)"
-              >
-                {marker.year}
-              </text>
-              <text
-                x={marker.x}
-                y={marker.y + marker.ry + yearFontSize * 1.2 + nameFontSize * 1.6}
-                textAnchor="middle"
-                fill="white"
-                fontSize={nameFontSize}
-                letterSpacing={nameLetterSpacing}
-                fontFamily="var(--font-satoshi, sans-serif)"
-              >
-                {marker.name}
-              </text>
-            </g>
-          ))}
+          {/* Year markers — hidden until rocket finishes sliding in */}
+          <g ref={markersRef}>
+            {YEAR_MARKERS.map((marker) => (
+              <g key={marker.year}>
+                <ellipse
+                  cx={marker.x}
+                  cy={marker.y}
+                  rx={marker.rx}
+                  ry={marker.ry}
+                  fill="white"
+                />
+                <text
+                  x={marker.x}
+                  y={marker.y + marker.ry + yearFontSize * 1.2}
+                  textAnchor="middle"
+                  fill="white"
+                  fontSize={yearFontSize}
+                  fontWeight="600"
+                  fontFamily="var(--font-satoshi, sans-serif)"
+                >
+                  {marker.year}
+                </text>
+                <text
+                  x={marker.x}
+                  y={marker.y + marker.ry + yearFontSize * 1.2 + nameFontSize * 1.6}
+                  textAnchor="middle"
+                  fill="white"
+                  fontSize={nameFontSize}
+                  letterSpacing={nameLetterSpacing}
+                  fontFamily="var(--font-satoshi, sans-serif)"
+                >
+                  {marker.name}
+                </text>
+              </g>
+            ))}
+          </g>
         </svg>
       </div>
     </div>
