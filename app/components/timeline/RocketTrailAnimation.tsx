@@ -14,7 +14,7 @@ import {
   ROCKET_SLIDE_EASE,
   TIMELINE_SCROLL,
   TRAIL_GRADIENT_STOPS,
-  TRAIL_PATH,
+  TRAIL_WAVE,
   YEAR_MARKERS,
 } from "./sceneConfig";
 
@@ -24,6 +24,7 @@ export default function RocketTrailAnimation() {
   const clipRef = useRef<HTMLDivElement>(null);
   const assemblyRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<SVGGElement>(null);
+  const trailPolyRef = useRef<SVGPolygonElement>(null);
 
   const isMobile = useIsMobile();
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -33,12 +34,36 @@ export default function RocketTrailAnimation() {
       const assembly = assemblyRef.current;
       const markers = markersRef.current;
       const clip = clipRef.current;
-      if (!assembly || !markers || !clip) return;
+      const trailPoly = trailPolyRef.current;
+      if (!assembly || !markers || !clip || !trailPoly) return;
 
       const trigger = clip.closest("section") ?? clip.parentElement;
       if (!trigger) return;
 
-      const scrub = isMobile ? MOBILE_TIMELINE_SCRUB : TIMELINE_SCROLL.scrub;
+      const svg = trailPoly.ownerSVGElement;
+      if (!svg) return;
+
+      const { numPoints, startX, endX, centerY, halfWidthStart, halfWidthEnd, amplitude, staggerEach, duration } = TRAIL_WAVE;
+
+      // Build polygon: top edge (left→right) then bottom edge (right→left) = closed band
+      while (trailPoly.points.numberOfItems > 0) trailPoly.points.removeItem(0);
+
+      const step = (endX - startX) / (numPoints - 1);
+
+      for (let i = 0; i < numPoints; i++) {
+        const p = trailPoly.points.appendItem(svg.createSVGPoint());
+        const t = i / (numPoints - 1);
+        const hw = halfWidthStart + (halfWidthEnd - halfWidthStart) * t;
+        p.x = startX + i * step;
+        p.y = centerY - hw;
+      }
+      for (let i = numPoints - 1; i >= 0; i--) {
+        const p = trailPoly.points.appendItem(svg.createSVGPoint());
+        const t = i / (numPoints - 1);
+        const hw = halfWidthStart + (halfWidthEnd - halfWidthStart) * t;
+        p.x = startX + i * step;
+        p.y = centerY + hw;
+      }
 
       if (prefersReducedMotion) {
         gsap.set(assembly, { x: 0 });
@@ -46,11 +71,11 @@ export default function RocketTrailAnimation() {
         return;
       }
 
-      // Markers hidden until the rocket finishes sliding in
+      // Scroll animation: rocket slides in from right
       gsap.set(assembly, { x: "100vw" });
       gsap.set(markers, { opacity: 0 });
 
-      // Single scrubbed timeline: rocket slides in for 88%, then markers fade in
+      const scrub = isMobile ? MOBILE_TIMELINE_SCRUB : TIMELINE_SCROLL.scrub;
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger,
@@ -62,6 +87,23 @@ export default function RocketTrailAnimation() {
 
       tl.to(assembly, { x: 0, ease: CustomEase.create("rocketSlide", ROCKET_SLIDE_EASE), duration: 0.88 }, 0);
       tl.to(markers, { opacity: 1, ease: "power2.out", duration: 0.12 }, 0.88);
+
+      // Continuous wave animation — independent of scroll, runs forever
+      // Top edge: points 0..numPoints-1, ordered left→right
+      const topEdge: SVGPoint[] = [];
+      for (let i = 0; i < numPoints; i++) topEdge.push(trailPoly.points.getItem(i));
+
+      // Bottom edge: points stored right→left; reverse so index 0 = leftmost (matches topEdge[0])
+      const bottomEdge: SVGPoint[] = [];
+      for (let i = 0; i < numPoints; i++) bottomEdge.push(trailPoly.points.getItem(2 * numPoints - 1 - i));
+
+      // Amplitude grows from 0 at the rocket (index 0) to full at the far end (index numPoints-1).
+      // This keeps the trail anchored at the rocket and lets the wave grow outward.
+      const waveY = (i: number) => `+=${amplitude * (i / (numPoints - 1))}`;
+      const staggerCfg = { each: staggerEach, repeat: -1, yoyo: true };
+
+      gsap.to(topEdge,    { y: waveY, stagger: staggerCfg, ease: "sine.inOut", duration });
+      gsap.to(bottomEdge, { y: waveY, stagger: staggerCfg, ease: "sine.inOut", duration });
     },
     { scope: clipRef, dependencies: [isMobile, prefersReducedMotion] },
   );
@@ -146,9 +188,9 @@ export default function RocketTrailAnimation() {
             )}
           </defs>
 
-          {/* Trail shape */}
-          <path
-            d={TRAIL_PATH}
+          {/* Animated wave trail polygon — points built imperatively in useGSAP */}
+          <polygon
+            ref={trailPolyRef}
             fill="url(#timelineTrailGradient)"
             filter={isMobile ? undefined : "url(#timelineGrain)"}
           />

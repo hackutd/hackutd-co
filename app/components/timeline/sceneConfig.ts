@@ -53,3 +53,15 @@ export const TIMELINE_LAYOUT = {
 } as const;
 
 export const MOBILE_TIMELINE_SCRUB = 0.6;
+
+export const TRAIL_WAVE = {
+  numPoints: 80,
+  startX: 202,
+  endX: 1370,
+  centerY: 192,
+  halfWidthStart: 30,   // thick near rocket nozzle
+  halfWidthEnd: 155,    // very thick at far end (dispersed exhaust)
+  amplitude: 90,        // max wave amplitude at far end (0 at rocket)
+  staggerEach: 0.08,    // large stagger → ~2–3 visible sine crests across trail
+  duration: 1.2,
+} as const;
