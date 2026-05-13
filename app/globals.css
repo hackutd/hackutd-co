@@ -71,19 +71,4 @@ body {
   }
 }
 
-/* ── Sponsor globe logo cards ── */
-.sponsor-logo-card {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px;
-  border-radius: 8px;
-  transition:
-    transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 0.3s ease;
-}
-
-.sponsor-logo-card:hover {
-  transform: translateZ(18px) scale(1.1);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
-}
+/* ── Sponsor cards ── */
