@@ -25,102 +25,35 @@ interface TowerSceneProps {
   sponsors: SponsorData[];
 }
 
-// ── Extract triangle faces from globe region of model ───────
-function extractGlobeTriangles(
-  scene: THREE.Object3D,
-  scale: number,
-  centerY: number
-): TriFace[] {
+// ── Procedurally generate band positions around the globe ──
+function generateBandPositions(sponsorsCount: number): TriFace[] {
+  const bands = 4;
+  const globeCenterY = 125; // Centered near the top of the 350-unit tall model
+  const radius = 42; // Constant radius for cylindrical layout
   const faces: TriFace[] = [];
-  const box = new THREE.Box3().setFromObject(scene);
-  const modelHeight = (box.max.y - box.min.y) * scale;
-  // Globe is top ~30% of the tower
-  const globeThresholdY = (box.min.y + (box.max.y - box.min.y) * 0.65) * scale - centerY;
+  
+  const sponsorsPerBand = Math.ceil(sponsorsCount / bands);
+  const yOffsets = [-12, -4, 4, 12]; // Vertical distribution
 
-  scene.traverse((child) => {
-    if (!(child instanceof THREE.Mesh)) return;
-    const geo = child.geometry;
-    if (!geo || !geo.attributes.position) return;
-
-    const pos = geo.attributes.position;
-    const index = geo.index;
-    const worldMatrix = child.matrixWorld.clone();
-
-    const triCount = index ? index.count / 3 : pos.count / 3;
-    const vA = new THREE.Vector3();
-    const vB = new THREE.Vector3();
-    const vC = new THREE.Vector3();
-
-    for (let i = 0; i < triCount; i++) {
-      if (index) {
-        vA.fromBufferAttribute(pos, index.getX(i * 3));
-        vB.fromBufferAttribute(pos, index.getX(i * 3 + 1));
-        vC.fromBufferAttribute(pos, index.getX(i * 3 + 2));
-      } else {
-        vA.fromBufferAttribute(pos, i * 3);
-        vB.fromBufferAttribute(pos, i * 3 + 1);
-        vC.fromBufferAttribute(pos, i * 3 + 2);
-      }
-
-      // Transform to world space then scale
-      vA.applyMatrix4(worldMatrix).multiplyScalar(scale);
-      vB.applyMatrix4(worldMatrix).multiplyScalar(scale);
-      vC.applyMatrix4(worldMatrix).multiplyScalar(scale);
-
-      // Offset Y to match model positioning
-      vA.y -= centerY;
-      vB.y -= centerY;
-      vC.y -= centerY;
-
-      const center = new THREE.Vector3()
-        .addVectors(vA, vB)
-        .add(vC)
-        .divideScalar(3);
-
-      // Only faces in globe region
-      if (center.y < globeThresholdY) continue;
-
-      // Compute face normal
-      const edge1 = new THREE.Vector3().subVectors(vB, vA);
-      const edge2 = new THREE.Vector3().subVectors(vC, vA);
-      const normal = new THREE.Vector3().crossVectors(edge1, edge2).normalize();
-
-      // Face size (area)
-      const area = new THREE.Vector3().crossVectors(edge1, edge2).length() * 0.5;
-
-      // Skip tiny degenerate triangles
-      if (area < 0.01) continue;
-
-      faces.push({ center, normal, size: Math.sqrt(area) * 0.6 });
+  for (let b = 0; b < bands; b++) {
+    const y = globeCenterY + yOffsets[b];
+    const r = radius;
+    
+    for (let i = 0; i < sponsorsPerBand; i++) {
+      if (faces.length >= sponsorsCount) break;
+      
+      const angle = (i / sponsorsPerBand) * Math.PI * 2;
+      const x = Math.cos(angle) * r;
+      const z = Math.sin(angle) * r;
+      
+      const center = new THREE.Vector3(x, y, z);
+      const normal = new THREE.Vector3(x, 0, z).normalize();
+      
+      // Use a consistent size for all procedural "faces"
+      faces.push({ center, normal, size: 22 });
     }
-  });
-
-  return faces;
-}
-
-// ── Select well-spaced triangles for sponsor placement ──────
-function selectSponsorFaces(faces: TriFace[], count: number): TriFace[] {
-  if (faces.length === 0) return [];
-
-  // Sort by size descending — prefer larger triangles
-  const sorted = [...faces].sort((a, b) => b.size - a.size);
-
-  const selected: TriFace[] = [];
-  const minDist = 1.2; // minimum distance between selected faces
-
-  for (const face of sorted) {
-    if (selected.length >= count) break;
-
-    // Check distance to already selected faces
-    const tooClose = selected.some(
-      (s) => s.center.distanceTo(face.center) < minDist
-    );
-    if (tooClose) continue;
-
-    selected.push(face);
   }
-
-  return selected;
+  return faces;
 }
 
 // ── Single sponsor logo plane ───────────────────────────────
@@ -132,7 +65,7 @@ function SponsorPlane({
   logoUrl: string;
 }) {
   const texture = useLoader(THREE.TextureLoader, logoUrl);
-  const meshRef = useRef<THREE.Mesh>(null);
+  const groupRef = useRef<THREE.Group>(null);
 
   const quaternion = useMemo(() => {
     const q = new THREE.Quaternion();
@@ -141,13 +74,27 @@ function SponsorPlane({
     return q;
   }, [face.normal]);
 
+  const aspect = texture.image ? texture.image.width / texture.image.height : 1;
+  const logoWidth = face.size * 0.15 * aspect;
+  const logoHeight = face.size * 0.15;
+
+  const bgWidth = face.size * 0.18 * aspect;
+  const bgHeight = face.size * 0.18;
+
   return (
-    <mesh
-      ref={meshRef}
+    <group
+      ref={groupRef}
       position={[face.center.x, face.center.y, face.center.z]}
       quaternion={quaternion}
     >
-      <planeGeometry args={[face.size * 1.4, face.size * 1.4]} />
+      {/* White background rectangle */}
+      <mesh position={[0, 0, 0.05]} renderOrder={1}>
+        <planeGeometry args={[bgWidth, bgHeight]} />
+        <meshBasicMaterial color="white" transparent opacity={0.9} />
+      </mesh>
+      {/* Logo plane */}
+      <mesh position={[0, 0, 0.11]} renderOrder={2}>
+        <planeGeometry args={[logoWidth, logoHeight]} />
       <meshBasicMaterial
         map={texture}
         transparent
@@ -155,7 +102,8 @@ function SponsorPlane({
         depthWrite={false}
         opacity={0.92}
       />
-    </mesh>
+      </mesh>
+    </group>
   );
 }
 
@@ -191,11 +139,8 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
 
   // Extract globe triangle faces for sponsor placement
   const sponsorFaces = useMemo(() => {
-    // Update world matrices before scanning
-    clonedScene.updateMatrixWorld(true);
-    const allFaces = extractGlobeTriangles(clonedScene, normScale, centerY);
-    return selectSponsorFaces(allFaces, sponsors.length);
-  }, [clonedScene, normScale, centerY, sponsors.length]);
+    return generateBandPositions(sponsors.length);
+  }, [sponsors.length]);
 
   // Filter sponsors to ones with valid logos
   const validSponsors = useMemo(
@@ -229,7 +174,7 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
         position={[0, -centerY, 0]}
       />
       {/* Sponsor group handles the primary rotation */}
-      <group ref={sponsorGroupRef}>
+      <group ref={sponsorGroupRef} position={[0, 0, 0]}>
         {sponsorFaces.map((face, i) => {
           const sponsor = validSponsors[i % validSponsors.length];
           if (!sponsor?.logo) return null;
