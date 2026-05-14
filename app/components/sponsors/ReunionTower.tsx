@@ -163,6 +163,7 @@ function SponsorPlane({
 function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerSceneProps) {
   const { scene } = useGLTF(MODEL_PATH);
   const globeRef = useRef<THREE.Object3D | null>(null);
+  const sponsorGroupRef = useRef<THREE.Group>(null);
   const smoothRotation = useRef(0);
   const autoAngle = useRef(0);
 
@@ -175,7 +176,7 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
     const center = new THREE.Vector3();
     box.getSize(size);
     box.getCenter(center);
-    const s = 200 / size.y;
+    const s = 350 / size.y;
     return { normScale: s, centerY: center.y * s };
   }, [clonedScene]);
 
@@ -211,8 +212,13 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
     const target = autoAngle.current + scrollAngle + dragAngle;
 
     smoothRotation.current += (target - smoothRotation.current) * 0.08;
-    // Only rotate the PlatonicSphere node — the tower body stays still
-    globeRef.current.rotation.y = smoothRotation.current;
+
+    // 1. Inside part (sponsors) rotates in the original direction
+    if (sponsorGroupRef.current) {
+      sponsorGroupRef.current.rotation.y = smoothRotation.current;
+    }
+    // 2. Globe rotates in the opposite direction at half speed
+    globeRef.current.rotation.y = -smoothRotation.current * 0.5;
   });
 
   return (
@@ -222,16 +228,18 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
         scale={[normScale, normScale, normScale]}
         position={[0, -centerY, 0]}
       />
-      {/* Sponsor logos placed in globe triangle gaps */}
-      {sponsorFaces.map((face, i) => {
-        const sponsor = validSponsors[i % validSponsors.length];
-        if (!sponsor?.logo) return null;
-        return (
-          <Suspense key={`sponsor-${i}`} fallback={null}>
-            <SponsorPlane face={face} logoUrl={sponsor.logo} />
-          </Suspense>
-        );
-      })}
+      {/* Sponsor group handles the primary rotation */}
+      <group ref={sponsorGroupRef}>
+        {sponsorFaces.map((face, i) => {
+          const sponsor = validSponsors[i % validSponsors.length];
+          if (!sponsor?.logo) return null;
+          return (
+            <Suspense key={`sponsor-${i}`} fallback={null}>
+              <SponsorPlane face={face} logoUrl={sponsor.logo} />
+            </Suspense>
+          );
+        })}
+      </group>
     </group>
   );
 }
@@ -242,17 +250,17 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
 function CameraRig({ scrollProgressRef }: { scrollProgressRef: React.RefObject<number> }) {
   const { camera } = useThree();
   const smoothZ = useRef(20);
-  const smoothY = useRef(97);
-  const smoothLookY = useRef(94);
+  const smoothY = useRef(155);
+  const smoothLookY = useRef(150);
 
   useFrame(() => {
     const p = scrollProgressRef.current ?? 0;
 
-    // p=0: lookAt Y=94, visible top = 94+10.4 = 104.4, globe top Y=100 → 4.4 units headroom
-    // p=1: pulled back to see full tower
-    const targetZ = 20 + p * 170;
-    const targetY = 97 - p * 67;
-    const targetLookY = 94 - p * 84;
+    // Values recalculated for a base scale of 320 (1.6x the original 200)
+    // targetZ at p=1 moves from 190 to 304 to maintain vertical framing while increasing width
+    const targetZ = 20 + p * 284;
+    const targetY = 155 - p * 107;
+    const targetLookY = 150 - p * 134;
 
     smoothZ.current += (targetZ - smoothZ.current) * 0.06;
     smoothY.current += (targetY - smoothY.current) * 0.06;
@@ -289,7 +297,7 @@ export default function ReunionTower({
         stencil: false,
         depth: true,
       }}
-      camera={{ position: [0, 97, 20], fov: 55, near: 0.1, far: 1000 }}
+      camera={{ position: [0, 155, 20], fov: 55, near: 0.1, far: 2000 }}
       style={{ background: "transparent", touchAction: "pan-y" }}
       frameloop="always"
     >
