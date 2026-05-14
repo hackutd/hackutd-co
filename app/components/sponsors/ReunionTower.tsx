@@ -162,7 +162,7 @@ function SponsorPlane({
 // ── Tower model with sponsor logos in globe triangles ────────
 function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerSceneProps) {
   const { scene } = useGLTF(MODEL_PATH);
-  const groupRef = useRef<THREE.Group>(null);
+  const globeRef = useRef<THREE.Object3D | null>(null);
   const smoothRotation = useRef(0);
   const autoAngle = useRef(0);
 
@@ -177,6 +177,15 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
     box.getCenter(center);
     const s = 200 / size.y;
     return { normScale: s, centerY: center.y * s };
+  }, [clonedScene]);
+
+  // Find the PlatonicSphere node (the actual globe ball) to rotate independently
+  useEffect(() => {
+    clonedScene.traverse((child) => {
+      if (child.name === "PlatonicSphere") {
+        globeRef.current = child;
+      }
+    });
   }, [clonedScene]);
 
   // Extract globe triangle faces for sponsor placement
@@ -194,7 +203,7 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
   );
 
   useFrame((_, delta) => {
-    if (!groupRef.current) return;
+    if (!globeRef.current) return;
 
     autoAngle.current += delta * 0.3;
     const scrollAngle = (scrollProgressRef.current ?? 0) * Math.PI * 2;
@@ -202,11 +211,12 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
     const target = autoAngle.current + scrollAngle + dragAngle;
 
     smoothRotation.current += (target - smoothRotation.current) * 0.08;
-    groupRef.current.rotation.y = smoothRotation.current;
+    // Only rotate the PlatonicSphere node — the tower body stays still
+    globeRef.current.rotation.y = smoothRotation.current;
   });
 
   return (
-    <group ref={groupRef} dispose={null}>
+    <group dispose={null}>
       <primitive
         object={clonedScene}
         scale={[normScale, normScale, normScale]}
