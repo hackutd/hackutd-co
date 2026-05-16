@@ -7,6 +7,8 @@ import * as THREE from "three";
 
 const MODEL_PATH = "/models/reunion-tower.glb";
 
+const GLOBE_RADIUS = 36;
+
 // ── Types ───────────────────────────────────────────────────
 interface TriFace {
   center: THREE.Vector3;
@@ -29,7 +31,7 @@ interface TowerSceneProps {
 function generateBandPositions(sponsorsCount: number): TriFace[] {
   const bands = 4;
   const globeCenterY = 125; // Centered near the top of the 350-unit tall model
-  const radius = 42; // Constant radius for cylindrical layout
+  const radius = GLOBE_RADIUS; // Constant radius for cylindrical layout
   const faces: TriFace[] = [];
   
   const sponsorsPerBand = Math.ceil(sponsorsCount / bands);
@@ -81,20 +83,26 @@ function SponsorPlane({
   const bgWidth = face.size * 0.18 * aspect;
   const bgHeight = face.size * 0.18;
 
+  // Calculate angular spans for the curved surface (chord length / radius approx)
+  const thetaLength = logoWidth / GLOBE_RADIUS;
+  const thetaStart = -thetaLength / 2;
+  const bgThetaLength = bgWidth / GLOBE_RADIUS;
+  const bgThetaStart = -bgThetaLength / 2;
+
   return (
     <group
       ref={groupRef}
       position={[face.center.x, face.center.y, face.center.z]}
       quaternion={quaternion}
     >
-      {/* White background rectangle */}
-      <mesh position={[0, 0, 0.05]} renderOrder={1}>
-        <planeGeometry args={[bgWidth, bgHeight]} />
-        <meshBasicMaterial color="white" transparent opacity={0.9} />
+      {/* Test background curved segment (Pink) */}
+      <mesh position={[0, 0, -GLOBE_RADIUS + 0.05]} renderOrder={1}>
+        <cylinderGeometry args={[GLOBE_RADIUS, GLOBE_RADIUS, bgHeight, 16, 1, true, bgThetaStart, bgThetaLength]} />
+        <meshBasicMaterial color="pink" transparent opacity={0.9} />
       </mesh>
-      {/* Logo plane */}
-      <mesh position={[0, 0, 0.11]} renderOrder={2}>
-        <planeGeometry args={[logoWidth, logoHeight]} />
+      {/* Logo curved segment */}
+      <mesh position={[0, 0, -GLOBE_RADIUS + 0.11]} renderOrder={2}>
+        <cylinderGeometry args={[GLOBE_RADIUS, GLOBE_RADIUS, logoHeight, 16, 1, true, thetaStart, thetaLength]} />
       <meshBasicMaterial
         map={texture}
         transparent
@@ -174,7 +182,7 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
         position={[0, -centerY, 0]}
       />
       {/* Sponsor group handles the primary rotation */}
-      <group ref={sponsorGroupRef} position={[0, 0, 0]}>
+      <group ref={sponsorGroupRef} position={[-2, 0, 0]}>
         {sponsorFaces.map((face, i) => {
           const sponsor = validSponsors[i % validSponsors.length];
           if (!sponsor?.logo) return null;
