@@ -20,11 +20,22 @@ import {
 
 configureScrollTrigger();
 
+// Width profile: narrow at rocket → spikes to peak → settles.
+// (t/peakT)·exp(1 − t/peakT) is a spike function that equals exactly 1 at t=peakT.
+// The offset term forces hw(0) = hwMin regardless of hwEnd.
+function trailHW(t: number, hwMin: number, hwPeak: number, hwEnd: number, peakT: number): number {
+  const spike  = (hwPeak - hwEnd) * (t / peakT) * Math.exp(1 - t / peakT);
+  const offset = (hwMin  - hwEnd) * Math.exp(-20 * t);
+  return hwEnd + spike + offset;
+}
+
 export default function RocketTrailAnimation() {
   const clipRef = useRef<HTMLDivElement>(null);
   const assemblyRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<SVGGElement>(null);
   const trailPolyRef = useRef<SVGPolygonElement>(null);
+  // Individual refs for each marker <g> so GSAP can wave them in sync with the trail
+  const markerRefs = useRef<(SVGGElement | null)[]>([]);
 
   const isMobile = useIsMobile();
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -43,7 +54,7 @@ export default function RocketTrailAnimation() {
       const svg = trailPoly.ownerSVGElement;
       if (!svg) return;
 
-      const { numPoints, startX, endX, centerY, halfWidthStart, halfWidthEnd, amplitude, staggerEach, duration } = TRAIL_WAVE;
+      const { numPoints, startX, endX, centerY, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT, maxAmplitude, staggerEach, duration } = TRAIL_WAVE;
 
       // Build polygon: top edge (left→right) then bottom edge (right→left) = closed band
       while (trailPoly.points.numberOfItems > 0) trailPoly.points.removeItem(0);
@@ -53,17 +64,24 @@ export default function RocketTrailAnimation() {
       for (let i = 0; i < numPoints; i++) {
         const p = trailPoly.points.appendItem(svg.createSVGPoint());
         const t = i / (numPoints - 1);
-        const hw = halfWidthStart + (halfWidthEnd - halfWidthStart) * t;
+        const hw = trailHW(t, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT);
         p.x = startX + i * step;
         p.y = centerY - hw;
       }
       for (let i = numPoints - 1; i >= 0; i--) {
         const p = trailPoly.points.appendItem(svg.createSVGPoint());
         const t = i / (numPoints - 1);
-        const hw = halfWidthStart + (halfWidthEnd - halfWidthStart) * t;
+        const hw = trailHW(t, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT);
         p.x = startX + i * step;
         p.y = centerY + hw;
       }
+
+      // Position each marker group via GSAP so it owns the SVG transform
+      // (children use group-relative coordinates, GSAP then animates y in the wave)
+      YEAR_MARKERS.forEach((marker, i) => {
+        const el = markerRefs.current[i];
+        if (el) gsap.set(el, { x: marker.x, y: marker.y });
+      });
 
       if (prefersReducedMotion) {
         gsap.set(assembly, { x: 0 });
@@ -75,6 +93,53 @@ export default function RocketTrailAnimation() {
       gsap.set(assembly, { x: "100vw" });
       gsap.set(markers, { opacity: 0 });
 
+      // --- Wave animation (created first so scroll callbacks can reference it) ---
+      const topEdge: SVGPoint[] = [];
+      for (let i = 0; i < numPoints; i++) topEdge.push(trailPoly.points.getItem(i));
+      const bottomEdge: SVGPoint[] = [];
+      for (let i = 0; i < numPoints; i++) bottomEdge.push(trailPoly.points.getItem(2 * numPoints - 1 - i));
+
+      const waveY = (i: number): string => {
+        const t = i / (numPoints - 1);
+        const hw = trailHW(t, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT);
+        const factor = (hw - halfWidthMin) / (halfWidthPeak - halfWidthMin);
+        return `+=${maxAmplitude * factor}`;
+      };
+      const staggerCfg = { each: staggerEach, repeat: -1, yoyo: true };
+
+      const topWave = gsap.to(topEdge,    { y: waveY, stagger: staggerCfg, ease: "sine.inOut", duration });
+      const botWave = gsap.to(bottomEdge, { y: waveY, stagger: staggerCfg, ease: "sine.inOut", duration });
+
+      // Marker tweens — each marker syncs to the trail point at its x position.
+      // Matching the stagger delay (idx * staggerEach) keeps it phase-locked with the polygon.
+      const markerTweens: gsap.core.Tween[] = [];
+      YEAR_MARKERS.forEach((marker, i) => {
+        const el = markerRefs.current[i];
+        if (!el) return;
+        const idx = Math.max(0, Math.min(numPoints - 1, Math.round((marker.x - startX) / step)));
+        const t   = idx / (numPoints - 1);
+        const hw  = trailHW(t, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT);
+        const amp = maxAmplitude * (hw - halfWidthMin) / (halfWidthPeak - halfWidthMin);
+        markerTweens.push(
+          gsap.to(el, { y: `+=${amp}`, delay: idx * staggerEach, duration, ease: "sine.inOut", repeat: -1, yoyo: true }),
+        );
+      });
+
+      // Collect all wave tweens so speed control is applied uniformly
+      const FAST_TS = 1.6;
+      const SLOW_TS = 0.35;
+      const allWaveTweens = [topWave, botWave, ...markerTweens];
+      allWaveTweens.forEach(tw => tw.timeScale(FAST_TS));
+
+      let rocketDone = false;
+      const setWaveSpeed = (slow: boolean) => {
+        const ts = slow ? SLOW_TS : FAST_TS;
+        allWaveTweens.forEach(tw =>
+          gsap.to(tw, { timeScale: ts, duration: 1.2, ease: "power1.inOut", overwrite: true }),
+        );
+      };
+
+      // --- Scroll-driven rocket slide ---
       const scrub = isMobile ? MOBILE_TIMELINE_SCRUB : TIMELINE_SCROLL.scrub;
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -82,28 +147,18 @@ export default function RocketTrailAnimation() {
           start: TIMELINE_SCROLL.start,
           end: TIMELINE_SCROLL.end,
           scrub,
+          onUpdate(self) {
+            const done = self.progress >= 0.88;
+            if (done !== rocketDone) { rocketDone = done; setWaveSpeed(done); }
+          },
+          onLeave()      { if (!rocketDone) { rocketDone = true;  setWaveSpeed(true);  } },
+          onEnterBack()  {                    rocketDone = false; setWaveSpeed(false); },
+          onLeaveBack()  {                    rocketDone = false; setWaveSpeed(false); },
         },
       });
 
       tl.to(assembly, { x: 0, ease: CustomEase.create("rocketSlide", ROCKET_SLIDE_EASE), duration: 0.88 }, 0);
       tl.to(markers, { opacity: 1, ease: "power2.out", duration: 0.12 }, 0.88);
-
-      // Continuous wave animation — independent of scroll, runs forever
-      // Top edge: points 0..numPoints-1, ordered left→right
-      const topEdge: SVGPoint[] = [];
-      for (let i = 0; i < numPoints; i++) topEdge.push(trailPoly.points.getItem(i));
-
-      // Bottom edge: points stored right→left; reverse so index 0 = leftmost (matches topEdge[0])
-      const bottomEdge: SVGPoint[] = [];
-      for (let i = 0; i < numPoints; i++) bottomEdge.push(trailPoly.points.getItem(2 * numPoints - 1 - i));
-
-      // Amplitude grows from 0 at the rocket (index 0) to full at the far end (index numPoints-1).
-      // This keeps the trail anchored at the rocket and lets the wave grow outward.
-      const waveY = (i: number) => `+=${amplitude * (i / (numPoints - 1))}`;
-      const staggerCfg = { each: staggerEach, repeat: -1, yoyo: true };
-
-      gsap.to(topEdge,    { y: waveY, stagger: staggerCfg, ease: "sine.inOut", duration });
-      gsap.to(bottomEdge, { y: waveY, stagger: staggerCfg, ease: "sine.inOut", duration });
     },
     { scope: clipRef, dependencies: [isMobile, prefersReducedMotion] },
   );
@@ -210,18 +265,14 @@ export default function RocketTrailAnimation() {
 
           {/* Year markers — hidden until rocket finishes sliding in */}
           <g ref={markersRef}>
-            {YEAR_MARKERS.map((marker) => (
-              <g key={marker.year}>
-                <ellipse
-                  cx={marker.x}
-                  cy={marker.y}
-                  rx={marker.rx}
-                  ry={marker.ry}
-                  fill="white"
-                />
+            {YEAR_MARKERS.map((marker, i) => (
+              // ref lets GSAP set translate(marker.x, marker.y) and then wave the y
+              // children use group-relative coords (origin = marker center)
+              <g key={marker.year} ref={el => { markerRefs.current[i] = el; }}>
+                <ellipse cx={0} cy={0} rx={marker.rx} ry={marker.ry} fill="white" />
                 <text
-                  x={marker.x}
-                  y={marker.y + marker.ry + yearFontSize * 1.2}
+                  x={0}
+                  y={marker.ry + yearFontSize * 1.2}
                   textAnchor="middle"
                   fill="white"
                   fontSize={yearFontSize}
@@ -231,8 +282,8 @@ export default function RocketTrailAnimation() {
                   {marker.year}
                 </text>
                 <text
-                  x={marker.x}
-                  y={marker.y + marker.ry + yearFontSize * 1.2 + nameFontSize * 1.6}
+                  x={0}
+                  y={marker.ry + yearFontSize * 1.2 + nameFontSize * 1.6}
                   textAnchor="middle"
                   fill="white"
                   fontSize={nameFontSize}

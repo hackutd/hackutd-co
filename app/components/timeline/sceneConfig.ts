@@ -28,13 +28,13 @@ export type YearMarker = {
 };
 
 export const YEAR_MARKERS: YearMarker[] = [
-  { year: "2025", name: "HACKUTD XII",  x: 375,  y: 212, rx: 52, ry: 57 },
-  { year: "2024", name: "HACKUTD XI",   x: 535,  y: 256, rx: 43, ry: 48 },
-  { year: "2023", name: "HACKUTD X",    x: 700,  y: 232, rx: 38, ry: 43 },
-  { year: "2022", name: "HACKUTD IX",   x: 858,  y: 165, rx: 35, ry: 39 },
-  { year: "2021", name: "HACKUTD VIII", x: 1010, y: 180, rx: 32, ry: 36 },
-  { year: "2019", name: "HACKUTD VI",   x: 1155, y: 152, rx: 28, ry: 32 },
-  { year: "2018", name: "HACKUTD V",    x: 1295, y: 198, rx: 24, ry: 27 },
+  { year: "2025", name: "HACKUTD XII",  x: 375,  y: 162, rx: 52, ry: 60 },
+  { year: "2024", name: "HACKUTD XI",   x: 535,  y: 176, rx: 52, ry: 60 },
+  { year: "2023", name: "HACKUTD X",    x: 700,  y: 182, rx: 52, ry: 60 },
+  { year: "2022", name: "HACKUTD IX",   x: 858,  y: 165, rx: 52, ry: 60 },
+  { year: "2021", name: "HACKUTD VIII", x: 1010, y: 180, rx: 52, ry: 60 },
+  { year: "2019", name: "HACKUTD VI",   x: 1155, y: 152, rx: 52, ry: 60 },
+  { year: "2018", name: "HACKUTD V",    x: 1295, y: 178, rx: 52, ry: 60 },
 ];
 
 export const TIMELINE_SCROLL = {
@@ -58,10 +58,12 @@ export const TRAIL_WAVE = {
   numPoints: 80,
   startX: 202,
   endX: 1370,
-  centerY: 192,
-  halfWidthStart: 30,   // thick near rocket nozzle
-  halfWidthEnd: 155,    // very thick at far end (dispersed exhaust)
-  amplitude: 90,        // max wave amplitude at far end (0 at rocket)
+  centerY: 179,
+  halfWidthMin: 12,     // very narrow at rocket nozzle (t=0)
+  halfWidthPeak: 115,   // cone width once fully open
+  halfWidthEnd: 140,    // stays wide, slight taper at far end
+  peakT: 0.15,          // cone opens up in first 15% of trail, then holds
+  maxAmplitude: 80,     // wave amplitude scales with width (0 at rocket, peaks then settles)
   staggerEach: 0.08,    // large stagger → ~2–3 visible sine crests across trail
   duration: 1.2,
 } as const;
