@@ -20,13 +20,15 @@ import {
 
 configureScrollTrigger();
 
-// Width profile: narrow at rocket → spikes to peak → settles.
+// Width profile: narrow at rocket → spikes to peak → settles → bursts at tail.
 // (t/peakT)·exp(1 − t/peakT) is a spike function that equals exactly 1 at t=peakT.
 // The offset term forces hw(0) = hwMin regardless of hwEnd.
-function trailHW(t: number, hwMin: number, hwPeak: number, hwEnd: number, peakT: number): number {
-  const spike  = (hwPeak - hwEnd) * (t / peakT) * Math.exp(1 - t / peakT);
-  const offset = (hwMin  - hwEnd) * Math.exp(-20 * t);
-  return hwEnd + spike + offset;
+// The tailBurst term adds a dramatic flare in the last portion of the trail.
+function trailHW(t: number, hwMin: number, hwPeak: number, hwEnd: number, peakT: number, hwTailBurst: number, tailSharpness: number): number {
+  const spike     = (hwPeak - hwEnd) * (t / peakT) * Math.exp(1 - t / peakT);
+  const offset    = (hwMin  - hwEnd) * Math.exp(-20 * t);
+  const tailBurst = (hwTailBurst - hwEnd) * Math.exp(-tailSharpness * (1 - t));
+  return hwEnd + spike + offset + tailBurst;
 }
 
 export default function RocketTrailAnimation() {
@@ -54,7 +56,7 @@ export default function RocketTrailAnimation() {
       const svg = trailPoly.ownerSVGElement;
       if (!svg) return;
 
-      const { numPoints, startX, endX, centerY, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT, maxAmplitude, staggerEach, duration } = TRAIL_WAVE;
+      const { numPoints, startX, endX, centerY, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT, maxAmplitude, staggerEach, duration, hwTailBurst, tailSharpness } = TRAIL_WAVE;
 
       // Build polygon: top edge (left→right) then bottom edge (right→left) = closed band
       while (trailPoly.points.numberOfItems > 0) trailPoly.points.removeItem(0);
@@ -64,14 +66,14 @@ export default function RocketTrailAnimation() {
       for (let i = 0; i < numPoints; i++) {
         const p = trailPoly.points.appendItem(svg.createSVGPoint());
         const t = i / (numPoints - 1);
-        const hw = trailHW(t, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT);
+        const hw = trailHW(t, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT, hwTailBurst, tailSharpness);
         p.x = startX + i * step;
         p.y = centerY - hw;
       }
       for (let i = numPoints - 1; i >= 0; i--) {
         const p = trailPoly.points.appendItem(svg.createSVGPoint());
         const t = i / (numPoints - 1);
-        const hw = trailHW(t, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT);
+        const hw = trailHW(t, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT, hwTailBurst, tailSharpness);
         p.x = startX + i * step;
         p.y = centerY + hw;
       }
@@ -101,8 +103,8 @@ export default function RocketTrailAnimation() {
 
       const waveY = (i: number): string => {
         const t = i / (numPoints - 1);
-        const hw = trailHW(t, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT);
-        const factor = (hw - halfWidthMin) / (halfWidthPeak - halfWidthMin);
+        const hw = trailHW(t, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT, hwTailBurst, tailSharpness);
+        const factor = Math.min(1, (hw - halfWidthMin) / (halfWidthPeak - halfWidthMin));
         return `+=${maxAmplitude * factor}`;
       };
       const staggerCfg = { each: staggerEach, repeat: -1, yoyo: true };
@@ -118,8 +120,8 @@ export default function RocketTrailAnimation() {
         if (!el) return;
         const idx = Math.max(0, Math.min(numPoints - 1, Math.round((marker.x - startX) / step)));
         const t   = idx / (numPoints - 1);
-        const hw  = trailHW(t, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT);
-        const amp = maxAmplitude * (hw - halfWidthMin) / (halfWidthPeak - halfWidthMin);
+        const hw  = trailHW(t, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT, hwTailBurst, tailSharpness);
+        const amp = maxAmplitude * Math.min(1, (hw - halfWidthMin) / (halfWidthPeak - halfWidthMin));
         markerTweens.push(
           gsap.to(el, { y: `+=${amp}`, delay: idx * staggerEach, duration, ease: "sine.inOut", repeat: -1, yoyo: true }),
         );
@@ -183,7 +185,7 @@ export default function RocketTrailAnimation() {
         <svg
           viewBox="0 0 1371 402"
           className="w-screen"
-          style={{ height: "auto", minWidth: "900px" }}
+          style={{ height: "auto", minWidth: "900px", overflow: "visible" }}
           aria-hidden="true"
           xmlns="http://www.w3.org/2000/svg"
         >

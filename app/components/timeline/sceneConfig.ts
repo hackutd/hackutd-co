@@ -61,9 +61,11 @@ export const TRAIL_WAVE = {
   centerY: 179,
   halfWidthMin: 12,     // very narrow at rocket nozzle (t=0)
   halfWidthPeak: 115,   // cone width once fully open
-  halfWidthEnd: 140,    // stays wide, slight taper at far end
+  halfWidthEnd: 140,    // baseline width after the spike settles
   peakT: 0.15,          // cone opens up in first 15% of trail, then holds
   maxAmplitude: 80,     // wave amplitude scales with width (0 at rocket, peaks then settles)
   staggerEach: 0.08,    // large stagger → ~2–3 visible sine crests across trail
   duration: 1.2,
+  hwTailBurst: 240,     // dramatic flare width at the very far end of the trail
+  tailSharpness: 6,     // how concentrated the burst is near t=1 (higher = sharper)
 } as const;
