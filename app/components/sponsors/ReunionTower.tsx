@@ -29,6 +29,7 @@ const BAND_MAX_Y = CYLINDER_MAX_Y - BAND_TOP_MARGIN;     // ~141.8
 interface SponsorPlacement {
   theta: number;
   y: number;
+  sponsorIndex: number;
 }
 
 interface SponsorData {
@@ -51,55 +52,165 @@ function seededRandom(seed: number) {
   };
 }
 
-// ── Poisson-disk placement on cylinder surface ──────────────
-// logoH passed in so we can constrain logo EDGES (not just centers) within band
-function generatePlacements(count: number, logoH: number): SponsorPlacement[] {
-  const rand = seededRandom(12345);
-  // Logo edges must stay inside band — shrink valid center range by half logo height
-  const yMin = BAND_MIN_Y + logoH / 2;
-  const yMax = BAND_MAX_Y - logoH / 2;
+// ── Hybrid stratified-grid + AABB placement ────────────────
+// Step 1: Divide cylinder band into a grid for even spatial coverage
+// Step 2: Assign logos to shuffled cells (largest first get priority)
+// Step 3: Jitter within cell, AABB-check against all placed logos
+// Result: even distribution + zero overlaps + natural randomness
+const LOGO_HEIGHT = 4.752;
+const LOGO_PADDING = 3.0; // Minimum gap between any two logo edges (world units)
 
-  if (yMax <= yMin) {
-    console.warn("[Sponsors] Band too small for logos of height " + logoH);
+interface LogoFootprint {
+  sponsorIndex: number;
+  halfWidth: number;
+  halfHeight: number;
+  angularHalfWidth: number;
+  area: number;
+}
+
+interface PlacedLogo extends LogoFootprint {
+  theta: number;
+  y: number;
+}
+
+function generatePlacements(aspects: number[]): SponsorPlacement[] {
+  const N = aspects.length;
+  if (N === 0) return [];
+
+  const rand = seededRandom(54321);
+  const bandHeight = BAND_MAX_Y - BAND_MIN_Y;
+
+  if (bandHeight <= LOGO_HEIGHT) {
+    console.warn("[Sponsors] Band too small for logos");
     return [];
   }
 
-  let minArcSpacing = 14;
-  let minYSpacing = 5;
-  const placements: SponsorPlacement[] = [];
+  const circumference = 2 * Math.PI * LOGO_RADIUS;
 
-  for (let i = 0; i < count; i++) {
-    let placed = false;
-    for (let attempt = 0; attempt < 100; attempt++) {
-      const theta = rand() * Math.PI * 2;
-      const y = yMin + rand() * (yMax - yMin);
+  // Build footprints with real aspect ratios + padding
+  const footprints: LogoFootprint[] = aspects.map((aspect, i) => {
+    const w = LOGO_HEIGHT * aspect;
+    const halfW = w / 2 + LOGO_PADDING / 2;
+    const halfH = LOGO_HEIGHT / 2 + LOGO_PADDING / 2;
+    return {
+      sponsorIndex: i,
+      halfWidth: halfW,
+      halfHeight: halfH,
+      angularHalfWidth: halfW / LOGO_RADIUS,
+      area: halfW * halfH,
+    };
+  });
 
-      const tooClose = placements.some((p) => {
-        let dTheta = Math.abs(p.theta - theta);
-        if (dTheta > Math.PI) dTheta = Math.PI * 2 - dTheta;
-        const arcDist = dTheta * LOGO_RADIUS;
-        const dY = Math.abs(p.y - y);
-        return arcDist < minArcSpacing && dY < minYSpacing;
-      });
+  // Grid dimensions — roughly square cells in cylinder-surface space
+  const surfaceAspect = circumference / bandHeight;
+  const rows = Math.max(2, Math.round(Math.sqrt(N / surfaceAspect)));
+  const cols = Math.ceil(N / rows);
+  const cellTheta = (Math.PI * 2) / cols;
+  const cellH = bandHeight / rows;
 
-      if (!tooClose) {
-        placements.push({ theta, y });
-        placed = true;
-        break;
-      }
-    }
-
-    if (!placed) {
-      minArcSpacing *= 0.9;
-      minYSpacing *= 0.9;
-      i--;
-      if (minArcSpacing < 2) {
-        console.warn(`[Sponsors] Could not place all sponsors. Placed ${placements.length}/${count}`);
-        break;
-      }
+  // Build & shuffle cells
+  const cells: { row: number; col: number }[] = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      cells.push({ row: r, col: c });
     }
   }
-  return placements;
+  for (let i = cells.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [cells[i], cells[j]] = [cells[j], cells[i]];
+  }
+
+  // Sort footprints largest-first so wide logos get first pick of cells
+  const sorted = [...footprints].sort((a, b) => b.area - a.area);
+
+  // Assign cells: largest logos first, shuffled cells
+  const assignments: { fp: LogoFootprint; cell: { row: number; col: number } }[] = [];
+  for (let i = 0; i < sorted.length; i++) {
+    assignments.push({ fp: sorted[i], cell: cells[i % cells.length] });
+  }
+
+  // AABB overlap check (theta wraps)
+  function overlaps(a: PlacedLogo, b: PlacedLogo): boolean {
+    let dTheta = Math.abs(a.theta - b.theta);
+    if (dTheta > Math.PI) dTheta = 2 * Math.PI - dTheta;
+    return (
+      dTheta < a.angularHalfWidth + b.angularHalfWidth &&
+      Math.abs(a.y - b.y) < a.halfHeight + b.halfHeight
+    );
+  }
+
+  const placed: PlacedLogo[] = [];
+  const dropped: number[] = [];
+
+  for (const { fp, cell } of assignments) {
+    const cellCenterTheta = cell.col * cellTheta + cellTheta / 2;
+    const cellCenterY = BAND_MIN_Y + cell.row * cellH + cellH / 2;
+
+    // Try jittered positions within cell, AABB-checked
+    let success = false;
+    for (let attempt = 0; attempt < 60; attempt++) {
+      // Moderate jitter for even look; shrink on retries for guaranteed fit
+      const jitterScale = attempt < 30 ? 0.35 : attempt < 50 ? 0.2 : 0.05;
+      const theta = cellCenterTheta + (rand() - 0.5) * cellTheta * jitterScale;
+      let y = cellCenterY + (rand() - 0.5) * cellH * jitterScale;
+
+      // Clamp Y so logo edges stay in band
+      y = Math.max(BAND_MIN_Y + fp.halfHeight, Math.min(BAND_MAX_Y - fp.halfHeight, y));
+
+      const candidate: PlacedLogo = { ...fp, theta: ((theta % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI), y };
+
+      if (!placed.some((p) => overlaps(candidate, p))) {
+        placed.push(candidate);
+        success = true;
+        break;
+      }
+    }
+
+    // Fallback: try anywhere on cylinder (pure rejection)
+    if (!success) {
+      for (let attempt = 0; attempt < 200; attempt++) {
+        const theta = rand() * Math.PI * 2;
+        const y = BAND_MIN_Y + fp.halfHeight + rand() * (bandHeight - 2 * fp.halfHeight);
+        const candidate: PlacedLogo = { ...fp, theta, y };
+        if (!placed.some((p) => overlaps(candidate, p))) {
+          placed.push(candidate);
+          success = true;
+          break;
+        }
+      }
+    }
+
+    if (!success) dropped.push(fp.sponsorIndex);
+  }
+
+  // Verification
+  if (typeof window !== "undefined") {
+    let overlapCount = 0;
+    let bandViolations = 0;
+    for (let i = 0; i < placed.length; i++) {
+      for (let j = i + 1; j < placed.length; j++) {
+        if (overlaps(placed[i], placed[j])) overlapCount++;
+      }
+      if (placed[i].y - placed[i].halfHeight < BAND_MIN_Y ||
+          placed[i].y + placed[i].halfHeight > BAND_MAX_Y) {
+        bandViolations++;
+      }
+    }
+    console.log(
+      `[Sponsors] Hybrid grid+AABB: ${rows}×${cols} grid | ` +
+      `${placed.length}/${N} placed | Dropped: ${dropped.length} | ` +
+      `Overlaps: ${overlapCount} | Band violations: ${bandViolations}`
+    );
+    if (dropped.length > 0) {
+      console.warn("[Sponsors] Dropped indices:", dropped);
+    }
+  }
+
+  return placed.map((p) => ({
+    theta: p.theta,
+    y: p.y,
+    sponsorIndex: p.sponsorIndex,
+  }));
 }
 
 // ── Near-white discard material ─────────────────────────────
@@ -146,8 +257,7 @@ function SponsorLogo({
   const material = useWhiteDiscardMaterial(texture);
 
   const aspect = texture.image ? texture.image.width / texture.image.height : 1;
-  // 20% size increase: 3.96 * 1.2 = 4.752
-  const logoHeight = 4.752;
+  const logoHeight = LOGO_HEIGHT;
   const logoWidth = logoHeight * aspect;
 
   // Build curved arc at exact cylinder radius + tiny offset
@@ -211,12 +321,20 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
   }, [clonedScene]);
 
   const validSponsors = useMemo(() => sponsors.filter((s) => s.logo), [sponsors]);
+  const logoUrls = useMemo(() => validSponsors.map((s) => s.logo!), [validSponsors]);
 
-  // Random placement with fixed seed, constrained to blue glass band
-  const logoHeight = 4.752;
+  // Batch-load all textures to get real aspect ratios BEFORE placement
+  const textures = useLoader(THREE.TextureLoader, logoUrls);
+
+  // AABB collision placement using real per-logo aspect ratios
   const placements = useMemo(() => {
-    return generatePlacements(validSponsors.length, logoHeight);
-  }, [validSponsors.length]);
+    const texArr = Array.isArray(textures) ? textures : [textures];
+    const aspects = texArr.map((t: THREE.Texture) => {
+      const img = t.image as HTMLImageElement | undefined;
+      return img ? img.width / img.height : 1;
+    });
+    return generatePlacements(aspects);
+  }, [textures]);
 
   useFrame((_, delta) => {
     if (!globeRef.current) return;
@@ -243,7 +361,7 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
       />
       <group ref={sponsorGroupRef}>
         {placements.map((placement, i) => {
-          const sponsor = validSponsors[i % validSponsors.length];
+          const sponsor = validSponsors[placement.sponsorIndex];
           if (!sponsor?.logo) return null;
           return (
             <Suspense key={`sponsor-${i}`} fallback={null}>
