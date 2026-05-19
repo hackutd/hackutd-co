@@ -5,7 +5,7 @@ import { Canvas, useFrame, useThree, useLoader } from "@react-three/fiber";
 import { useGLTF, Environment } from "@react-three/drei";
 import * as THREE from "three";
 
-const MODEL_PATH = "/models/reunion-tower.glb";
+const MODEL_PATH = "/models/reunion-tower-simple.glb";
 
 const GLOBE_RADIUS = 36;
 
