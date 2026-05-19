@@ -169,7 +169,7 @@ export default function Sponsors() {
     return () => nav.kill();
   });
 
-  const towerH = "100vh";
+  const towerH = "max(90vh, 700px)";
 
   // ── Reduced-motion fallback ────────────────────────────────
   if (reducedMotion) {
@@ -245,7 +245,7 @@ export default function Sponsors() {
             className="sticky top-0"
             style={{
               width: "100%",
-              height: "100vh",
+              height: "max(90vh, 700px)",
               cursor: "grab",
               userSelect: "none",
             }}

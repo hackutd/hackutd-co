@@ -197,27 +197,56 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
   );
 }
 
+// ── Globe bounding sphere (computed once from sponsor band geometry) ──
+// Bands span Y = 113..137, radius = 36 → bounding sphere center ≈ (0, 125, 0), r ≈ 38
+const GLOBE_CENTER_Y = 125;
+const GLOBE_BOUNDING_R = 38; // slightly larger than GLOBE_RADIUS to cover band extents
+
 // ── Camera rig ──────────────────────────────────────────────
-// p=0 → tight on globe (fills viewport, no top clipping)
-// p=1 → pulled back to see full tower
+// Uses bounding-sphere fit: camera distance = (r / sin(fov/2)) * fitOffset
+// fitOffset 1.15 → globe fills ~85% of viewport (was ~55% before).
+// Recomputes each frame from live viewport size → responsive at all breakpoints.
 function CameraRig({ scrollProgressRef }: { scrollProgressRef: React.RefObject<number> }) {
-  const { camera } = useThree();
-  const smoothZ = useRef(20);
-  const smoothY = useRef(155);
-  const smoothLookY = useRef(150);
+  const { camera, size } = useThree();
+  const smoothZ = useRef(0);
+  const smoothY = useRef(0);
+  const smoothLookY = useRef(0);
+  const initialized = useRef(false);
 
   useFrame(() => {
     const p = scrollProgressRef.current ?? 0;
+    const cam = camera as THREE.PerspectiveCamera;
+    const aspect = size.width / size.height;
+    const vFov = THREE.MathUtils.degToRad(cam.fov);
 
-    // Values recalculated for a base scale of 320 (1.6x the original 200)
-    // targetZ at p=1 moves from 190 to 304 to maintain vertical framing while increasing width
-    const targetZ = 20 + p * 284;
-    const targetY = 155 - p * 107;
-    const targetLookY = 150 - p * 134;
+    // Fit globe's bounding sphere into the smaller of vertical/horizontal FOV
+    const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect);
+    const effectiveFov = Math.min(vFov, hFov);
 
-    smoothZ.current += (targetZ - smoothZ.current) * 0.06;
-    smoothY.current += (targetY - smoothY.current) * 0.06;
-    smoothLookY.current += (targetLookY - smoothLookY.current) * 0.06;
+    // fitOffset: lower = globe bigger in frame. 1.15 ≈ 85% fill.
+    const fitOffset = 1.15;
+    const baseZ = (GLOBE_BOUNDING_R / Math.sin(effectiveFov / 2)) * fitOffset;
+
+    // Update near/far from computed distance for proper depth precision
+    cam.near = baseZ / 100;
+    cam.far = (baseZ + 240) * 3;
+    cam.updateProjectionMatrix();
+
+    // p=0: framed on globe, p=1: pull back +240 for full tower
+    const targetZ = baseZ + p * 240;
+    const targetY = GLOBE_CENTER_Y + 47 - p * 124;
+    const targetLookY = GLOBE_CENTER_Y + 5 - p * 114;
+
+    if (!initialized.current) {
+      smoothZ.current = targetZ;
+      smoothY.current = targetY;
+      smoothLookY.current = targetLookY;
+      initialized.current = true;
+    } else {
+      smoothZ.current += (targetZ - smoothZ.current) * 0.06;
+      smoothY.current += (targetY - smoothY.current) * 0.06;
+      smoothLookY.current += (targetLookY - smoothLookY.current) * 0.06;
+    }
 
     camera.position.set(0, smoothY.current, smoothZ.current);
     camera.lookAt(0, smoothLookY.current, 0);
@@ -250,7 +279,7 @@ export default function ReunionTower({
         stencil: false,
         depth: true,
       }}
-      camera={{ position: [0, 155, 20], fov: 55, near: 0.1, far: 2000 }}
+      camera={{ position: [0, 172, 120], fov: 55, near: 0.1, far: 2000 }}
       style={{ background: "transparent", touchAction: "pan-y" }}
       frameloop="always"
     >
