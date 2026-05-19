@@ -115,20 +115,20 @@ function useWhiteDiscardMaterial(texture: THREE.Texture) {
       opacity: 1,
     });
 
-    mat.onBeforeCompile = (shader) => {
-      shader.fragmentShader = shader.fragmentShader.replace(
-        "#include <map_fragment>",
-        `
-        #include <map_fragment>
-        {
-          float brightness = max(diffuseColor.r, max(diffuseColor.g, diffuseColor.b));
-          if (brightness > 0.95 && diffuseColor.a > 0.5) {
-            discard;
-          }
-        }
-        `
-      );
-    };
+    // mat.onBeforeCompile = (shader) => {
+    //   shader.fragmentShader = shader.fragmentShader.replace(
+    //     "#include <map_fragment>",
+    //     `
+    //     #include <map_fragment>
+    //     {
+    //       float brightness = max(diffuseColor.r, max(diffuseColor.g, diffuseColor.b));
+    //       if (brightness > 0.95 && diffuseColor.a > 0.5) {
+    //         discard;
+    //       }
+    //     }
+    //     `
+    //   );
+    // };
 
     return mat;
   }, [texture]);
