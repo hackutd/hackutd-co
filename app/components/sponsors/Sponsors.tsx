@@ -169,7 +169,7 @@ export default function Sponsors() {
     return () => nav.kill();
   });
 
-  const towerH = "max(90vh, 700px)";
+  const towerH = "max(100vh, 1000px)";
 
   // ── Reduced-motion fallback ────────────────────────────────
   if (reducedMotion) {
@@ -238,14 +238,14 @@ export default function Sponsors() {
         {/* 3D Reunion Tower — spans multiple pages, sticky canvas */}
         <div
           className="relative mt-12"
-          style={{ height: "250vh" }}
+          style={{ height: "400vh" }}
         >
           <div
             ref={towerWrapRef}
             className="sticky top-0"
             style={{
               width: "100%",
-              height: "max(90vh, 700px)",
+              height: "max(100vh, 1000px)",
               cursor: "grab",
               userSelect: "none",
             }}

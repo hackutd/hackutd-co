@@ -7,6 +7,9 @@ import * as THREE from "three";
 
 const MODEL_PATH = "/models/reunion-tower-simple.glb";
 
+// ── Scene scale — applied to root group; camera constants must match ──
+const SCENE_SCALE = 1.6;
+
 // Cylinder radius: MainRoom is ~37.7 after normalization. Place logos just outside.
 const LOGO_RADIUS = 38.0;
 const LOGO_OFFSET = 0.03; // Tiny offset to prevent z-fighting
@@ -232,13 +235,12 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
   });
 
   return (
-    <group dispose={null}>
+    <group dispose={null} scale={SCENE_SCALE}>
       <primitive
         object={clonedScene}
         scale={[normScale, normScale, normScale]}
         position={[0, -centerY, 0]}
       />
-      {/* Issue 1 fix: no X offset — logos centered on cylinder axis */}
       <group ref={sponsorGroupRef}>
         {placements.map((placement, i) => {
           const sponsor = validSponsors[i % validSponsors.length];
@@ -254,9 +256,9 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
   );
 }
 
-// ── Globe bounding sphere for camera fit ────────────────────
-const GLOBE_CENTER_Y = 125;
-const GLOBE_BOUNDING_R = 38;
+// ── Globe bounding sphere for camera fit (world-space, includes SCENE_SCALE) ──
+const GLOBE_CENTER_Y = 125 * SCENE_SCALE;   // 200
+const GLOBE_BOUNDING_R = 38 * SCENE_SCALE;  // 60.8
 
 // ── Camera rig ──────────────────────────────────────────────
 function CameraRig({ scrollProgressRef }: { scrollProgressRef: React.RefObject<number> }) {
@@ -279,12 +281,12 @@ function CameraRig({ scrollProgressRef }: { scrollProgressRef: React.RefObject<n
     const baseZ = (GLOBE_BOUNDING_R / Math.sin(effectiveFov / 2)) * fitOffset;
 
     cam.near = baseZ / 100;
-    cam.far = (baseZ + 240) * 3;
+    cam.far = (baseZ + 384) * 3;   // 240 * 1.6 = 384
     cam.updateProjectionMatrix();
 
-    const targetZ = baseZ + p * 240;
-    const targetY = GLOBE_CENTER_Y + 47 - p * 124;
-    const targetLookY = GLOBE_CENTER_Y + 5 - p * 114;
+    const targetZ = baseZ + p * 384;                         // 240 * 1.6
+    const targetY = GLOBE_CENTER_Y + 75.2 - p * 198.4;      // 47 * 1.6, 124 * 1.6
+    const targetLookY = GLOBE_CENTER_Y + 8 - p * 182.4;     // 5 * 1.6, 114 * 1.6
 
     if (!initialized.current) {
       smoothZ.current = targetZ;
@@ -328,7 +330,7 @@ export default function ReunionTower({
         stencil: false,
         depth: true,
       }}
-      camera={{ position: [0, 172, 120], fov: 55, near: 0.1, far: 2000 }}
+      camera={{ position: [0, 275, 192], fov: 55, near: 0.1, far: 3200 }}
       style={{ background: "transparent", touchAction: "pan-y" }}
       frameloop="always"
     >
