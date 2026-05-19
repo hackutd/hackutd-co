@@ -7,13 +7,25 @@ import * as THREE from "three";
 
 const MODEL_PATH = "/models/reunion-tower-simple.glb";
 
-const GLOBE_RADIUS = 36;
+// Cylinder radius: MainRoom is ~37.7 after normalization. Place logos just outside.
+const LOGO_RADIUS = 38.0;
+const LOGO_OFFSET = 0.03; // Tiny offset to prevent z-fighting
+
+// ── Blue glass band vertical constraints ───────────────────
+// MainRoom cylinder normalized: y=[89.57, 154.80], height=65.23
+const CYLINDER_MIN_Y = 89.57;
+const CYLINDER_MAX_Y = 154.80;
+const CYLINDER_HEIGHT = CYLINDER_MAX_Y - CYLINDER_MIN_Y; // ~65.23
+// Blue band is the middle portion — gray structural rings at top/bottom
+const BAND_TOP_MARGIN = CYLINDER_HEIGHT * 0.20;   // Top 20% is gray ledge
+const BAND_BOTTOM_MARGIN = CYLINDER_HEIGHT * 0.15; // Bottom 15% is gray ring
+const BAND_MIN_Y = CYLINDER_MIN_Y + BAND_BOTTOM_MARGIN;  // ~99.4
+const BAND_MAX_Y = CYLINDER_MAX_Y - BAND_TOP_MARGIN;     // ~141.8
 
 // ── Types ───────────────────────────────────────────────────
-interface TriFace {
-  center: THREE.Vector3;
-  normal: THREE.Vector3;
-  size: number;
+interface SponsorPlacement {
+  theta: number;
+  y: number;
 }
 
 interface SponsorData {
@@ -27,95 +39,145 @@ interface TowerSceneProps {
   sponsors: SponsorData[];
 }
 
-// ── Procedurally generate band positions around the globe ──
-function generateBandPositions(sponsorsCount: number): TriFace[] {
-  const bands = 4;
-  const globeCenterY = 125; // Centered near the top of the 350-unit tall model
-  const radius = GLOBE_RADIUS; // Constant radius for cylindrical layout
-  const faces: TriFace[] = [];
-  
-  const sponsorsPerBand = Math.ceil(sponsorsCount / bands);
-  const yOffsets = [-12, -4, 4, 12]; // Vertical distribution
-
-  for (let b = 0; b < bands; b++) {
-    const y = globeCenterY + yOffsets[b];
-    const r = radius;
-    
-    for (let i = 0; i < sponsorsPerBand; i++) {
-      if (faces.length >= sponsorsCount) break;
-      
-      const angle = (i / sponsorsPerBand) * Math.PI * 2;
-      const x = Math.cos(angle) * r;
-      const z = Math.sin(angle) * r;
-      
-      const center = new THREE.Vector3(x, y, z);
-      const normal = new THREE.Vector3(x, 0, z).normalize();
-      
-      // Use a consistent size for all procedural "faces"
-      faces.push({ center, normal, size: 22 });
-    }
-  }
-  return faces;
+// ── Seeded PRNG for reproducible layout ─────────────────────
+function seededRandom(seed: number) {
+  let s = seed;
+  return () => {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
 }
 
-// ── Single sponsor logo plane ───────────────────────────────
-function SponsorPlane({
-  face,
+// ── Poisson-disk placement on cylinder surface ──────────────
+// logoH passed in so we can constrain logo EDGES (not just centers) within band
+function generatePlacements(count: number, logoH: number): SponsorPlacement[] {
+  const rand = seededRandom(12345);
+  // Logo edges must stay inside band — shrink valid center range by half logo height
+  const yMin = BAND_MIN_Y + logoH / 2;
+  const yMax = BAND_MAX_Y - logoH / 2;
+
+  if (yMax <= yMin) {
+    console.warn("[Sponsors] Band too small for logos of height " + logoH);
+    return [];
+  }
+
+  let minArcSpacing = 14;
+  let minYSpacing = 5;
+  const placements: SponsorPlacement[] = [];
+
+  for (let i = 0; i < count; i++) {
+    let placed = false;
+    for (let attempt = 0; attempt < 100; attempt++) {
+      const theta = rand() * Math.PI * 2;
+      const y = yMin + rand() * (yMax - yMin);
+
+      const tooClose = placements.some((p) => {
+        let dTheta = Math.abs(p.theta - theta);
+        if (dTheta > Math.PI) dTheta = Math.PI * 2 - dTheta;
+        const arcDist = dTheta * LOGO_RADIUS;
+        const dY = Math.abs(p.y - y);
+        return arcDist < minArcSpacing && dY < minYSpacing;
+      });
+
+      if (!tooClose) {
+        placements.push({ theta, y });
+        placed = true;
+        break;
+      }
+    }
+
+    if (!placed) {
+      minArcSpacing *= 0.9;
+      minYSpacing *= 0.9;
+      i--;
+      if (minArcSpacing < 2) {
+        console.warn(`[Sponsors] Could not place all sponsors. Placed ${placements.length}/${count}`);
+        break;
+      }
+    }
+  }
+  return placements;
+}
+
+// ── Near-white discard material ─────────────────────────────
+// Discards near-white pixels so logos with white backgrounds render transparent.
+function useWhiteDiscardMaterial(texture: THREE.Texture) {
+  return useMemo(() => {
+    const mat = new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      alphaTest: 0.1,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      opacity: 1,
+    });
+
+    mat.onBeforeCompile = (shader) => {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <map_fragment>",
+        `
+        #include <map_fragment>
+        {
+          float brightness = max(diffuseColor.r, max(diffuseColor.g, diffuseColor.b));
+          if (brightness > 0.95 && diffuseColor.a > 0.5) {
+            discard;
+          }
+        }
+        `
+      );
+    };
+
+    return mat;
+  }, [texture]);
+}
+
+// ── Single sponsor logo ─────────────────────────────────────
+function SponsorLogo({
+  placement,
   logoUrl,
 }: {
-  face: TriFace;
+  placement: SponsorPlacement;
   logoUrl: string;
 }) {
   const texture = useLoader(THREE.TextureLoader, logoUrl);
-  const groupRef = useRef<THREE.Group>(null);
-
-  const quaternion = useMemo(() => {
-    const q = new THREE.Quaternion();
-    // Orient plane to face outward along the triangle normal
-    q.setFromUnitVectors(new THREE.Vector3(0, 0, 1), face.normal);
-    return q;
-  }, [face.normal]);
+  const material = useWhiteDiscardMaterial(texture);
 
   const aspect = texture.image ? texture.image.width / texture.image.height : 1;
-  const logoWidth = face.size * 0.15 * aspect;
-  const logoHeight = face.size * 0.15;
+  // 20% size increase: 3.96 * 1.2 = 4.752
+  const logoHeight = 4.752;
+  const logoWidth = logoHeight * aspect;
 
-  const bgWidth = face.size * 0.18 * aspect;
-  const bgHeight = face.size * 0.18;
+  // Build curved arc at exact cylinder radius + tiny offset
+  const arcGeo = useMemo(() => {
+    const r = LOGO_RADIUS + LOGO_OFFSET;
+    const thetaLen = logoWidth / r;
+    const thetaStart = -thetaLen / 2;
 
-  // Calculate angular spans for the curved surface (chord length / radius approx)
-  const thetaLength = logoWidth / GLOBE_RADIUS;
-  const thetaStart = -thetaLength / 2;
-  const bgThetaLength = bgWidth / GLOBE_RADIUS;
-  const bgThetaStart = -bgThetaLength / 2;
+    const geo = new THREE.CylinderGeometry(
+      r, r, logoHeight, 12, 1, true, thetaStart, thetaLen
+    );
+
+    // Flip normals outward
+    const normals = geo.attributes.normal;
+    for (let i = 0; i < normals.count; i++) {
+      normals.setXYZ(i, -normals.getX(i), -normals.getY(i), -normals.getZ(i));
+    }
+    normals.needsUpdate = true;
+    return geo;
+  }, [logoWidth, logoHeight]);
+
+  // CylinderGeometry arc at thetaStart=0 faces +X direction in Three.js.
+  // Rotate around Y to place at the correct theta.
+  const rotY = placement.theta + Math.PI / 2;
 
   return (
-    <group
-      ref={groupRef}
-      position={[face.center.x, face.center.y, face.center.z]}
-      quaternion={quaternion}
-    >
-      {/* Test background curved segment (Pink) */}
-      <mesh position={[0, 0, -GLOBE_RADIUS + 0.05]} renderOrder={1}>
-        <cylinderGeometry args={[GLOBE_RADIUS, GLOBE_RADIUS, bgHeight, 16, 1, true, bgThetaStart, bgThetaLength]} />
-        <meshBasicMaterial color="pink" transparent opacity={0.9} />
-      </mesh>
-      {/* Logo curved segment */}
-      <mesh position={[0, 0, -GLOBE_RADIUS + 0.11]} renderOrder={2}>
-        <cylinderGeometry args={[GLOBE_RADIUS, GLOBE_RADIUS, logoHeight, 16, 1, true, thetaStart, thetaLength]} />
-      <meshBasicMaterial
-        map={texture}
-        transparent
-        side={THREE.DoubleSide}
-        depthWrite={false}
-        opacity={0.92}
-      />
-      </mesh>
+    <group position={[0, placement.y, 0]} rotation={[0, rotY, 0]}>
+      <mesh geometry={arcGeo} material={material} renderOrder={2} />
     </group>
   );
 }
 
-// ── Tower model with sponsor logos in globe triangles ────────
+// ── Tower model ─────────────────────────────────────────────
 function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerSceneProps) {
   const { scene } = useGLTF(MODEL_PATH);
   const globeRef = useRef<THREE.Object3D | null>(null);
@@ -136,7 +198,7 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
     return { normScale: s, centerY: center.y * s };
   }, [clonedScene]);
 
-  // Find the PlatonicSphere node (the actual globe ball) to rotate independently
+  // Find PlatonicSphere
   useEffect(() => {
     clonedScene.traverse((child) => {
       if (child.name === "PlatonicSphere") {
@@ -145,16 +207,13 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
     });
   }, [clonedScene]);
 
-  // Extract globe triangle faces for sponsor placement
-  const sponsorFaces = useMemo(() => {
-    return generateBandPositions(sponsors.length);
-  }, [sponsors.length]);
+  const validSponsors = useMemo(() => sponsors.filter((s) => s.logo), [sponsors]);
 
-  // Filter sponsors to ones with valid logos
-  const validSponsors = useMemo(
-    () => sponsors.filter((s) => s.logo),
-    [sponsors]
-  );
+  // Random placement with fixed seed, constrained to blue glass band
+  const logoHeight = 4.752;
+  const placements = useMemo(() => {
+    return generatePlacements(validSponsors.length, logoHeight);
+  }, [validSponsors.length]);
 
   useFrame((_, delta) => {
     if (!globeRef.current) return;
@@ -166,11 +225,9 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
 
     smoothRotation.current += (target - smoothRotation.current) * 0.08;
 
-    // 1. Inside part (sponsors) rotates in the original direction
     if (sponsorGroupRef.current) {
       sponsorGroupRef.current.rotation.y = smoothRotation.current;
     }
-    // 2. Globe rotates in the opposite direction at half speed
     globeRef.current.rotation.y = -smoothRotation.current * 0.5;
   });
 
@@ -181,14 +238,14 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
         scale={[normScale, normScale, normScale]}
         position={[0, -centerY, 0]}
       />
-      {/* Sponsor group handles the primary rotation */}
-      <group ref={sponsorGroupRef} position={[-2, 0, 0]}>
-        {sponsorFaces.map((face, i) => {
+      {/* Issue 1 fix: no X offset — logos centered on cylinder axis */}
+      <group ref={sponsorGroupRef}>
+        {placements.map((placement, i) => {
           const sponsor = validSponsors[i % validSponsors.length];
           if (!sponsor?.logo) return null;
           return (
             <Suspense key={`sponsor-${i}`} fallback={null}>
-              <SponsorPlane face={face} logoUrl={sponsor.logo} />
+              <SponsorLogo placement={placement} logoUrl={sponsor.logo} />
             </Suspense>
           );
         })}
@@ -197,15 +254,11 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
   );
 }
 
-// ── Globe bounding sphere (computed once from sponsor band geometry) ──
-// Bands span Y = 113..137, radius = 36 → bounding sphere center ≈ (0, 125, 0), r ≈ 38
+// ── Globe bounding sphere for camera fit ────────────────────
 const GLOBE_CENTER_Y = 125;
-const GLOBE_BOUNDING_R = 38; // slightly larger than GLOBE_RADIUS to cover band extents
+const GLOBE_BOUNDING_R = 38;
 
 // ── Camera rig ──────────────────────────────────────────────
-// Uses bounding-sphere fit: camera distance = (r / sin(fov/2)) * fitOffset
-// fitOffset 1.15 → globe fills ~85% of viewport (was ~55% before).
-// Recomputes each frame from live viewport size → responsive at all breakpoints.
 function CameraRig({ scrollProgressRef }: { scrollProgressRef: React.RefObject<number> }) {
   const { camera, size } = useThree();
   const smoothZ = useRef(0);
@@ -219,20 +272,16 @@ function CameraRig({ scrollProgressRef }: { scrollProgressRef: React.RefObject<n
     const aspect = size.width / size.height;
     const vFov = THREE.MathUtils.degToRad(cam.fov);
 
-    // Fit globe's bounding sphere into the smaller of vertical/horizontal FOV
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect);
     const effectiveFov = Math.min(vFov, hFov);
 
-    // fitOffset: lower = globe bigger in frame. 1.15 ≈ 85% fill.
     const fitOffset = 1.15;
     const baseZ = (GLOBE_BOUNDING_R / Math.sin(effectiveFov / 2)) * fitOffset;
 
-    // Update near/far from computed distance for proper depth precision
     cam.near = baseZ / 100;
     cam.far = (baseZ + 240) * 3;
     cam.updateProjectionMatrix();
 
-    // p=0: framed on globe, p=1: pull back +240 for full tower
     const targetZ = baseZ + p * 240;
     const targetY = GLOBE_CENTER_Y + 47 - p * 124;
     const targetLookY = GLOBE_CENTER_Y + 5 - p * 114;
