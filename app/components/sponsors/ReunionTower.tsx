@@ -494,8 +494,8 @@ function CameraRig({ scrollProgressRef }: { scrollProgressRef: React.RefObject<n
     cam.updateProjectionMatrix();
 
     const targetZ = baseZ + p * 240;                         // Reduced zoom-out travel
-    const targetY = GLOBE_CENTER_Y + 75.2 - p * 198.4;      // 47 * 1.6, 124 * 1.6
-    const targetLookY = GLOBE_CENTER_Y + 8 - p * 182.4;     // 5 * 1.6, 114 * 1.6
+    const targetY = GLOBE_CENTER_Y + 24 - p * 147.2;       // Starts lower (15*1.6), ends same (-77*1.6)
+    const targetLookY = GLOBE_CENTER_Y - 4.8 - p * 169.6;  // Starts at logo center (-3*1.6), ends same (-109*1.6)
 
     if (!initialized.current) {
       smoothZ.current = targetZ;
@@ -539,7 +539,7 @@ export default function ReunionTower({
         stencil: false,
         depth: true,
       }}
-      camera={{ position: [0, 275, 192], fov: 55, near: 0.1, far: 3200 }}
+      camera={{ position: [0, 224, 192], fov: 55, near: 0.1, far: 3200 }}
       style={{ background: "transparent", touchAction: "pan-y" }}
       frameloop="always"
     >
