@@ -20,8 +20,8 @@ const CYLINDER_MIN_Y = 89.57;
 const CYLINDER_MAX_Y = 154.80;
 const CYLINDER_HEIGHT = CYLINDER_MAX_Y - CYLINDER_MIN_Y; // ~65.23
 // Blue band is the middle portion — gray structural rings at top/bottom
-const BAND_TOP_MARGIN = CYLINDER_HEIGHT * 0.20;   // Top 20% is gray ledge
-const BAND_BOTTOM_MARGIN = CYLINDER_HEIGHT * 0.15; // Bottom 15% is gray ring
+const BAND_TOP_MARGIN = CYLINDER_HEIGHT * 0.22;   // Top 15% is gray ledge
+const BAND_BOTTOM_MARGIN = CYLINDER_HEIGHT * 0.18; // Bottom 10% is gray ring
 const BAND_MIN_Y = CYLINDER_MIN_Y + BAND_BOTTOM_MARGIN;  // ~99.4
 const BAND_MAX_Y = CYLINDER_MAX_Y - BAND_TOP_MARGIN;     // ~141.8
 
@@ -57,8 +57,8 @@ function seededRandom(seed: number) {
 // Step 2: Assign logos to shuffled cells (largest first get priority)
 // Step 3: Jitter within cell, AABB-check against all placed logos
 // Result: even distribution + zero overlaps + natural randomness
-const LOGO_HEIGHT = 4.752;
-const LOGO_PADDING = 3.0; // Minimum gap between any two logo edges (world units)
+const LOGO_HEIGHT = 3.8;
+const LOGO_PADDING = 2.2; // Minimum gap between any two logo edges (world units)
 
 interface LogoFootprint {
   sponsorIndex: number;
@@ -226,20 +226,20 @@ function useWhiteDiscardMaterial(texture: THREE.Texture) {
       opacity: 1,
     });
 
-    // mat.onBeforeCompile = (shader) => {
-    //   shader.fragmentShader = shader.fragmentShader.replace(
-    //     "#include <map_fragment>",
-    //     `
-    //     #include <map_fragment>
-    //     {
-    //       float brightness = max(diffuseColor.r, max(diffuseColor.g, diffuseColor.b));
-    //       if (brightness > 0.95 && diffuseColor.a > 0.5) {
-    //         discard;
-    //       }
-    //     }
-    //     `
-    //   );
-    // };
+    mat.onBeforeCompile = (shader) => {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <map_fragment>",
+        `
+        #include <map_fragment>
+    
+
+        // Apply brightness reduction and saturation boost to colored logos
+        diffuseColor.rgb *= 0.55; // TUNE THIS PLS!!!!
+        float luma = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+        diffuseColor.rgb = mix(vec3(luma), diffuseColor.rgb, 1.5);
+        `
+      );
+    };
 
     return mat;
   }, [texture]);
@@ -294,6 +294,7 @@ function SponsorLogo({
 function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerSceneProps) {
   const { scene } = useGLTF(MODEL_PATH);
   const globeRef = useRef<THREE.Object3D | null>(null);
+  const globeMaterialsRef = useRef<THREE.Material[]>([]);
   const sponsorGroupRef = useRef<THREE.Group>(null);
   const smoothRotation = useRef(0);
   const autoAngle = useRef(0);
@@ -311,13 +312,26 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
     return { normScale: s, centerY: center.y * s };
   }, [clonedScene]);
 
-  // Find PlatonicSphere
+  // Find PlatonicSphere and apply transparency to the whole structure
   useEffect(() => {
+    const mats: THREE.Material[] = [];
     clonedScene.traverse((child) => {
       if (child.name === "PlatonicSphere") {
         globeRef.current = child;
+
+        // Apply transparency to the sphere and all its sub-meshes (bars, connectors, etc.)
+        child.traverse((node) => {
+          if (node instanceof THREE.Mesh) {
+            node.material = node.material.clone();
+            node.material.transparent = true;
+            node.material.opacity = 0.2; // Adjust this for overall transparency (0.0 to 1.0)
+            node.material.depthWrite = false; // Prevents the sphere from blocking the logos inside
+            mats.push(node.material as THREE.Material);
+          }
+        });
       }
     });
+    globeMaterialsRef.current = mats;
   }, [clonedScene]);
 
   const validSponsors = useMemo(() => sponsors.filter((s) => s.logo), [sponsors]);
@@ -337,10 +351,18 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
   }, [textures]);
 
   useFrame((_, delta) => {
+    const scroll = scrollProgressRef.current ?? 0;
+
+    // Dynamically update globe opacity based on scroll progress (0.2 -> 1.0)
+    const targetOpacity = THREE.MathUtils.lerp(0.2, 1.0, scroll);
+    globeMaterialsRef.current.forEach((mat) => {
+      mat.opacity = targetOpacity;
+    });
+
     if (!globeRef.current) return;
 
     autoAngle.current += delta * 0.3;
-    const scrollAngle = (scrollProgressRef.current ?? 0) * Math.PI * 2;
+    const scrollAngle = scroll * Math.PI * 2;
     const dragAngle = (dragOffsetRef.current ?? 0) * 0.01;
     const target = autoAngle.current + scrollAngle + dragAngle;
 
@@ -395,14 +417,14 @@ function CameraRig({ scrollProgressRef }: { scrollProgressRef: React.RefObject<n
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect);
     const effectiveFov = Math.min(vFov, hFov);
 
-    const fitOffset = 1.15;
+    const fitOffset = 0.85;
     const baseZ = (GLOBE_BOUNDING_R / Math.sin(effectiveFov / 2)) * fitOffset;
 
     cam.near = baseZ / 100;
     cam.far = (baseZ + 384) * 3;   // 240 * 1.6 = 384
     cam.updateProjectionMatrix();
 
-    const targetZ = baseZ + p * 384;                         // 240 * 1.6
+    const targetZ = baseZ + p * 240;                         // Reduced zoom-out travel
     const targetY = GLOBE_CENTER_Y + 75.2 - p * 198.4;      // 47 * 1.6, 124 * 1.6
     const targetLookY = GLOBE_CENTER_Y + 8 - p * 182.4;     // 5 * 1.6, 114 * 1.6
 
@@ -452,7 +474,7 @@ export default function ReunionTower({
       style={{ background: "transparent", touchAction: "pan-y" }}
       frameloop="always"
     >
-      <ambientLight intensity={1.4} />
+      <ambientLight intensity={0.8} />
       <directionalLight position={[10, 20, 10]} intensity={2.5} />
       <directionalLight position={[-6, 12, -8]} intensity={0.6} />
       <hemisphereLight color="#f2f2f2" groundColor="#a3a3a3" intensity={0.8} />
