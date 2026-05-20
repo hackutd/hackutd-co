@@ -19,6 +19,7 @@
 
   /* Font */
   --font-sans: var(--font-satoshi);
+  --font-serif: var(--font-cormorant);
 }
 
 html,
