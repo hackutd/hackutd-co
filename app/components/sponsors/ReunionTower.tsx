@@ -245,6 +245,74 @@ function useWhiteDiscardMaterial(texture: THREE.Texture) {
   }, [texture]);
 }
 
+// ── SVG dimension fix ───────────────────────────────────────
+// Three.js TextureLoader rasterizes SVGs via <img>. If the SVG has no explicit
+// width/height attributes (only viewBox), the browser produces a 0×0 bitmap,
+// causing "texSubImage2D: bad image data" / "Texture is immutable" WebGL errors.
+// This hook fetches the raw SVG text, injects concrete pixel dimensions derived
+// from the viewBox, and returns a stable object-URL safe to pass to TextureLoader.
+const SVG_RASTER_SIZE = 512; // px — enough for crisp logos on the tower
+
+function usePatchedSvgUrl(url: string): string {
+  const [patchedUrl, setPatchedUrl] = useState(url);
+
+  useEffect(() => {
+    if (!url.toLowerCase().endsWith(".svg")) return;
+
+    let objectUrl: string | null = null;
+
+    (async () => {
+      try {
+        const res = await fetch(url);
+        const text = await res.text();
+
+        // Parse the SVG to check/inject width + height
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, "image/svg+xml");
+        const svg = doc.querySelector("svg");
+        if (!svg) return;
+
+        const hasW = svg.hasAttribute("width");
+        const hasH = svg.hasAttribute("height");
+        if (hasW && hasH) return; // already fine — keep original URL
+
+        // Derive pixel size from viewBox
+        const vb = svg.getAttribute("viewBox");
+        if (vb) {
+          const parts = vb.trim().split(/[\s,]+/).map(Number);
+          if (parts.length === 4) {
+            const [, , vbW, vbH] = parts;
+            const aspect = vbW / vbH;
+            const [pw, ph] =
+              aspect >= 1
+                ? [SVG_RASTER_SIZE, Math.round(SVG_RASTER_SIZE / aspect)]
+                : [Math.round(SVG_RASTER_SIZE * aspect), SVG_RASTER_SIZE];
+            if (!hasW) svg.setAttribute("width", String(pw));
+            if (!hasH) svg.setAttribute("height", String(ph));
+          }
+        } else {
+          // No viewBox either — last resort fallback
+          if (!hasW) svg.setAttribute("width", String(SVG_RASTER_SIZE));
+          if (!hasH) svg.setAttribute("height", String(SVG_RASTER_SIZE));
+        }
+
+        const serialized = new XMLSerializer().serializeToString(doc);
+        const blob = new Blob([serialized], { type: "image/svg+xml" });
+        objectUrl = URL.createObjectURL(blob);
+        setPatchedUrl(objectUrl);
+      } catch (e) {
+        console.warn("[SVG patch] Failed for", url, e);
+      }
+    })();
+
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [url]);
+
+  return patchedUrl;
+}
+
 // ── Single sponsor logo ─────────────────────────────────────
 function SponsorLogo({
   placement,
@@ -253,7 +321,8 @@ function SponsorLogo({
   placement: SponsorPlacement;
   logoUrl: string;
 }) {
-  const texture = useLoader(THREE.TextureLoader, logoUrl);
+  const safeUrl = usePatchedSvgUrl(logoUrl);
+  const texture = useLoader(THREE.TextureLoader, safeUrl);
   const material = useWhiteDiscardMaterial(texture);
 
   const aspect = texture.image ? texture.image.width / texture.image.height : 1;
