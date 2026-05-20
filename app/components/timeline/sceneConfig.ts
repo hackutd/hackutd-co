@@ -63,9 +63,17 @@ export const TRAIL_WAVE = {
   halfWidthPeak: 115,   // cone width once fully open
   halfWidthEnd: 140,    // baseline width after the spike settles
   peakT: 0.15,          // cone opens up in first 15% of trail, then holds
-  maxAmplitude: 80,     // wave amplitude scales with width (0 at rocket, peaks then settles)
+  maxAmplitude: 40,     // wave amplitude scales with width (0 at rocket, peaks then settles)
   staggerEach: 0.08,    // large stagger → ~2–3 visible sine crests across trail
   duration: 1.2,
   hwTailBurst: 240,     // dramatic flare width at the very far end of the trail
   tailSharpness: 6,     // how concentrated the burst is near t=1 (higher = sharper)
+} as const;
+
+export const MOBILE_TRAIL_WAVE = {
+  ...TRAIL_WAVE,
+  halfWidthPeak: 145,
+  halfWidthEnd: 155,
+  hwTailBurst: 270,
+  maxAmplitude: 50,
 } as const;

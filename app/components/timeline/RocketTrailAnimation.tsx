@@ -9,6 +9,7 @@ import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import {
   MOBILE_TIMELINE_SCRUB,
+  MOBILE_TRAIL_WAVE,
   ROCKET_FILL_PATH,
   ROCKET_STROKE_PATH,
   ROCKET_SLIDE_EASE,
@@ -56,7 +57,7 @@ export default function RocketTrailAnimation() {
       const svg = trailPoly.ownerSVGElement;
       if (!svg) return;
 
-      const { numPoints, startX, endX, centerY, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT, maxAmplitude, staggerEach, duration, hwTailBurst, tailSharpness } = TRAIL_WAVE;
+      const { numPoints, startX, endX, centerY, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT, maxAmplitude, staggerEach, duration, hwTailBurst, tailSharpness } = isMobile ? MOBILE_TRAIL_WAVE : TRAIL_WAVE;
 
       // Build polygon: top edge (left→right) then bottom edge (right→left) = closed band
       while (trailPoly.points.numberOfItems > 0) trailPoly.points.removeItem(0);
@@ -80,9 +81,10 @@ export default function RocketTrailAnimation() {
 
       // Position each marker group via GSAP so it owns the SVG transform
       // (children use group-relative coordinates, GSAP then animates y in the wave)
+      const markerYOffset = isMobile ? -30 : 0;
       YEAR_MARKERS.forEach((marker, i) => {
         const el = markerRefs.current[i];
-        if (el) gsap.set(el, { x: marker.x, y: marker.y });
+        if (el) gsap.set(el, { x: marker.x, y: marker.y + markerYOffset });
       });
 
       if (prefersReducedMotion) {
@@ -168,9 +170,9 @@ export default function RocketTrailAnimation() {
   // Font sizes scale with the SVG (which scales with viewport width).
   // SVG viewBox is 1371 wide. At typical 1440px desktop the scale ≈ 1.
   // On mobile (390px) scale ≈ 0.28, so we use larger SVG-unit values.
-  const yearFontSize = isMobile ? 60 : 18;
-  const nameFontSize = isMobile ? 32 : 9;
-  const nameLetterSpacing = isMobile ? 4 : 1.5;
+  const yearFontSize = isMobile ? 26 : 18;
+  const nameFontSize = isMobile ? 18 : 9;
+  const nameLetterSpacing = isMobile ? 2.0 : 1.5;
 
   return (
     <div
@@ -185,7 +187,7 @@ export default function RocketTrailAnimation() {
         <svg
           viewBox="0 0 1371 402"
           className="w-screen"
-          style={{ height: "auto", minWidth: "900px", overflow: "visible" }}
+          style={{ height: "auto", minWidth: isMobile ? "300px" : "900px", overflow: "visible" }}
           aria-hidden="true"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -274,21 +276,22 @@ export default function RocketTrailAnimation() {
                 <ellipse cx={0} cy={0} rx={marker.rx} ry={marker.ry} fill="white" />
                 <text
                   x={0}
-                  y={marker.ry + yearFontSize * 1.2}
+                  y={marker.ry+ yearFontSize * 1.2}
                   textAnchor="middle"
                   fill="white"
                   fontSize={yearFontSize}
-                  fontWeight="600"
+                  fontWeight="700"
                   fontFamily="var(--font-satoshi, sans-serif)"
                 >
                   {marker.year}
                 </text>
                 <text
                   x={0}
-                  y={marker.ry + yearFontSize * 1.2 + nameFontSize * 1.6}
+                  y={marker.ry+ yearFontSize * 1.2 + nameFontSize * 1.6}
                   textAnchor="middle"
                   fill="white"
                   fontSize={nameFontSize}
+                  fontWeight={"600"}
                   letterSpacing={nameLetterSpacing}
                   fontFamily="var(--font-satoshi, sans-serif)"
                 >
