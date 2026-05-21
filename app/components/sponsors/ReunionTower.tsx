@@ -11,6 +11,10 @@ const MODEL_PATH = "/models/reunion-tower-simple.glb";
 const LOGO_RADIUS = 38.0;
 const LOGO_OFFSET = 0.03; // Tiny offset to prevent z-fighting
 
+const MIN_LOGO_DISPLAY_HEIGHT = 3.8; // All logos will be at least this tall
+const MAX_LOGO_DISPLAY_WIDTH = 15.0; // All logos will be at most this wide (supersedes min height)
+const LOGO_PADDING = 2.2; // Minimum gap between any two logo edges (world units)
+
 // ── Blue glass band vertical constraints ───────────────────
 // MainRoom cylinder normalized: y=[89.57, 154.80], height=65.23
 const CYLINDER_MIN_Y = 89.57;
@@ -27,6 +31,8 @@ interface SponsorPlacement {
   theta: number;
   y: number;
   sponsorIndex: number;
+  displayWidth: number; // Actual width of the logo in world units
+  displayHeight: number; // Actual height of the logo in world units
 }
 
 interface SponsorData {
@@ -54,17 +60,16 @@ function seededRandom(seed: number) {
 // Step 2: Assign logos to shuffled cells (largest first get priority)
 // Step 3: Jitter within cell, AABB-check against all placed logos
 // Result: even distribution + zero overlaps + natural randomness
-const LOGO_HEIGHT = 3.8;
-const LOGO_PADDING = 2.2; // Minimum gap between any two logo edges (world units)
 
 interface LogoFootprint {
   sponsorIndex: number;
   halfWidth: number;
   halfHeight: number;
+  displayWidth: number;
+  displayHeight: number;
   angularHalfWidth: number;
   area: number;
 }
-
 interface PlacedLogo extends LogoFootprint {
   theta: number;
   y: number;
@@ -77,24 +82,35 @@ function generatePlacements(aspects: number[]): SponsorPlacement[] {
   const rand = seededRandom(54321);
   const bandHeight = BAND_MAX_Y - BAND_MIN_Y;
 
-  if (bandHeight <= LOGO_HEIGHT) {
+  if (bandHeight <= MIN_LOGO_DISPLAY_HEIGHT) {
     console.warn("[Sponsors] Band too small for logos");
     return [];
   }
 
   const circumference = 2 * Math.PI * LOGO_RADIUS;
 
-  // Build footprints with real aspect ratios + padding
+  // Build footprints with calculated display dimensions and padding
   const footprints: LogoFootprint[] = aspects.map((aspect, i) => {
-    const w = LOGO_HEIGHT * aspect;
-    const halfW = w / 2 + LOGO_PADDING / 2;
-    const halfH = LOGO_HEIGHT / 2 + LOGO_PADDING / 2;
+    let displayHeight = MIN_LOGO_DISPLAY_HEIGHT;
+    let displayWidth = displayHeight * aspect;
+
+    // Apply maximum width constraint (supersedes minimum height)
+    if (displayWidth > MAX_LOGO_DISPLAY_WIDTH) {
+      displayWidth = MAX_LOGO_DISPLAY_WIDTH;
+      displayHeight = displayWidth / aspect;
+    }
+
+    const halfW = displayWidth / 2 + LOGO_PADDING / 2;
+    const halfH = displayHeight / 2 + LOGO_PADDING / 2;
+
     return {
       sponsorIndex: i,
       halfWidth: halfW,
       halfHeight: halfH,
       angularHalfWidth: halfW / LOGO_RADIUS,
       area: halfW * halfH,
+      displayWidth: displayWidth,
+      displayHeight: displayHeight,
     };
   });
 
@@ -207,6 +223,8 @@ function generatePlacements(aspects: number[]): SponsorPlacement[] {
     theta: p.theta,
     y: p.y,
     sponsorIndex: p.sponsorIndex,
+    displayWidth: p.displayWidth,
+    displayHeight: p.displayHeight,
   }));
 }
 
@@ -322,18 +340,15 @@ function SponsorLogo({
   const texture = useLoader(THREE.TextureLoader, safeUrl);
   const material = useWhiteDiscardMaterial(texture);
 
-  const aspect = texture.image ? texture.image.width / texture.image.height : 1;
-  const logoHeight = LOGO_HEIGHT;
-  const logoWidth = logoHeight * aspect;
-
   // Build curved arc at exact cylinder radius + tiny offset
   const arcGeo = useMemo(() => {
     const r = LOGO_RADIUS + LOGO_OFFSET;
-    const thetaLen = logoWidth / r;
+    // Use actual logo dimensions from placement
+    const thetaLen = placement.displayWidth / r;
     const thetaStart = -thetaLen / 2;
 
     const geo = new THREE.CylinderGeometry(
-      r, r, logoHeight, 12, 1, true, thetaStart, thetaLen
+      r, r, placement.displayHeight, 12, 1, true, thetaStart, thetaLen
     );
 
     // Flip normals outward
@@ -342,8 +357,8 @@ function SponsorLogo({
       normals.setXYZ(i, -normals.getX(i), -normals.getY(i), -normals.getZ(i));
     }
     normals.needsUpdate = true;
-    return geo;
-  }, [logoWidth, logoHeight]);
+    return geo; // Use actual logo dimensions from placement
+  }, [placement.displayWidth, placement.displayHeight]);
 
   // CylinderGeometry arc at thetaStart=0 faces +X direction in Three.js.
   // Rotate around Y to place at the correct theta.
@@ -453,7 +468,11 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
           const sponsor = validSponsors[placement.sponsorIndex];
           if (!sponsor?.logo) return null;
           return (
-            <Suspense key={`sponsor-${i}`} fallback={null}>
+            <Suspense
+              key={`sponsor-${i}`}
+              // A small transparent mesh could be a fallback to reserve space
+              fallback={null}
+            >
               <SponsorLogo placement={placement} logoUrl={sponsor.logo} />
             </Suspense>
           );
