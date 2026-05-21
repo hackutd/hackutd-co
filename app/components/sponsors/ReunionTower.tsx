@@ -293,8 +293,9 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
           if (node instanceof THREE.Mesh) {
             node.material = node.material.clone();
             node.material.transparent = true;
-            node.material.opacity = 0.2; // Adjust this for overall transparency (0.0 to 1.0)
-            node.material.depthWrite = false; // Prevents the sphere from blocking the logos inside
+            node.material.opacity = 0.6;
+            node.material.depthWrite = false;
+            node.renderOrder = 3; // Render AFTER logos (renderOrder=2) so sphere appears in front
             mats.push(node.material as THREE.Material);
           }
         });
