@@ -419,8 +419,9 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
   useFrame((_, delta) => {
     const scroll = scrollProgressRef.current ?? 0;
 
-    // Dynamically update globe opacity based on scroll progress (0.2 -> 1.0)
-    const targetOpacity = THREE.MathUtils.lerp(0.2, 1.0, scroll);
+    // Parabolic fading: Starts at 1.0, reaches 0.2 at scroll=0.5, ends at 1.0
+    const minOpacity = 0.2;
+    const targetOpacity = 4 * (1 - minOpacity) * Math.pow(scroll - 0.1, 2) + minOpacity;
     globeMaterialsRef.current.forEach((mat) => {
       mat.opacity = targetOpacity;
     });
