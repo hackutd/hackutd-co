@@ -11,9 +11,10 @@ const MODEL_PATH = "/models/reunion-tower-simple.glb";
 const LOGO_RADIUS = 38.0;
 const LOGO_OFFSET = 0.03; // Tiny offset to prevent z-fighting
 
-const MIN_LOGO_DISPLAY_HEIGHT = 3.8; // All logos will be at least this tall
-const MAX_LOGO_DISPLAY_WIDTH = 15.0; // All logos will be at most this wide (supersedes min height)
+const MIN_LOGO_DISPLAY_HEIGHT = 12.0; // "Wayy bigger" height
+const MAX_LOGO_DISPLAY_WIDTH = 32.0;  // "Wayy bigger" width
 const LOGO_PADDING = 2.2; // Minimum gap between any two logo edges (world units)
+const SLOT_COUNT = 10;    // Number of active logos on the tower at once
 
 // ── Blue glass band vertical constraints ───────────────────
 // MainRoom cylinder normalized: y=[89.57, 154.80], height=65.23
@@ -33,6 +34,7 @@ interface SponsorPlacement {
   sponsorIndex: number;
   displayWidth: number; // Actual width of the logo in world units
   displayHeight: number; // Actual height of the logo in world units
+  initialSponsorIndex: number;
 }
 
 interface SponsorData {
@@ -61,171 +63,28 @@ function seededRandom(seed: number) {
 // Step 3: Jitter within cell, AABB-check against all placed logos
 // Result: even distribution + zero overlaps + natural randomness
 
-interface LogoFootprint {
-  sponsorIndex: number;
-  halfWidth: number;
-  halfHeight: number;
-  displayWidth: number;
-  displayHeight: number;
-  angularHalfWidth: number;
-  area: number;
-}
-interface PlacedLogo extends LogoFootprint {
-  theta: number;
-  y: number;
-}
-
-function generatePlacements(aspects: number[]): SponsorPlacement[] {
-  const N = aspects.length;
-  if (N === 0) return [];
-
-  const rand = seededRandom(54321);
-  const bandHeight = BAND_MAX_Y - BAND_MIN_Y;
-
-  if (bandHeight <= MIN_LOGO_DISPLAY_HEIGHT) {
-    console.warn("[Sponsors] Band too small for logos");
-    return [];
-  }
-
-  const circumference = 2 * Math.PI * LOGO_RADIUS;
-
-  // Build footprints with calculated display dimensions and padding
-  const footprints: LogoFootprint[] = aspects.map((aspect, i) => {
-    let displayHeight = MIN_LOGO_DISPLAY_HEIGHT;
-    let displayWidth = displayHeight * aspect;
-
-    // Apply maximum width constraint (supersedes minimum height)
-    if (displayWidth > MAX_LOGO_DISPLAY_WIDTH) {
-      displayWidth = MAX_LOGO_DISPLAY_WIDTH;
-      displayHeight = displayWidth / aspect;
-    }
-
-    const halfW = displayWidth / 2 + LOGO_PADDING / 2;
-    const halfH = displayHeight / 2 + LOGO_PADDING / 2;
-
-    return {
-      sponsorIndex: i,
-      halfWidth: halfW,
-      halfHeight: halfH,
-      angularHalfWidth: halfW / LOGO_RADIUS,
-      area: halfW * halfH,
-      displayWidth: displayWidth,
-      displayHeight: displayHeight,
-    };
-  });
-
-  // Grid dimensions — roughly square cells in cylinder-surface space
-  const surfaceAspect = circumference / bandHeight;
-  const rows = Math.max(2, Math.round(Math.sqrt(N / surfaceAspect)));
-  const cols = Math.ceil(N / rows);
-  const cellTheta = (Math.PI * 2) / cols;
-  const cellH = bandHeight / rows;
-
-  // Build & shuffle cells
-  const cells: { row: number; col: number }[] = [];
+function generateSlots(): SponsorPlacement[] {
+  const slots: SponsorPlacement[] = [];
+  const rows = 2;
+  const cols = SLOT_COUNT / rows;
+  
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      cells.push({ row: r, col: c });
+      const initialSponsorIndex = r * cols + c;
+      const theta = (c * (Math.PI * 2)) / cols + (r * Math.PI) / cols; // Staggered rows
+      const y = r === 0 ? 112 : 130; // Fixed heights in the blue band
+      
+      slots.push({
+        theta: theta % (Math.PI * 2),
+        y,
+        sponsorIndex: initialSponsorIndex,
+        initialSponsorIndex,
+        displayWidth: MAX_LOGO_DISPLAY_WIDTH, // Default, will be adjusted per sponsor
+        displayHeight: MIN_LOGO_DISPLAY_HEIGHT,
+      });
     }
   }
-  for (let i = cells.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1));
-    [cells[i], cells[j]] = [cells[j], cells[i]];
-  }
-
-  // Sort footprints largest-first so wide logos get first pick of cells
-  const sorted = [...footprints].sort((a, b) => b.area - a.area);
-
-  // Assign cells: largest logos first, shuffled cells
-  const assignments: { fp: LogoFootprint; cell: { row: number; col: number } }[] = [];
-  for (let i = 0; i < sorted.length; i++) {
-    assignments.push({ fp: sorted[i], cell: cells[i % cells.length] });
-  }
-
-  // AABB overlap check (theta wraps)
-  function overlaps(a: PlacedLogo, b: PlacedLogo): boolean {
-    let dTheta = Math.abs(a.theta - b.theta);
-    if (dTheta > Math.PI) dTheta = 2 * Math.PI - dTheta;
-    return (
-      dTheta < a.angularHalfWidth + b.angularHalfWidth &&
-      Math.abs(a.y - b.y) < a.halfHeight + b.halfHeight
-    );
-  }
-
-  const placed: PlacedLogo[] = [];
-  const dropped: number[] = [];
-
-  for (const { fp, cell } of assignments) {
-    const cellCenterTheta = cell.col * cellTheta + cellTheta / 2;
-    const cellCenterY = BAND_MIN_Y + cell.row * cellH + cellH / 2;
-
-    // Try jittered positions within cell, AABB-checked
-    let success = false;
-    for (let attempt = 0; attempt < 60; attempt++) {
-      // Moderate jitter for even look; shrink on retries for guaranteed fit
-      const jitterScale = attempt < 30 ? 0.35 : attempt < 50 ? 0.2 : 0.05;
-      const theta = cellCenterTheta + (rand() - 0.5) * cellTheta * jitterScale;
-      let y = cellCenterY + (rand() - 0.5) * cellH * jitterScale;
-
-      // Clamp Y so logo edges stay in band
-      y = Math.max(BAND_MIN_Y + fp.halfHeight, Math.min(BAND_MAX_Y - fp.halfHeight, y));
-
-      const candidate: PlacedLogo = { ...fp, theta: ((theta % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI), y };
-
-      if (!placed.some((p) => overlaps(candidate, p))) {
-        placed.push(candidate);
-        success = true;
-        break;
-      }
-    }
-
-    // Fallback: try anywhere on cylinder (pure rejection)
-    if (!success) {
-      for (let attempt = 0; attempt < 200; attempt++) {
-        const theta = rand() * Math.PI * 2;
-        const y = BAND_MIN_Y + fp.halfHeight + rand() * (bandHeight - 2 * fp.halfHeight);
-        const candidate: PlacedLogo = { ...fp, theta, y };
-        if (!placed.some((p) => overlaps(candidate, p))) {
-          placed.push(candidate);
-          success = true;
-          break;
-        }
-      }
-    }
-
-    if (!success) dropped.push(fp.sponsorIndex);
-  }
-
-  // Verification
-  if (typeof window !== "undefined") {
-    let overlapCount = 0;
-    let bandViolations = 0;
-    for (let i = 0; i < placed.length; i++) {
-      for (let j = i + 1; j < placed.length; j++) {
-        if (overlaps(placed[i], placed[j])) overlapCount++;
-      }
-      if (placed[i].y - placed[i].halfHeight < BAND_MIN_Y ||
-          placed[i].y + placed[i].halfHeight > BAND_MAX_Y) {
-        bandViolations++;
-      }
-    }
-    console.log(
-      `[Sponsors] Hybrid grid+AABB: ${rows}×${cols} grid | ` +
-      `${placed.length}/${N} placed | Dropped: ${dropped.length} | ` +
-      `Overlaps: ${overlapCount} | Band violations: ${bandViolations}`
-    );
-    if (dropped.length > 0) {
-      console.warn("[Sponsors] Dropped indices:", dropped);
-    }
-  }
-
-  return placed.map((p) => ({
-    theta: p.theta,
-    y: p.y,
-    sponsorIndex: p.sponsorIndex,
-    displayWidth: p.displayWidth,
-    displayHeight: p.displayHeight,
-  }));
+  return slots;
 }
 
 // ── Near-white discard material ─────────────────────────────
@@ -265,104 +124,133 @@ function useWhiteDiscardMaterial(texture: THREE.Texture) {
 // width/height attributes (only viewBox), the browser produces a 0×0 bitmap,
 // causing "texSubImage2D: bad image data" / "Texture is immutable" WebGL errors.
 // This hook fetches the raw SVG text, injects concrete pixel dimensions derived
-// from the viewBox, and returns a stable object-URL safe to pass to TextureLoader.
+// from the viewBox, and returns stable object-URLs safe to pass to TextureLoader.
 const SVG_RASTER_SIZE = 512; // px — enough for crisp logos on the tower
 
-function usePatchedSvgUrl(url: string): string {
-  const [patchedUrl, setPatchedUrl] = useState(url);
+async function patchSvgUrl(url: string): Promise<string> {
+  if (!url.toLowerCase().endsWith(".svg")) return url;
+  try {
+    const res = await fetch(url);
+    const text = await res.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(text, "image/svg+xml");
+    const svg = doc.querySelector("svg");
+    if (!svg) return url;
+
+    const hasW = svg.hasAttribute("width");
+    const hasH = svg.hasAttribute("height");
+    if (hasW && hasH) return url; // already fine — keep original URL
+
+    const vb = svg.getAttribute("viewBox");
+    if (vb) {
+      const parts = vb.trim().split(/[\s,]+/).map(Number);
+      if (parts.length === 4) {
+        const [, , vbW, vbH] = parts;
+        const aspect = vbW / vbH;
+        const [pw, ph] =
+          aspect >= 1
+            ? [SVG_RASTER_SIZE, Math.round(SVG_RASTER_SIZE / aspect)]
+            : [Math.round(SVG_RASTER_SIZE * aspect), SVG_RASTER_SIZE];
+        if (!hasW) svg.setAttribute("width", String(pw));
+        if (!hasH) svg.setAttribute("height", String(ph));
+      }
+    } else {
+      // No viewBox either — last resort fallback
+      if (!hasW) svg.setAttribute("width", String(SVG_RASTER_SIZE));
+      if (!hasH) svg.setAttribute("height", String(SVG_RASTER_SIZE));
+    }
+
+    const serialized = new XMLSerializer().serializeToString(doc);
+    const blob = new Blob([serialized], { type: "image/svg+xml" });
+    return URL.createObjectURL(blob);
+  } catch (e) {
+    console.warn("[SVG patch] Failed for", url, e);
+    return url;
+  }
+}
+
+// Patches all SVG URLs in a list before they reach TextureLoader.
+// Returns null while async patching is in progress so the caller can wait.
+function usePatchedSvgUrls(urls: string[]): string[] | null {
+  const [patchedUrls, setPatchedUrls] = useState<string[] | null>(null);
+  const urlKey = urls.join("|");
 
   useEffect(() => {
-    if (!url.toLowerCase().endsWith(".svg")) return;
+    setPatchedUrls(null);
+    let cancelled = false;
+    const createdObjectUrls: string[] = [];
 
-    let objectUrl: string | null = null;
-
-    (async () => {
-      try {
-        const res = await fetch(url);
-        const text = await res.text();
-
-        // Parse the SVG to check/inject width + height
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(text, "image/svg+xml");
-        const svg = doc.querySelector("svg");
-        if (!svg) return;
-
-        const hasW = svg.hasAttribute("width");
-        const hasH = svg.hasAttribute("height");
-        if (hasW && hasH) return; // already fine — keep original URL
-
-        // Derive pixel size from viewBox
-        const vb = svg.getAttribute("viewBox");
-        if (vb) {
-          const parts = vb.trim().split(/[\s,]+/).map(Number);
-          if (parts.length === 4) {
-            const [, , vbW, vbH] = parts;
-            const aspect = vbW / vbH;
-            const [pw, ph] =
-              aspect >= 1
-                ? [SVG_RASTER_SIZE, Math.round(SVG_RASTER_SIZE / aspect)]
-                : [Math.round(SVG_RASTER_SIZE * aspect), SVG_RASTER_SIZE];
-            if (!hasW) svg.setAttribute("width", String(pw));
-            if (!hasH) svg.setAttribute("height", String(ph));
-          }
-        } else {
-          // No viewBox either — last resort fallback
-          if (!hasW) svg.setAttribute("width", String(SVG_RASTER_SIZE));
-          if (!hasH) svg.setAttribute("height", String(SVG_RASTER_SIZE));
-        }
-
-        const serialized = new XMLSerializer().serializeToString(doc);
-        const blob = new Blob([serialized], { type: "image/svg+xml" });
-        objectUrl = URL.createObjectURL(blob);
-        setPatchedUrl(objectUrl);
-      } catch (e) {
-        console.warn("[SVG patch] Failed for", url, e);
+    Promise.all(urls.map((u) => patchSvgUrl(u))).then((results) => {
+      if (cancelled) {
+        results.forEach((r) => { if (r.startsWith("blob:")) URL.revokeObjectURL(r); });
+        return;
       }
-    })();
+      results.forEach((r) => { if (r.startsWith("blob:")) createdObjectUrls.push(r); });
+      setPatchedUrls(results);
+    });
 
     return () => {
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      cancelled = true;
+      createdObjectUrls.forEach((u) => URL.revokeObjectURL(u));
     };
-  }, [url]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlKey]);
 
-  return patchedUrl;
+  return patchedUrls;
 }
 
 // ── Single sponsor logo ─────────────────────────────────────
 function SponsorLogo({
   placement,
-  logoUrl,
+  textures,
+  groupRotationRef,
+  totalSponsors,
 }: {
   placement: SponsorPlacement;
-  logoUrl: string;
+  textures: THREE.Texture[];
+  groupRotationRef: React.MutableRefObject<number>;
+  totalSponsors: number;
 }) {
-  const safeUrl = usePatchedSvgUrl(logoUrl);
-  const texture = useLoader(THREE.TextureLoader, safeUrl);
-  const material = useWhiteDiscardMaterial(texture);
+  const [sponsorIdx, setSponsorIdx] = useState(placement.initialSponsorIndex);
+  const texture = textures[sponsorIdx];
 
-  // Build curved arc at exact cylinder radius + tiny offset
   const arcGeo = useMemo(() => {
+    const img = texture.image as HTMLImageElement | undefined;
+    const aspect = img ? img.width / img.height : 1;
+
+    let h = MIN_LOGO_DISPLAY_HEIGHT;
+    let w = h * aspect;
+    if (w > MAX_LOGO_DISPLAY_WIDTH) {
+      w = MAX_LOGO_DISPLAY_WIDTH;
+      h = w / aspect;
+    }
+
     const r = LOGO_RADIUS + LOGO_OFFSET;
-    // Use actual logo dimensions from placement
-    const thetaLen = placement.displayWidth / r;
+    const thetaLen = w / r;
     const thetaStart = -thetaLen / 2;
-
-    const geo = new THREE.CylinderGeometry(
-      r, r, placement.displayHeight, 12, 1, true, thetaStart, thetaLen
-    );
-
-    // Flip normals outward
+    const geo = new THREE.CylinderGeometry(r, r, h, 12, 1, true, thetaStart, thetaLen);
     const normals = geo.attributes.normal;
     for (let i = 0; i < normals.count; i++) {
       normals.setXYZ(i, -normals.getX(i), -normals.getY(i), -normals.getZ(i));
     }
-    normals.needsUpdate = true;
-    return geo; // Use actual logo dimensions from placement
-  }, [placement.displayWidth, placement.displayHeight]);
+    return geo;
+  }, [texture]);
 
-  // CylinderGeometry arc at thetaStart=0 faces +X direction in Three.js.
-  // Rotate around Y to place at the correct theta.
-  const rotY = placement.theta + Math.PI / 2;
+  // Shared material for this slot
+  const material = useWhiteDiscardMaterial(texture);
+
+  useFrame(() => {
+    const worldTheta = placement.theta + groupRotationRef.current;
+    // Shift trigger phase to 1.4*PI (from 1.0*PI) to swap the logo earlier.
+    // This ensures the transition happens shortly after the logo enters the hidden zone.
+    const revolution = Math.floor((worldTheta + Math.PI * 1.4) / (Math.PI * 2));
+    let nextIdx = (placement.initialSponsorIndex + revolution * SLOT_COUNT) % totalSponsors;
+    if (nextIdx < 0) nextIdx = (nextIdx + totalSponsors) % totalSponsors;
+    if (nextIdx !== sponsorIdx) setSponsorIdx(nextIdx);
+  });
+
+  // Local rotation to face outward
+  const rotY = placement.theta + Math.PI / 2; 
 
   return (
     <group position={[0, placement.y, 0]} rotation={[0, rotY, 0]}>
@@ -418,18 +306,16 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
   const validSponsors = useMemo(() => sponsors.filter((s) => s.logo), [sponsors]);
   const logoUrls = useMemo(() => validSponsors.map((s) => s.logo!), [validSponsors]);
 
-  // Batch-load all textures to get real aspect ratios BEFORE placement
-  const textures = useLoader(THREE.TextureLoader, logoUrls);
+  // Patch any SVGs missing explicit width/height before handing URLs to TextureLoader.
+  // Without this, viewBox-only SVGs rasterize to a 0x0 bitmap -> WebGL errors.
+  const safeLogoUrls = usePatchedSvgUrls(logoUrls);
 
-  // AABB collision placement using real per-logo aspect ratios
-  const placements = useMemo(() => {
-    const texArr = Array.isArray(textures) ? textures : [textures];
-    const aspects = texArr.map((t: THREE.Texture) => {
-      const img = t.image as HTMLImageElement | undefined;
-      return img ? img.width / img.height : 1;
-    });
-    return generatePlacements(aspects);
-  }, [textures]);
+  // Batch-load all textures to get real aspect ratios BEFORE placement.
+  // Falls back to original URLs while SVG patching is still in progress.
+  const textures = useLoader(THREE.TextureLoader, safeLogoUrls ?? logoUrls);
+
+  // Static layout of slots
+  const placements = useMemo(() => generateSlots(), []);
 
   useFrame((_, delta) => {
     const scroll = scrollProgressRef.current ?? 0;
@@ -465,15 +351,14 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
       />
       <group ref={sponsorGroupRef}>
         {placements.map((placement, i) => {
-          const sponsor = validSponsors[placement.sponsorIndex];
-          if (!sponsor?.logo) return null;
           return (
-            <Suspense
-              key={`sponsor-${i}`}
-              // A small transparent mesh could be a fallback to reserve space
-              fallback={null}
-            >
-              <SponsorLogo placement={placement} logoUrl={sponsor.logo} />
+            <Suspense key={`slot-${i}`} fallback={null}>
+              <SponsorLogo 
+                placement={placement} 
+                textures={Array.isArray(textures) ? textures : [textures]} 
+                groupRotationRef={smoothRotation}
+                totalSponsors={validSponsors.length}
+              />
             </Suspense>
           );
         })}
