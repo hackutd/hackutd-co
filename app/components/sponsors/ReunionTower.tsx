@@ -5,11 +5,11 @@ import { Canvas, useFrame, useThree, useLoader } from "@react-three/fiber";
 import { useGLTF, Environment } from "@react-three/drei";
 import * as THREE from "three";
 
-const MODEL_PATH = "/models/reunion-tower-simple.glb";
+const MODEL_PATH = "/models/reunion_tower_center.glb";
 
 // Cylinder radius: MainRoom is ~37.7 after normalization. Place logos just outside.
-const LOGO_RADIUS = 38.0;
-const LOGO_OFFSET = 0.03; // Tiny offset to prevent z-fighting
+const LOGO_RADIUS = 37.2;
+const LOGO_OFFSET = 0.0; // Tiny offset to prevent z-fighting
 
 const MIN_LOGO_DISPLAY_HEIGHT = 12.0; // "Wayy bigger" height
 const MAX_LOGO_DISPLAY_WIDTH = 32.0;  // "Wayy bigger" width
@@ -350,7 +350,7 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
         scale={[normScale, normScale, normScale]}
         position={[0, -centerY, 0]}
       />
-      <group ref={sponsorGroupRef}>
+      <group ref={sponsorGroupRef} position={[-1.7, 0, 0]}>
         {placements.map((placement, i) => {
           return (
             <Suspense key={`slot-${i}`} fallback={null}>
