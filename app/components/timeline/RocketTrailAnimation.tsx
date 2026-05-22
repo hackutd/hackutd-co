@@ -14,6 +14,7 @@ import {
   ROCKET_STROKE_PATH,
   ROCKET_SLIDE_EASE,
   TIMELINE_SCROLL,
+  TRAIL_GRADIENT_CYCLE_DURATION,
   TRAIL_GRADIENT_STOPS,
   TRAIL_WAVE,
   YEAR_MARKERS,
@@ -37,6 +38,7 @@ export default function RocketTrailAnimation() {
   const assemblyRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<SVGGElement>(null);
   const trailPolyRef = useRef<SVGPolygonElement>(null);
+  const gradientRef = useRef<SVGLinearGradientElement>(null);
   // Individual refs for each marker <g> so GSAP can wave them in sync with the trail
   const markerRefs = useRef<(SVGGElement | null)[]>([]);
 
@@ -49,7 +51,8 @@ export default function RocketTrailAnimation() {
       const markers = markersRef.current;
       const clip = clipRef.current;
       const trailPoly = trailPolyRef.current;
-      if (!assembly || !markers || !clip || !trailPoly) return;
+      const gradientEl = gradientRef.current;
+      if (!assembly || !markers || !clip || !trailPoly || !gradientEl) return;
 
       const trigger = clip.closest("section") ?? clip.parentElement;
       if (!trigger) return;
@@ -129,10 +132,26 @@ export default function RocketTrailAnimation() {
         );
       });
 
+      // Gradient color cycling: animate a translate offset so colours flow left→right.
+      // The gradient uses spreadMethod="repeat" so the pattern tiles seamlessly;
+      // shifting x by one cycle width (endX - startX) returns to the identical visual.
+      const trailWidth = endX - startX;
+      const gradProxy = { tx: startX };
+      gradientEl.setAttribute("gradientTransform", `translate(${startX}, 0)`);
+      const gradientTween = gsap.to(gradProxy, {
+        tx: startX + trailWidth,
+        duration: TRAIL_GRADIENT_CYCLE_DURATION,
+        repeat: -1,
+        ease: "none",
+        onUpdate() {
+          gradientEl.setAttribute("gradientTransform", `translate(${gradProxy.tx}, 0)`);
+        },
+      });
+
       // Collect all wave tweens so speed control is applied uniformly
       const FAST_TS = 1.6;
       const SLOW_TS = 0.35;
-      const allWaveTweens = [topWave, botWave, ...markerTweens];
+      const allWaveTweens = [topWave, botWave, ...markerTweens, gradientTween];
       allWaveTweens.forEach(tw => tw.timeScale(FAST_TS));
 
       let rocketDone = false;
@@ -192,14 +211,18 @@ export default function RocketTrailAnimation() {
           xmlns="http://www.w3.org/2000/svg"
         >
           <defs>
-            {/* Horizontal gradient: amber (left/rocket end) → purple (right/oldest end) */}
+            {/* Gradient animates left→right by shifting a repeating tile via gradientTransform.
+                x1/x2 define one cycle width (trail span); spreadMethod tiles it infinitely.
+                GSAP drives gradientTransform="translate(tx, 0)" in useGSAP below. */}
             <linearGradient
+              ref={gradientRef}
               id="timelineTrailGradient"
-              gradientUnits="objectBoundingBox"
+              gradientUnits="userSpaceOnUse"
+              spreadMethod="repeat"
               x1="0"
-              y1="0.5"
-              x2="1"
-              y2="0.5"
+              y1="0"
+              x2="1168"
+              y2="0"
             >
               {TRAIL_GRADIENT_STOPS.map((stop) => (
                 <stop
@@ -209,6 +232,13 @@ export default function RocketTrailAnimation() {
                 />
               ))}
             </linearGradient>
+
+            {/* Per-marker clip paths — ellipse in group-local coords (GSAP moves the <g> via SVG transform) */}
+            {YEAR_MARKERS.map((marker) => (
+              <clipPath key={`clip-${marker.year}`} id={`markerClip-${marker.year}`}>
+                <ellipse cx={0} cy={0} rx={marker.rx} ry={marker.ry} />
+              </clipPath>
+            ))}
 
             {/* Subtle grain overlay — desktop only for performance */}
             {!isMobile && (
@@ -269,36 +299,66 @@ export default function RocketTrailAnimation() {
 
           {/* Year markers — hidden until rocket finishes sliding in */}
           <g ref={markersRef}>
-            {YEAR_MARKERS.map((marker, i) => (
+            {YEAR_MARKERS.map((marker, i) => {
               // ref lets GSAP set translate(marker.x, marker.y) and then wave the y
               // children use group-relative coords (origin = marker center)
-              <g key={marker.year} ref={el => { markerRefs.current[i] = el; }}>
-                <ellipse cx={0} cy={0} rx={marker.rx} ry={marker.ry} fill="white" />
-                <text
-                  x={0}
-                  y={marker.ry+ yearFontSize * 1.2}
-                  textAnchor="middle"
-                  fill="white"
-                  fontSize={yearFontSize}
-                  fontWeight="700"
-                  fontFamily="var(--font-satoshi, sans-serif)"
-                >
-                  {marker.year}
-                </text>
-                <text
-                  x={0}
-                  y={marker.ry+ yearFontSize * 1.2 + nameFontSize * 1.6}
-                  textAnchor="middle"
-                  fill="white"
-                  fontSize={nameFontSize}
-                  fontWeight={"600"}
-                  letterSpacing={nameLetterSpacing}
-                  fontFamily="var(--font-satoshi, sans-serif)"
-                >
-                  {marker.name}
-                </text>
-              </g>
-            ))}
+              const inner = (
+                <>
+                  {/* White base — shows when no image, acts as border behind image */}
+                  <ellipse cx={0} cy={0} rx={marker.rx} ry={marker.ry} fill="white" />
+                  {/* Optional image clipped to the ellipse shape */}
+                  {marker.image && (
+                    <image
+                      href={marker.image}
+                      x={-marker.rx}
+                      y={-marker.ry}
+                      width={marker.rx * 2}
+                      height={marker.ry * 2}
+                      preserveAspectRatio="xMidYMid slice"
+                      clipPath={`url(#markerClip-${marker.year})`}
+                    />
+                  )}
+                  <text
+                    x={0}
+                    y={marker.ry + yearFontSize * 1.2}
+                    textAnchor="middle"
+                    fill="white"
+                    fontSize={yearFontSize}
+                    fontWeight="700"
+                    fontFamily="var(--font-satoshi, sans-serif)"
+                  >
+                    {marker.year}
+                  </text>
+                  <text
+                    x={0}
+                    y={marker.ry + yearFontSize * 1.2 + nameFontSize * 1.6}
+                    textAnchor="middle"
+                    fill="white"
+                    fontSize={nameFontSize}
+                    fontWeight="600"
+                    letterSpacing={nameLetterSpacing}
+                    fontFamily="var(--font-satoshi, sans-serif)"
+                  >
+                    {marker.name}
+                  </text>
+                </>
+              );
+
+              return (
+                <g key={marker.year} ref={el => { markerRefs.current[i] = el; }}>
+                  {marker.href ? (
+                    <a
+                      href={marker.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ pointerEvents: "auto", cursor: "pointer" }}
+                    >
+                      {inner}
+                    </a>
+                  ) : inner}
+                </g>
+              );
+            })}
           </g>
         </svg>
       </div>
