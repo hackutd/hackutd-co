@@ -492,27 +492,32 @@ export default function Teams() {
         0,
         1,
       );
-      targetX = progress * maxTranslate;
 
-      if (maxTranslate > 0) {
-        const slotWidth = track.scrollWidth / ORDERED_OFFICER_TEAMS.length;
-        const nextIndex = clamp(
-          Math.round((progress * maxTranslate) / slotWidth),
-          0,
-          ORDERED_OFFICER_TEAMS.length - 1,
-        );
-        if (nextIndex !== activeTeamIndexRef.current) {
-          activeTeamIndexRef.current = nextIndex;
-          setDescVisible(false);
-          if (descTransitionRef.current !== null) {
-            window.clearTimeout(descTransitionRef.current);
-          }
-          descTransitionRef.current = window.setTimeout(() => {
-            setDisplayedTeamIndex(nextIndex);
-            setDescVisible(true);
-            descTransitionRef.current = null;
-          }, 200);
+      const slotWidth = track.scrollWidth / ORDERED_OFFICER_TEAMS.length;
+      const nextIndex = clamp(
+        Math.round(progress * (ORDERED_OFFICER_TEAMS.length - 1)),
+        0,
+        ORDERED_OFFICER_TEAMS.length - 1,
+      );
+
+      // Snap to center the active constellation in the viewport
+      targetX = clamp(
+        nextIndex * slotWidth + slotWidth / 2 - window.innerWidth / 2,
+        0,
+        maxTranslate,
+      );
+
+      if (nextIndex !== activeTeamIndexRef.current) {
+        activeTeamIndexRef.current = nextIndex;
+        setDescVisible(false);
+        if (descTransitionRef.current !== null) {
+          window.clearTimeout(descTransitionRef.current);
         }
+        descTransitionRef.current = window.setTimeout(() => {
+          setDisplayedTeamIndex(nextIndex);
+          setDescVisible(true);
+          descTransitionRef.current = null;
+        }, 200);
       }
 
       if (progress <= 0.001 || progress >= 0.999) {
@@ -727,38 +732,6 @@ export default function Teams() {
       </div>
     );
 
-    const mobilePhotoPanel = (
-      <div
-        className="px-5 mt-4 transition-opacity duration-200"
-        style={{ opacity: descVisible ? 1 : 0 }}
-      >
-        {ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.groupPhotoUrl ? (
-          <Image
-            key={ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.id}
-            src={ORDERED_OFFICER_TEAMS[displayedTeamIndex]!.groupPhotoUrl!}
-            alt={`${ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.label} team`}
-            width={400}
-            height={160}
-            className="w-full rounded-xl object-cover border border-white/10"
-            style={{ maxHeight: "140px" }}
-          />
-        ) : (
-          <div
-            className="flex w-full items-center justify-center rounded-xl border border-white/8 bg-white/[0.02]"
-            style={{ height: "100px" }}
-          >
-            <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/20">
-              Group photo coming soon
-            </p>
-          </div>
-        )}
-        {ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.description ? (
-          <p className="mt-2 text-sm leading-snug text-white/50 line-clamp-2">
-            {ORDERED_OFFICER_TEAMS[displayedTeamIndex]!.description}
-          </p>
-        ) : null}
-      </div>
-    );
 
     if (prefersReducedMotion) {
       return (
@@ -802,13 +775,18 @@ export default function Teams() {
       <section
         id="team"
         ref={mobileSectionRef}
-        className={`relative bg-background ${isAndroid ? TEAMS_LAYOUT.mobileSectionMinHeightAndroid : TEAMS_LAYOUT.mobileSectionMinHeight}`}
+        className="relative bg-background"
+        style={{ minHeight: `${100 + ORDERED_OFFICER_TEAMS.length * 22}vh` }}
       >
         <div className={`sticky top-0 overflow-hidden ${isAndroid ? TEAMS_LAYOUT.mobileViewportHeightAndroid : TEAMS_LAYOUT.mobileViewportHeight}`}>
           {mobileStars}
 
-          <div className="relative flex h-full flex-col pt-16 pb-6">
-            <div className="px-5">
+          <div className="relative flex h-full flex-col">
+            {/* Top info zone: heading + full description + photo, capped at ~50% height */}
+            <div
+              className="shrink-0 overflow-y-auto px-5 pt-16 pb-3"
+              style={{ maxHeight: isAndroid ? "52%" : "50%" }}
+            >
               <p className="text-[0.62rem] uppercase tracking-[0.2em] text-white/26">
                 {TEAMS_COPY.eyebrow}
               </p>
@@ -817,11 +795,43 @@ export default function Teams() {
                 <br />
                 {TEAMS_COPY.heading[1]}
               </h2>
+
+              <div
+                className="mt-3 transition-opacity duration-200"
+                style={{ opacity: descVisible ? 1 : 0 }}
+              >
+                {ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.description ? (
+                  <p className="text-sm leading-relaxed text-white/50">
+                    {ORDERED_OFFICER_TEAMS[displayedTeamIndex]!.description}
+                  </p>
+                ) : null}
+                <div className="mt-3">
+                  {ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.groupPhotoUrl ? (
+                    <Image
+                      key={ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.id}
+                      src={ORDERED_OFFICER_TEAMS[displayedTeamIndex]!.groupPhotoUrl!}
+                      alt={`${ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.label} team`}
+                      width={400}
+                      height={96}
+                      className="w-full rounded-xl object-cover border border-white/10"
+                      style={{ maxHeight: "96px" }}
+                    />
+                  ) : (
+                    <div
+                      className="flex w-full items-center justify-center rounded-xl border border-white/8 bg-white/[0.02]"
+                      style={{ height: "72px" }}
+                    >
+                      <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/20">
+                        Group photo coming soon
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {mobilePhotoPanel}
-
-            <div className="relative mt-4 flex-1 overflow-hidden">
+            {/* Bottom constellation zone: takes all remaining space */}
+            <div className="relative mt-2 min-h-0 flex-1 overflow-hidden">
               <div
                 ref={mobileTrackRef}
                 className="flex h-full w-max items-start will-change-transform"
@@ -843,6 +853,19 @@ export default function Teams() {
                   />
                 ))}
               </div>
+            </div>
+
+            <div className="flex items-center justify-center gap-1.5 pb-3 pt-1">
+              {ORDERED_OFFICER_TEAMS.map((_, i) => (
+                <span
+                  key={i}
+                  className={`h-1 rounded-full transition-all duration-300 ${
+                    i === displayedTeamIndex
+                      ? "w-4 bg-white/60"
+                      : "w-1 bg-white/20"
+                  }`}
+                />
+              ))}
             </div>
           </div>
         </div>
