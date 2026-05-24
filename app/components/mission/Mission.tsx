@@ -7,13 +7,16 @@ import { useGSAP } from "@gsap/react";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { missionContent } from "@/app/data/mission";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
+import {
+  DIRECTORS_SECTION_DATA_ATTR,
+  MISSION_SECTION_DATA_ATTR,
+} from "../background/sceneConfig";
 import { dispatchNavbarThemeOverride } from "../navbar/navbarThemeOverride";
 import {
   DIRECTORS_NAVBAR_THEME_TRIGGER,
   DIRECTORS_PIN,
   MISSION_DECORATION_COUNT,
   MISSION_LAYOUT,
-  MISSION_OVERLAY,
 } from "./sceneConfig";
 
 configureScrollTrigger();
@@ -53,7 +56,6 @@ function renderDirectorsPanel() {
 
 export default function Mission() {
   const missionSectionRef = useRef<HTMLElement>(null);
-  const darkOverlayRef = useRef<HTMLDivElement>(null);
   const directorsSectionRef = useRef<HTMLElement>(null);
   const directorsContentRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -61,35 +63,16 @@ export default function Mission() {
   useGSAP(
     () => {
       const missionSection = missionSectionRef.current;
-      const darkOverlay = darkOverlayRef.current;
       const directorsSection = directorsSectionRef.current;
       const directorsContent = directorsContentRef.current;
 
-      if (
-        !missionSection ||
-        !darkOverlay ||
-        !directorsSection ||
-        !directorsContent
-      ) {
+      if (!missionSection || !directorsSection || !directorsContent) {
         return;
       }
 
       if (prefersReducedMotion) {
         return;
       }
-
-      // Dark overlay crossfade — begins when mission is half-scrolled out
-      gsap.set(darkOverlay, { autoAlpha: 0 });
-      gsap.to(darkOverlay, {
-        autoAlpha: 1,
-        ease: "power1.in",
-        scrollTrigger: {
-          trigger: missionSection,
-          start: MISSION_OVERLAY.start,
-          end: MISSION_OVERLAY.end,
-          scrub: MISSION_OVERLAY.scrub,
-        },
-      });
 
       // Directors section — pin at viewport top, fade content in, then unpin
       //    Animate children of the pinned element, not the pinned element itself.
@@ -153,7 +136,8 @@ export default function Mission() {
         <section
           ref={missionSectionRef}
           data-navbar-theme="light"
-          className={`bg-[var(--color-surface)] ${MISSION_LAYOUT.sectionPadding}`}
+          {...{ [MISSION_SECTION_DATA_ATTR]: "" }}
+          className={MISSION_LAYOUT.sectionPadding}
         >
           <div className="mx-auto flex min-h-[80vh] max-w-7xl items-center justify-center">
             <p className="max-w-6xl text-center text-4xl font-normal leading-[1.2] text-[var(--color-surface-foreground)] sm:text-5xl md:text-6xl lg:text-7xl xl:max-w-7xl">
@@ -164,7 +148,8 @@ export default function Mission() {
 
         <section
           ref={directorsSectionRef}
-          className="bg-background px-8 py-24 md:px-12 md:py-32"
+          {...{ [DIRECTORS_SECTION_DATA_ATTR]: "" }}
+          className="px-8 py-24 md:px-12 md:py-32"
         >
           <div
             ref={directorsContentRef}
@@ -178,17 +163,14 @@ export default function Mission() {
   }
 
   return (
-    <div className="relative bg-[var(--color-surface)]">
-      {/* Shared dark overlay — covers both sections for seamless transition */}
-      <div
-        ref={darkOverlayRef}
-        className="pointer-events-none absolute inset-0 z-10 bg-background"
-      />
-
-      {/* Mission statement — naturally scrolling, no pin */}
+    <div className="relative">
+      {/* Mission statement — naturally scrolling, no pin. Background is painted
+          by the page-level <PageBackground /> layer to avoid seams between
+          sections. */}
       <section
         ref={missionSectionRef}
         data-navbar-theme="light"
+        {...{ [MISSION_SECTION_DATA_ATTR]: "" }}
         className={`relative z-20 ${MISSION_LAYOUT.sectionPadding} ${MISSION_LAYOUT.sectionMinHeight}`}
       >
         <div
@@ -203,6 +185,7 @@ export default function Mission() {
       {/* Directors message — pins at viewport top, content fades in centered, then unpins */}
       <section
         ref={directorsSectionRef}
+        {...{ [DIRECTORS_SECTION_DATA_ATTR]: "" }}
         className="relative z-20"
       >
         <div className="flex h-screen items-center justify-center px-8 md:px-12">

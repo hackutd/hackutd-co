@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef } from "react";
+import { useId, useRef } from "react";
 import gsap from "gsap";
 import { CustomEase } from "gsap/CustomEase";
 import { useGSAP } from "@gsap/react";
+import BrandShaderBackground from "@/app/components/background/BrandShaderBackground";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
@@ -14,8 +15,6 @@ import {
   ROCKET_STROKE_PATH,
   ROCKET_SLIDE_EASE,
   TIMELINE_SCROLL,
-  TRAIL_GRADIENT_CYCLE_DURATION,
-  TRAIL_GRADIENT_STOPS,
   TRAIL_WAVE,
   YEAR_MARKERS,
 } from "./sceneConfig";
@@ -34,11 +33,12 @@ function trailHW(t: number, hwMin: number, hwPeak: number, hwEnd: number, peakT:
 }
 
 export default function RocketTrailAnimation() {
+  const reactId = useId();
+  const trailMaskId = `timelineTrailMask-${reactId.replace(/:/g, "")}`;
   const clipRef = useRef<HTMLDivElement>(null);
   const assemblyRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<SVGGElement>(null);
   const trailPolyRef = useRef<SVGPolygonElement>(null);
-  const gradientRef = useRef<SVGLinearGradientElement>(null);
   // Individual refs for each marker <g> so GSAP can wave them in sync with the trail
   const markerRefs = useRef<(SVGGElement | null)[]>([]);
 
@@ -51,8 +51,7 @@ export default function RocketTrailAnimation() {
       const markers = markersRef.current;
       const clip = clipRef.current;
       const trailPoly = trailPolyRef.current;
-      const gradientEl = gradientRef.current;
-      if (!assembly || !markers || !clip || !trailPoly || !gradientEl) return;
+      if (!assembly || !markers || !clip || !trailPoly) return;
 
       const trigger = clip.closest("section") ?? clip.parentElement;
       if (!trigger) return;
@@ -132,26 +131,10 @@ export default function RocketTrailAnimation() {
         );
       });
 
-      // Gradient color cycling: animate a translate offset so colours flow left→right.
-      // The gradient uses spreadMethod="repeat" so the pattern tiles seamlessly;
-      // shifting x by one cycle width (endX - startX) returns to the identical visual.
-      const trailWidth = endX - startX;
-      const gradProxy = { tx: startX };
-      gradientEl.setAttribute("gradientTransform", `translate(${startX}, 0)`);
-      const gradientTween = gsap.to(gradProxy, {
-        tx: startX + trailWidth,
-        duration: TRAIL_GRADIENT_CYCLE_DURATION,
-        repeat: -1,
-        ease: "none",
-        onUpdate() {
-          gradientEl.setAttribute("gradientTransform", `translate(${gradProxy.tx}, 0)`);
-        },
-      });
-
       // Collect all wave tweens so speed control is applied uniformly
       const FAST_TS = 1.6;
       const SLOW_TS = 0.35;
-      const allWaveTweens = [topWave, botWave, ...markerTweens, gradientTween];
+      const allWaveTweens = [topWave, botWave, ...markerTweens];
       allWaveTweens.forEach(tw => tw.timeScale(FAST_TS));
 
       let rocketDone = false;
@@ -211,27 +194,17 @@ export default function RocketTrailAnimation() {
           xmlns="http://www.w3.org/2000/svg"
         >
           <defs>
-            {/* Gradient animates left→right by shifting a repeating tile via gradientTransform.
-                x1/x2 define one cycle width (trail span); spreadMethod tiles it infinitely.
-                GSAP drives gradientTransform="translate(tx, 0)" in useGSAP below. */}
-            <linearGradient
-              ref={gradientRef}
-              id="timelineTrailGradient"
-              gradientUnits="userSpaceOnUse"
-              spreadMethod="repeat"
-              x1="0"
-              y1="0"
-              x2="1168"
-              y2="0"
+            <mask
+              id={trailMaskId}
+              maskUnits="userSpaceOnUse"
+              x="0"
+              y="-180"
+              width="1371"
+              height="760"
             >
-              {TRAIL_GRADIENT_STOPS.map((stop) => (
-                <stop
-                  key={stop.offset}
-                  offset={stop.offset}
-                  stopColor={stop.color}
-                />
-              ))}
-            </linearGradient>
+              <rect x="0" y="-180" width="1371" height="760" fill="black" />
+              <polygon ref={trailPolyRef} fill="white" />
+            </mask>
 
             {/* Per-marker clip paths — ellipse in group-local coords (GSAP moves the <g> via SVG transform) */}
             {YEAR_MARKERS.map((marker) => (
@@ -239,50 +212,22 @@ export default function RocketTrailAnimation() {
                 <ellipse cx={0} cy={0} rx={marker.rx} ry={marker.ry} />
               </clipPath>
             ))}
-
-            {/* Subtle grain overlay — desktop only for performance */}
-            {!isMobile && (
-              <filter
-                id="timelineGrain"
-                x="-5%"
-                y="-5%"
-                width="110%"
-                height="110%"
-              >
-                <feTurbulence
-                  type="fractalNoise"
-                  baseFrequency="0.5"
-                  numOctaves="2"
-                  stitchTiles="stitch"
-                  result="noise"
-                />
-                <feColorMatrix
-                  type="saturate"
-                  values="0"
-                  in="noise"
-                  result="grain"
-                />
-                <feComponentTransfer in="grain" result="grainAlpha">
-                  <feFuncA type="table" tableValues="0 0.3" />
-                </feComponentTransfer>
-                <feBlend
-                  in="SourceGraphic"
-                  in2="grainAlpha"
-                  mode="overlay"
-                  result="blended"
-                />
-                {/* Clip result to the original shape's alpha to prevent gray bleed outside the path */}
-                <feComposite in="blended" in2="SourceGraphic" operator="in" />
-              </filter>
-            )}
           </defs>
 
-          {/* Animated wave trail polygon — points built imperatively in useGSAP */}
-          <polygon
-            ref={trailPolyRef}
-            fill="url(#timelineTrailGradient)"
-            filter={isMobile ? undefined : "url(#timelineGrain)"}
-          />
+          <foreignObject
+            x="0"
+            y="-180"
+            width="1371"
+            height="760"
+            mask={`url(#${trailMaskId})`}
+          >
+            <div
+              className="h-full w-full"
+              style={{ height: "100%", width: "100%" }}
+            >
+              <BrandShaderBackground lazyLoad={false} />
+            </div>
+          </foreignObject>
 
           {/* Rocket body fill */}
           <path d={ROCKET_FILL_PATH} fill="#242425" />

@@ -14,6 +14,14 @@ export const HERO_SCENE_SCROLL = {
   scrub: 0.2,
 } as const;
 
+export const HERO_COMET_SHADER = {
+  reveal: {
+    start: HERO_SCENE_SCROLL.start,
+    end: HERO_SCENE_SCROLL.end,
+    ease: "power1.out",
+  },
+} as const;
+
 export const WHITEOUT_SCROLL = {
   start: "65% bottom",
   end: "bottom bottom",
@@ -22,18 +30,12 @@ export const WHITEOUT_SCROLL = {
 export const HERO_LAYOUT = {
   minHeight: "min-h-[250vh] md:min-h-[400vh]",
   stickyViewportHeight: "h-[100svh] md:h-screen",
-  skylineBackTranslateX: "-translate-x-[47%]",
 } as const;
 
 export const HERO_COPY = {
   heading: "The Largest 24-Hour Hackathon in Texas.",
   body: "Join hundreds of hackers, creators, and innovators for a weekend of coding, collaboration, and chaos where ideas become reality.",
   ctaLabel: "Coming Soon",
-} as const;
-
-export const HERO_SKYLINE_PARALLAX = {
-  backYPercent: -6,
-  frontYPercent: -12,
 } as const;
 
 export const HERO_WHITEOUT = {
@@ -47,6 +49,18 @@ export const HERO_WHITEOUT = {
     end: WHITEOUT_SCROLL.end,
     ease: "power2.in",
   },
+  scene: {
+    start: "72% bottom",
+    end: "92% bottom",
+    ease: "power2.in",
+  },
+} as const;
+
+export const HERO_SKYLINE_PARALLAX = {
+  start: "top top",
+  end: "65% bottom",
+  backY: -40,
+  ease: "none",
 } as const;
 
 export const HERO_NAVBAR_THEME_TRIGGER = {
@@ -65,74 +79,20 @@ export const COMET_TUNING = {
     C 300,134 120,72 -60,-28
   `,
   ribbon: {
-    minWidth: 6,
-    maxWidth: 220,
+    minWidth: 8,
+    maxWidth: 260,
     samples: 220,
     taperPower: 1,
+  },
+  wave: {
+    samplePoints: 80,
+    maxAmplitude: 40,
+    staggerEach: 0.08,
+    duration: 1.2,
   },
   animation: {
     duration: 3,
     initialProgress: 0,
-  },
-  gradient: {
-    x1: 735,
-    y1: 870,
-    x2: -60,
-    y2: -28,
-    stops: [
-      { offset: "10%", color: "var(--color-amber)" },
-      { offset: "30%", color: "var(--color-orange)" },
-      { offset: "55%", color: "var(--color-pink)" },
-      { offset: "100%", color: "var(--color-purple)" },
-    ],
-    grain: {
-      baseFrequency: 0.5,
-      numOctaves: 2,
-      opacity: 0.4,
-    },
-    drift: {
-      duration: 24,
-      x1: {
-        amplitude: 58,
-        frequency: 1,
-        phase: 0.35,
-        rippleAmplitude: 9,
-        rippleFrequency: 5,
-        ripplePhase: 1.1,
-      },
-      y1: {
-        amplitude: 46,
-        frequency: 2,
-        phase: 1.25,
-        rippleAmplitude: 7,
-        rippleFrequency: 6,
-        ripplePhase: 0.45,
-      },
-      x2: {
-        amplitude: 96,
-        frequency: 3,
-        phase: 2.2,
-        rippleAmplitude: 14,
-        rippleFrequency: 7,
-        ripplePhase: 1.7,
-      },
-      y2: {
-        amplitude: 74,
-        frequency: 4,
-        phase: 0.8,
-        rippleAmplitude: 11,
-        rippleFrequency: 8,
-        ripplePhase: 2.4,
-      },
-    },
-  },
-  glow: {
-    blurStdDev: 24,
-    opacity: 0.28,
-  },
-  outline: {
-    width: 1,
-    opacity: 0.9,
   },
   star: {
     outer: 14,
@@ -142,6 +102,11 @@ export const COMET_TUNING = {
 
 export const MOBILE_SCRUB = 0.6;
 export const MOBILE_RIBBON_SAMPLES = 80;
+
+export const MOBILE_COMET_WAVE = {
+  ...COMET_TUNING.wave,
+  maxAmplitude: 50,
+} as const;
 
 function createHeroStars(count: number): HeroStar[] {
   let seed = 27;
