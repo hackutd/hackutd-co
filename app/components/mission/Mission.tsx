@@ -7,10 +7,7 @@ import { useGSAP } from "@gsap/react";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { missionContent } from "@/app/data/mission";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
-import {
-  DIRECTORS_SECTION_DATA_ATTR,
-  MISSION_SECTION_DATA_ATTR,
-} from "../background/sceneConfig";
+import { MISSION_STATEMENT_DATA_ATTR } from "../background/sceneConfig";
 import { dispatchNavbarThemeOverride } from "../navbar/navbarThemeOverride";
 import {
   DIRECTORS_NAVBAR_THEME_TRIGGER,
@@ -136,8 +133,7 @@ export default function Mission() {
         <section
           ref={missionSectionRef}
           data-navbar-theme="light"
-          {...{ [MISSION_SECTION_DATA_ATTR]: "" }}
-          className={MISSION_LAYOUT.sectionPadding}
+          className={`bg-[var(--color-surface)] ${MISSION_LAYOUT.sectionPadding}`}
         >
           <div className="mx-auto flex min-h-[80vh] max-w-7xl items-center justify-center">
             <p className="max-w-6xl text-center text-4xl font-normal leading-[1.2] text-[var(--color-surface-foreground)] sm:text-5xl md:text-6xl lg:text-7xl xl:max-w-7xl">
@@ -148,8 +144,7 @@ export default function Mission() {
 
         <section
           ref={directorsSectionRef}
-          {...{ [DIRECTORS_SECTION_DATA_ATTR]: "" }}
-          className="px-8 py-24 md:px-12 md:py-32"
+          className="bg-background px-8 py-24 md:px-12 md:py-32"
         >
           <div
             ref={directorsContentRef}
@@ -170,7 +165,7 @@ export default function Mission() {
       <section
         ref={missionSectionRef}
         data-navbar-theme="light"
-        {...{ [MISSION_SECTION_DATA_ATTR]: "" }}
+        {...{ [MISSION_STATEMENT_DATA_ATTR]: "" }}
         className={`relative z-20 ${MISSION_LAYOUT.sectionPadding} ${MISSION_LAYOUT.sectionMinHeight}`}
       >
         <div
@@ -185,7 +180,6 @@ export default function Mission() {
       {/* Directors message — pins at viewport top, content fades in centered, then unpins */}
       <section
         ref={directorsSectionRef}
-        {...{ [DIRECTORS_SECTION_DATA_ATTR]: "" }}
         className="relative z-20"
       >
         <div className="flex h-screen items-center justify-center px-8 md:px-12">

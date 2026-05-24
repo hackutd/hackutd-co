@@ -1,16 +1,16 @@
 "use client";
 
-import { useId, useRef } from "react";
+import type { ComponentProps } from "react";
+import { useRef } from "react";
+import { ShaderGradient, ShaderGradientCanvas } from "@shadergradient/react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-import BrandShaderBackground from "@/app/components/background/BrandShaderBackground";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import {
   COMET_TUNING,
   HERO_SCENE_SCROLL,
-  MOBILE_COMET_WAVE,
   MOBILE_RIBBON_SAMPLES,
   MOBILE_SCRUB,
 } from "./sceneConfig";
@@ -22,9 +22,64 @@ import {
 
 configureScrollTrigger();
 
+type ShaderGradientProps = ComponentProps<typeof ShaderGradient> & {
+  axesHelper?: string;
+  bgColor1?: string;
+  bgColor2?: string;
+  destination?: string;
+  embedMode?: string;
+  fov?: number;
+  format?: string;
+  frameRate?: number;
+  gizmoHelper?: string;
+  pixelDensity?: number;
+};
+
+const shaderGradientProps: ShaderGradientProps = {
+  animate: "on",
+  axesHelper: "off",
+  bgColor1: "#000000",
+  bgColor2: "#000000",
+  brightness: 1.5,
+  cAzimuthAngle: 110,
+  cDistance: 7.1,
+  cPolarAngle: 104,
+  cameraZoom: 10.5,
+  color1: "#6C17FE",
+  color3: "#FFA21F",
+  color2: "#F31667",
+  destination: "onCanvas",
+  embedMode: "off",
+  envPreset: "dawn",
+  format: "gif",
+  fov: 45,
+  frameRate: 10,
+  gizmoHelper: "hide",
+  grain: "on",
+  lightType: "3d",
+  pixelDensity: 1,
+  positionX: 0,
+  positionY: -0.05,
+  positionZ: 0,
+  range: "disabled",
+  rangeEnd: 40,
+  rangeStart: 0,
+  reflection: 0.1,
+  rotationX: 28,
+  rotationY: -18,
+  rotationZ: -32,
+  shader: "defaults",
+  type: "sphere",
+  uAmplitude: 2.2,
+  uDensity: 1.7,
+  uFrequency: 5.5,
+  uSpeed: 0.18,
+  uStrength: 0.85,
+  uTime: 0,
+  wireframe: false,
+};
+
 export default function CometTrailBackground() {
-  const reactId = useId();
-  const maskId = `cometShaderMask-${reactId.replace(/:/g, "")}`;
   const wrapperRef = useRef<HTMLDivElement>(null);
   const spineRef = useRef<SVGPathElement>(null);
   const maskPathRef = useRef<SVGPathElement>(null);
@@ -55,55 +110,36 @@ export default function CometTrailBackground() {
         spineLength,
         sampleCount,
       );
-      const wave = isMobile ? MOBILE_COMET_WAVE : COMET_TUNING.wave;
-      const trailState: {
-        progress: number;
-        elapsed: number;
-      } = {
-        progress: COMET_TUNING.animation.initialProgress,
-        elapsed: 0,
-      };
 
-      const renderTrail = (withWave = true) => {
-        const p = clamp(trailState.progress, 0, 1);
+      const setReveal = (progress: number) => {
+        const p = clamp(progress, 0, 1);
         const headDistance = (1 - p) * spineLength;
         const revealPath = buildRibbonSegmentPath(
           spineSamples,
           spineLength,
           headDistance,
-          withWave
-            ? {
-                ...wave,
-                elapsed: trailState.elapsed,
-              }
-            : undefined,
         );
 
         maskPath.setAttribute("d", revealPath);
       };
 
       if (prefersReducedMotion) {
-        trailState.progress = 1;
-        renderTrail(false);
+        setReveal(1);
         return;
       }
 
-      renderTrail();
+      setReveal(COMET_TUNING.animation.initialProgress);
 
-      gsap.to(trailState, {
-        elapsed: wave.duration * 2,
-        duration: wave.duration * 2,
-        ease: "none",
-        repeat: -1,
-        onUpdate: renderTrail,
-      });
+      const revealState = {
+        progress: COMET_TUNING.animation.initialProgress,
+      };
 
-      gsap.to(trailState, {
+      gsap.to(revealState, {
         progress: 1,
         duration: COMET_TUNING.animation.duration,
         ease: "none",
         onUpdate: () => {
-          renderTrail();
+          setReveal(revealState.progress);
         },
         scrollTrigger: {
           trigger,
@@ -113,11 +149,7 @@ export default function CometTrailBackground() {
         },
       });
     },
-    {
-      scope: wrapperRef,
-      dependencies: [isMobile, prefersReducedMotion],
-      revertOnUpdate: true,
-    },
+    { scope: wrapperRef, dependencies: [isMobile, prefersReducedMotion] },
   );
 
   return (
@@ -132,7 +164,7 @@ export default function CometTrailBackground() {
         aria-hidden="true"
       >
         <defs>
-          <mask id={maskId} maskUnits="userSpaceOnUse">
+          <mask id="cometShaderMask" maskUnits="userSpaceOnUse">
             <rect x="0" y="0" width="1440" height="900" fill="black" />
             <path ref={maskPathRef} d="" fill="white" />
           </mask>
@@ -145,13 +177,21 @@ export default function CometTrailBackground() {
           y="0"
           width="1440"
           height="900"
-          mask={`url(#${maskId})`}
+          mask="url(#cometShaderMask)"
         >
           <div
             className="h-full w-full"
             style={{ height: "100%", width: "100%" }}
           >
-            <BrandShaderBackground />
+            <ShaderGradientCanvas
+              className="h-full w-full"
+              style={{ height: "100%", width: "100%" }}
+              pixelDensity={shaderGradientProps.pixelDensity}
+              fov={shaderGradientProps.fov}
+              pointerEvents="none"
+            >
+              <ShaderGradient {...shaderGradientProps} />
+            </ShaderGradientCanvas>
           </div>
         </foreignObject>
       </svg>

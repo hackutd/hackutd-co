@@ -13,9 +13,11 @@ import {
   MOBILE_RIBBON_SAMPLES,
 } from "./sceneConfig";
 import {
+  buildRibbonSegmentPath,
   buildStarPoints,
   clamp,
   interpolateSpineSample,
+  orbitGradientCoord,
   precomputeSpineSamples,
   roundCoord,
 } from "./cometGeometry";
@@ -25,7 +27,10 @@ configureScrollTrigger();
 export default function CometAnimation() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const spineRef = useRef<SVGPathElement>(null);
+  const revealMaskPathRef = useRef<SVGPathElement>(null);
+  const cometGlowRef = useRef<SVGPathElement>(null);
   const starRef = useRef<SVGGElement>(null);
+  const gradientRef = useRef<SVGLinearGradientElement>(null);
 
   const isMobile = useIsMobile();
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -33,10 +38,18 @@ export default function CometAnimation() {
   useGSAP(
     () => {
       const spine = spineRef.current;
+      const revealMaskPath = revealMaskPathRef.current;
+      const cometGlow = cometGlowRef.current;
       const star = starRef.current;
       const wrapper = wrapperRef.current;
 
-      if (!spine || !star || !wrapper) {
+      if (
+        !spine ||
+        !revealMaskPath ||
+        !cometGlow ||
+        !star ||
+        !wrapper
+      ) {
         return;
       }
 
@@ -56,10 +69,24 @@ export default function CometAnimation() {
         spineLength,
         sampleCount,
       );
+      const fullRibbonPath = buildRibbonSegmentPath(
+        spineSamples,
+        spineLength,
+        0,
+      );
+      cometGlow.setAttribute("d", fullRibbonPath);
 
-      const setStarProgress = (progress: number) => {
+      const setReveal = (progress: number) => {
         const p = clamp(progress, 0, 1);
         const headDistance = (1 - p) * spineLength;
+        const revealPath = buildRibbonSegmentPath(
+          spineSamples,
+          spineLength,
+          headDistance,
+        );
+
+        revealMaskPath.setAttribute("d", revealPath);
+
         const head = interpolateSpineSample(
           spineSamples,
           spineLength,
@@ -73,11 +100,11 @@ export default function CometAnimation() {
       };
 
       if (prefersReducedMotion) {
-        setStarProgress(1);
+        setReveal(1);
         return;
       }
 
-      setStarProgress(COMET_TUNING.animation.initialProgress);
+      setReveal(COMET_TUNING.animation.initialProgress);
 
       const revealState = {
         progress: COMET_TUNING.animation.initialProgress,
@@ -99,13 +126,71 @@ export default function CometAnimation() {
           duration: COMET_TUNING.animation.duration,
           ease: "none",
           onUpdate: () => {
-            setStarProgress(revealState.progress);
+            setReveal(revealState.progress);
           },
         },
         0,
       );
+
     },
     { scope: wrapperRef, dependencies: [isMobile, prefersReducedMotion] },
+  );
+
+  useGSAP(
+    () => {
+      const gradientEl = gradientRef.current;
+      if (!gradientEl) {
+        return;
+      }
+
+      const { x1, y1, x2, y2, drift } = COMET_TUNING.gradient;
+
+      const setGradientEndpoints = (
+        nextX1: number,
+        nextY1: number,
+        nextX2: number,
+        nextY2: number,
+      ) => {
+        gradientEl.setAttribute("x1", String(roundCoord(nextX1)));
+        gradientEl.setAttribute("y1", String(roundCoord(nextY1)));
+        gradientEl.setAttribute("x2", String(roundCoord(nextX2)));
+        gradientEl.setAttribute("y2", String(roundCoord(nextY2)));
+      };
+
+      const resetGradientEndpoints = () => {
+        setGradientEndpoints(x1, y1, x2, y2);
+      };
+
+      if (prefersReducedMotion) {
+        resetGradientEndpoints();
+        return;
+      }
+
+      const setGradientOrbit = (progress: number) => {
+        const angle = progress * Math.PI * 2;
+
+        setGradientEndpoints(
+          orbitGradientCoord(x1, angle, drift.x1),
+          orbitGradientCoord(y1, angle, drift.y1),
+          orbitGradientCoord(x2, angle, drift.x2),
+          orbitGradientCoord(y2, angle, drift.y2),
+        );
+      };
+
+      setGradientOrbit(0);
+
+      const orbitState = { progress: 0 };
+      gsap.to(orbitState, {
+        progress: 1,
+        duration: drift.duration,
+        ease: "none",
+        repeat: -1,
+        onUpdate: () => {
+          setGradientOrbit(orbitState.progress);
+        },
+      });
+    },
+    { scope: wrapperRef, dependencies: [prefersReducedMotion] },
   );
 
   return (
@@ -119,9 +204,54 @@ export default function CometAnimation() {
         className="h-full w-full"
         aria-hidden="true"
       >
+        <defs>
+          <linearGradient
+            ref={gradientRef}
+            id="cometGradient"
+            x1={COMET_TUNING.gradient.x1}
+            y1={COMET_TUNING.gradient.y1}
+            x2={COMET_TUNING.gradient.x2}
+            y2={COMET_TUNING.gradient.y2}
+            gradientUnits="userSpaceOnUse"
+          >
+            {COMET_TUNING.gradient.stops.map((stop) => (
+              <stop
+                key={stop.offset}
+                offset={stop.offset}
+                stopColor={stop.color}
+              />
+            ))}
+          </linearGradient>
+
+          {!isMobile && (
+            <filter id="cometGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation={COMET_TUNING.glow.blurStdDev} />
+            </filter>
+          )}
+
+          <mask id="cometRevealMask" maskUnits="userSpaceOnUse">
+            <rect x="0" y="0" width="1440" height="900" fill="black" />
+            <path ref={revealMaskPathRef} d="" fill="white" />
+          </mask>
+        </defs>
+
         <path ref={spineRef} d={COMET_TUNING.spine} fill="none" opacity="0" />
 
-        <g ref={starRef} opacity="0">
+        <g mask="url(#cometRevealMask)">
+          <path
+            ref={cometGlowRef}
+            d=""
+            fill="url(#cometGradient)"
+            filter={isMobile ? undefined : "url(#cometGlow)"}
+            opacity={isMobile ? 0.15 : COMET_TUNING.glow.opacity}
+          />
+        </g>
+
+        <g
+          ref={starRef}
+          transform={`translate(${COMET_TUNING.gradient.x2}, ${COMET_TUNING.gradient.y2})`}
+          opacity="0"
+        >
           <polygon
             points={buildStarPoints(
               COMET_TUNING.star.outer,

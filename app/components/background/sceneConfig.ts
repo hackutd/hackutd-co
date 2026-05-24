@@ -3,11 +3,11 @@
  *
  * A single fixed background element is painted once and its light layer's
  * opacity is driven by two scrubbed tweens:
- *   - WHITEOUT: dark → light, scoped to the Hero/Mission handoff
- *   - DARKEN:   light → dark, scoped to the Directors section handoff
+ *   - WHITEOUT: dark → light, scoped to the Hero section
+ *   - DARKEN:   light → dark, scoped to the Mission statement section
  *
- * Timings keep the Mission statement on the light layer, then return the page
- * to the dark layer as the Directors content pins.
+ * Timings match what Hero and Mission previously controlled locally, so the
+ * visual rhythm is unchanged — only the owning DOM node is unified.
  */
 
 export const PAGE_BG_WHITEOUT = {
@@ -18,8 +18,8 @@ export const PAGE_BG_WHITEOUT = {
 } as const;
 
 export const PAGE_BG_DARKEN = {
-  start: "top top",
-  end: "+=500",
+  start: "center top",
+  end: "bottom top",
   ease: "power1.in",
   scrub: 1,
 } as const;
@@ -27,5 +27,4 @@ export const PAGE_BG_DARKEN = {
 export const PAGE_BG_MOBILE_WHITEOUT_SCRUB = 0.6;
 
 export const HERO_SCENE_DATA_ATTR = "data-bg-hero-scene";
-export const MISSION_SECTION_DATA_ATTR = "data-bg-mission-section";
-export const DIRECTORS_SECTION_DATA_ATTR = "data-bg-directors-section";
+export const MISSION_STATEMENT_DATA_ATTR = "data-bg-mission-statement";

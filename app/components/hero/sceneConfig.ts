@@ -15,6 +15,8 @@ export const HERO_SCENE_SCROLL = {
 } as const;
 
 export const HERO_COMET_SHADER = {
+  fov: 45,
+  pixelDensity: 1,
   reveal: {
     start: HERO_SCENE_SCROLL.start,
     end: HERO_SCENE_SCROLL.end,
@@ -84,15 +86,64 @@ export const COMET_TUNING = {
     samples: 220,
     taperPower: 1,
   },
-  wave: {
-    samplePoints: 80,
-    maxAmplitude: 40,
-    staggerEach: 0.08,
-    duration: 1.2,
-  },
   animation: {
     duration: 3,
     initialProgress: 0,
+  },
+  gradient: {
+    x1: 735,
+    y1: 870,
+    x2: -60,
+    y2: -28,
+    stops: [
+      { offset: "10%", color: "var(--color-amber)" },
+      { offset: "30%", color: "var(--color-orange)" },
+      { offset: "55%", color: "var(--color-pink)" },
+      { offset: "100%", color: "var(--color-purple)" },
+    ],
+    drift: {
+      duration: 24,
+      x1: {
+        amplitude: 58,
+        frequency: 1,
+        phase: 0.35,
+        rippleAmplitude: 9,
+        rippleFrequency: 5,
+        ripplePhase: 1.1,
+      },
+      y1: {
+        amplitude: 46,
+        frequency: 2,
+        phase: 1.25,
+        rippleAmplitude: 7,
+        rippleFrequency: 6,
+        ripplePhase: 0.45,
+      },
+      x2: {
+        amplitude: 96,
+        frequency: 3,
+        phase: 2.2,
+        rippleAmplitude: 14,
+        rippleFrequency: 7,
+        ripplePhase: 1.7,
+      },
+      y2: {
+        amplitude: 74,
+        frequency: 4,
+        phase: 0.8,
+        rippleAmplitude: 11,
+        rippleFrequency: 8,
+        ripplePhase: 2.4,
+      },
+    },
+  },
+  glow: {
+    blurStdDev: 24,
+    opacity: 0.28,
+  },
+  outline: {
+    width: 1,
+    opacity: 0.9,
   },
   star: {
     outer: 14,
@@ -102,11 +153,6 @@ export const COMET_TUNING = {
 
 export const MOBILE_SCRUB = 0.6;
 export const MOBILE_RIBBON_SAMPLES = 80;
-
-export const MOBILE_COMET_WAVE = {
-  ...COMET_TUNING.wave,
-  maxAmplitude: 50,
-} as const;
 
 function createHeroStars(count: number): HeroStar[] {
   let seed = 27;
