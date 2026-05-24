@@ -1,3 +1,9 @@
+// constellationLayout.ts — Loads officer team data (officer-teams.json) and constellation
+// shape templates (constellation-templates.json), then exposes resolveConstellationLayout(),
+// which maps each team's members onto a template's named nodes, scales the result into a
+// pixel bounding box, and returns the final (x, y) positions and edges used for rendering.
+// Also exports ORDERED_OFFICER_TEAMS — the sorted source-of-truth team list used across the section.
+
 import constellationTemplatesData from "@/app/data/constellation-templates.json";
 import officerTeamsData from "@/app/data/officer-teams.json";
 

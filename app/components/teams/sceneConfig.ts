@@ -1,3 +1,8 @@
+// sceneConfig.ts — All static configuration for the Teams section: TypeScript types,
+// Tailwind layout classes, scroll/animation constants, constellation box dimensions
+// (both fixed presets and the responsive desktop calculator), and the seeded star field.
+// Nothing in this file is React — it is pure data consumed by Teams.tsx.
+
 export type AmbientStar = {
   id: number;
   top: number;
