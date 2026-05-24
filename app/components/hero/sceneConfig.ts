@@ -14,6 +14,16 @@ export const HERO_SCENE_SCROLL = {
   scrub: 0.2,
 } as const;
 
+export const HERO_COMET_SHADER = {
+  fov: 45,
+  pixelDensity: 1,
+  reveal: {
+    start: HERO_SCENE_SCROLL.start,
+    end: HERO_SCENE_SCROLL.end,
+    ease: "power1.out",
+  },
+} as const;
+
 export const WHITEOUT_SCROLL = {
   start: "65% bottom",
   end: "bottom bottom",
@@ -22,18 +32,12 @@ export const WHITEOUT_SCROLL = {
 export const HERO_LAYOUT = {
   minHeight: "min-h-[250vh] md:min-h-[400vh]",
   stickyViewportHeight: "h-[100svh] md:h-screen",
-  skylineBackTranslateX: "-translate-x-[47%]",
 } as const;
 
 export const HERO_COPY = {
   heading: "The Largest 24-Hour Hackathon in Texas.",
   body: "Join hundreds of hackers, creators, and innovators for a weekend of coding, collaboration, and chaos where ideas become reality.",
   ctaLabel: "Coming Soon",
-} as const;
-
-export const HERO_SKYLINE_PARALLAX = {
-  backYPercent: -6,
-  frontYPercent: -12,
 } as const;
 
 export const HERO_WHITEOUT = {
@@ -47,6 +51,18 @@ export const HERO_WHITEOUT = {
     end: WHITEOUT_SCROLL.end,
     ease: "power2.in",
   },
+  scene: {
+    start: "72% bottom",
+    end: "92% bottom",
+    ease: "power2.in",
+  },
+} as const;
+
+export const HERO_SKYLINE_PARALLAX = {
+  start: "top top",
+  end: "65% bottom",
+  backY: -40,
+  ease: "none",
 } as const;
 
 export const HERO_NAVBAR_THEME_TRIGGER = {
@@ -65,8 +81,8 @@ export const COMET_TUNING = {
     C 300,134 120,72 -60,-28
   `,
   ribbon: {
-    minWidth: 6,
-    maxWidth: 220,
+    minWidth: 8,
+    maxWidth: 260,
     samples: 220,
     taperPower: 1,
   },
@@ -85,11 +101,6 @@ export const COMET_TUNING = {
       { offset: "55%", color: "var(--color-pink)" },
       { offset: "100%", color: "var(--color-purple)" },
     ],
-    grain: {
-      baseFrequency: 0.5,
-      numOctaves: 2,
-      opacity: 0.4,
-    },
     drift: {
       duration: 24,
       x1: {

@@ -7,13 +7,13 @@ import { useGSAP } from "@gsap/react";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { missionContent } from "@/app/data/mission";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
+import { MISSION_STATEMENT_DATA_ATTR } from "../background/sceneConfig";
 import { dispatchNavbarThemeOverride } from "../navbar/navbarThemeOverride";
 import {
   DIRECTORS_NAVBAR_THEME_TRIGGER,
   DIRECTORS_PIN,
   MISSION_DECORATION_COUNT,
   MISSION_LAYOUT,
-  MISSION_OVERLAY,
 } from "./sceneConfig";
 
 configureScrollTrigger();
@@ -53,7 +53,6 @@ function renderDirectorsPanel() {
 
 export default function Mission() {
   const missionSectionRef = useRef<HTMLElement>(null);
-  const darkOverlayRef = useRef<HTMLDivElement>(null);
   const directorsSectionRef = useRef<HTMLElement>(null);
   const directorsContentRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -61,35 +60,16 @@ export default function Mission() {
   useGSAP(
     () => {
       const missionSection = missionSectionRef.current;
-      const darkOverlay = darkOverlayRef.current;
       const directorsSection = directorsSectionRef.current;
       const directorsContent = directorsContentRef.current;
 
-      if (
-        !missionSection ||
-        !darkOverlay ||
-        !directorsSection ||
-        !directorsContent
-      ) {
+      if (!missionSection || !directorsSection || !directorsContent) {
         return;
       }
 
       if (prefersReducedMotion) {
         return;
       }
-
-      // Dark overlay crossfade — begins when mission is half-scrolled out
-      gsap.set(darkOverlay, { autoAlpha: 0 });
-      gsap.to(darkOverlay, {
-        autoAlpha: 1,
-        ease: "power1.in",
-        scrollTrigger: {
-          trigger: missionSection,
-          start: MISSION_OVERLAY.start,
-          end: MISSION_OVERLAY.end,
-          scrub: MISSION_OVERLAY.scrub,
-        },
-      });
 
       // Directors section — pin at viewport top, fade content in, then unpin
       //    Animate children of the pinned element, not the pinned element itself.
@@ -178,17 +158,14 @@ export default function Mission() {
   }
 
   return (
-    <div className="relative bg-[var(--color-surface)]">
-      {/* Shared dark overlay — covers both sections for seamless transition */}
-      <div
-        ref={darkOverlayRef}
-        className="pointer-events-none absolute inset-0 z-10 bg-background"
-      />
-
-      {/* Mission statement — naturally scrolling, no pin */}
+    <div className="relative">
+      {/* Mission statement — naturally scrolling, no pin. Background is painted
+          by the page-level <PageBackground /> layer to avoid seams between
+          sections. */}
       <section
         ref={missionSectionRef}
         data-navbar-theme="light"
+        {...{ [MISSION_STATEMENT_DATA_ATTR]: "" }}
         className={`relative z-20 ${MISSION_LAYOUT.sectionPadding} ${MISSION_LAYOUT.sectionMinHeight}`}
       >
         <div
