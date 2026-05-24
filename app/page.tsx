@@ -1,3 +1,4 @@
+import PageBackground from "./components/background/PageBackground";
 import Navbar from "./components/navbar/Navbar";
 import Hero from "./components/hero/Hero";
 import Mission from "./components/mission/Mission";
@@ -10,14 +11,17 @@ import Footer from "./components/footer/Footer";
 export default function Home() {
   return (
     <>
-      <Navbar />
-      <Hero />
-      <Mission />
-      <Teams />
-      <Projects />
-      <Timeline />
-      <Sponsors />
-      <Footer />
+      <PageBackground />
+      <div className="relative z-10">
+        <Navbar />
+        <Hero />
+        <Mission />
+        <Teams />
+        <Projects />
+        <Timeline />
+        <Sponsors />
+        <Footer />
+      </div>
     </>
   );
 }

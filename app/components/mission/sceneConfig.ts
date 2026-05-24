@@ -9,13 +9,6 @@ export const MISSION_LAYOUT = {
   statementWrapMinHeight: "min-h-[88svh] md:min-h-[92vh]",
 } as const;
 
-/** Dark overlay fades in once mission is half-scrolled out of viewport */
-export const MISSION_OVERLAY = {
-  scrub: MISSION_SCRUB,
-  start: "center top",
-  end: "bottom top",
-} as const;
-
 /** Directors section pins at viewport top, content fades in, then unpins */
 export const DIRECTORS_PIN = {
   scrub: MISSION_SCRUB,
