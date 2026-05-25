@@ -15,6 +15,7 @@ import {
   ROCKET_STROKE_PATH,
   ROCKET_SLIDE_EASE,
   TIMELINE_SCROLL,
+  TIMELINE_WAVE_SPEED,
   TRAIL_WAVE,
   YEAR_MARKERS,
 } from "./sceneConfig";
@@ -34,7 +35,9 @@ function trailHW(t: number, hwMin: number, hwPeak: number, hwEnd: number, peakT:
 
 export default function RocketTrailAnimation() {
   const reactId = useId();
-  const trailMaskId = `timelineTrailMask-${reactId.replace(/:/g, "")}`;
+  const safeReactId = reactId.replace(/:/g, "");
+  const trailMaskId = `timelineTrailMask-${safeReactId}`;
+  const markerImageFilterId = `timelineMarkerImageFilter-${safeReactId}`;
   const clipRef = useRef<HTMLDivElement>(null);
   const assemblyRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<SVGGElement>(null);
@@ -97,7 +100,7 @@ export default function RocketTrailAnimation() {
 
       // Scroll animation: rocket slides in from right
       gsap.set(assembly, { x: "100vw" });
-      gsap.set(markers, { opacity: 0 });
+      gsap.set(markers, { opacity: 1 });
 
       // --- Wave animation (created first so scroll callbacks can reference it) ---
       const topEdge: SVGPoint[] = [];
@@ -132,16 +135,19 @@ export default function RocketTrailAnimation() {
       });
 
       // Collect all wave tweens so speed control is applied uniformly
-      const FAST_TS = 1.6;
-      const SLOW_TS = 0.35;
       const allWaveTweens = [topWave, botWave, ...markerTweens];
-      allWaveTweens.forEach(tw => tw.timeScale(FAST_TS));
+      allWaveTweens.forEach(tw => tw.timeScale(TIMELINE_WAVE_SPEED.active));
 
       let rocketDone = false;
       const setWaveSpeed = (slow: boolean) => {
-        const ts = slow ? SLOW_TS : FAST_TS;
+        const ts = slow ? TIMELINE_WAVE_SPEED.settled : TIMELINE_WAVE_SPEED.active;
         allWaveTweens.forEach(tw =>
-          gsap.to(tw, { timeScale: ts, duration: 1.2, ease: "power1.inOut", overwrite: true }),
+          gsap.to(tw, {
+            timeScale: ts,
+            duration: TIMELINE_WAVE_SPEED.transitionDuration,
+            ease: "power1.inOut",
+            overwrite: true,
+          }),
         );
       };
 
@@ -164,7 +170,6 @@ export default function RocketTrailAnimation() {
       });
 
       tl.to(assembly, { x: 0, ease: CustomEase.create("rocketSlide", ROCKET_SLIDE_EASE), duration: 0.88 }, 0);
-      tl.to(markers, { opacity: 1, ease: "power2.out", duration: 0.12 }, 0.88);
     },
     { scope: clipRef, dependencies: [isMobile, prefersReducedMotion] },
   );
@@ -206,12 +211,28 @@ export default function RocketTrailAnimation() {
               <polygon ref={trailPolyRef} fill="white" />
             </mask>
 
-            {/* Per-marker clip paths — ellipse in group-local coords (GSAP moves the <g> via SVG transform) */}
-            {YEAR_MARKERS.map((marker) => (
-              <clipPath key={`clip-${marker.year}`} id={`markerClip-${marker.year}`}>
-                <ellipse cx={0} cy={0} rx={marker.rx} ry={marker.ry} />
-              </clipPath>
-            ))}
+            <filter
+              id={markerImageFilterId}
+              x="-60%"
+              y="-60%"
+              width="220%"
+              height="220%"
+            >
+              <feDropShadow
+                dx="0"
+                dy="6"
+                stdDeviation="4"
+                floodColor="#000000"
+                floodOpacity="0.35"
+              />
+              <feDropShadow
+                dx="0"
+                dy="0"
+                stdDeviation="3"
+                floodColor="#ffffff"
+                floodOpacity="0.2"
+              />
+            </filter>
           </defs>
 
           <foreignObject
@@ -242,30 +263,26 @@ export default function RocketTrailAnimation() {
             strokeLinejoin="round"
           />
 
-          {/* Year markers — hidden until rocket finishes sliding in */}
+          {/* Year markers ride with the rocket trail as the assembly slides in */}
           <g ref={markersRef}>
             {YEAR_MARKERS.map((marker, i) => {
               // ref lets GSAP set translate(marker.x, marker.y) and then wave the y
               // children use group-relative coords (origin = marker center)
+              const labelBaseY = marker.imageHeight / 2 + yearFontSize * 1.2;
               const inner = (
                 <>
-                  {/* White base — shows when no image, acts as border behind image */}
-                  <ellipse cx={0} cy={0} rx={marker.rx} ry={marker.ry} fill="white" />
-                  {/* Optional image clipped to the ellipse shape */}
-                  {marker.image && (
-                    <image
-                      href={marker.image}
-                      x={-marker.rx}
-                      y={-marker.ry}
-                      width={marker.rx * 2}
-                      height={marker.ry * 2}
-                      preserveAspectRatio="xMidYMid slice"
-                      clipPath={`url(#markerClip-${marker.year})`}
-                    />
-                  )}
+                  <image
+                    href={marker.image}
+                    x={-marker.imageWidth / 2}
+                    y={-marker.imageHeight / 2}
+                    width={marker.imageWidth}
+                    height={marker.imageHeight}
+                    preserveAspectRatio="xMidYMid meet"
+                    filter={`url(#${markerImageFilterId})`}
+                  />
                   <text
                     x={0}
-                    y={marker.ry + yearFontSize * 1.2}
+                    y={labelBaseY}
                     textAnchor="middle"
                     fill="white"
                     fontSize={yearFontSize}
@@ -276,7 +293,7 @@ export default function RocketTrailAnimation() {
                   </text>
                   <text
                     x={0}
-                    y={marker.ry + yearFontSize * 1.2 + nameFontSize * 1.6}
+                    y={labelBaseY + nameFontSize * 1.6}
                     textAnchor="middle"
                     fill="white"
                     fontSize={nameFontSize}

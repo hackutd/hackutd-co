@@ -16,22 +16,21 @@ export type YearMarker = {
   // Trail occupies x≈202–1370, center-of-trail y varies
   x: number;
   y: number;
-  rx: number;
-  ry: number;
-  /** Optional image URL shown inside the ellipse */
-  image?: string;
+  /** Render image URL shown at the marker point */
+  image: string;
+  imageWidth: number;
+  imageHeight: number;
   /** Optional URL the marker links to when clicked */
   href?: string;
 };
 
 export const YEAR_MARKERS: YearMarker[] = [
-  { year: "2025", name: "HACKUTD XII",  x: 375,  y: 162, rx: 52, ry: 60, image: "/xii.avif", href: "https://legend.hackutd.co/" },
-  { year: "2024", name: "HACKUTD XI",   x: 535,  y: 176, rx: 52, ry: 60 },
-  { year: "2023", name: "HACKUTD X",    x: 700,  y: 182, rx: 52, ry: 60 },
-  { year: "2022", name: "HACKUTD IX",   x: 858,  y: 165, rx: 52, ry: 60 },
-  { year: "2021", name: "HACKUTD VIII", x: 1010, y: 180, rx: 52, ry: 60 },
-  { year: "2019", name: "HACKUTD VI",   x: 1155, y: 152, rx: 52, ry: 60 },
-  { year: "2018", name: "HACKUTD V",    x: 1295, y: 178, rx: 52, ry: 60 },
+  // Listed newest to oldest, laid out left-to-right across the trail.
+  { year: "2023", name: "HACKUTD X",    x: 500,  y: 158, image: "/hackX.png",    imageWidth: 82,  imageHeight: 102 },
+  { year: "2022", name: "HACKUTD IX",   x: 665,  y: 178, image: "/hackIX.png",   imageWidth: 102, imageHeight: 100 },
+  { year: "2021", name: "HACKUTD VIII", x: 830,  y: 164, image: "/hackVIII.png", imageWidth: 88,  imageHeight: 102 },
+  { year: "2020", name: "HACKUTD VII",  x: 995,  y: 182, image: "/hackVII.png",  imageWidth: 78,  imageHeight: 104 },
+  { year: "2019", name: "HACKUTD VI",   x: 1160, y: 154, image: "/hackVI.png",   imageWidth: 80,  imageHeight: 104 },
 ];
 
 export const TIMELINE_SCROLL = {
@@ -61,8 +60,8 @@ export const TRAIL_WAVE = {
   halfWidthEnd: 140,    // baseline width after the spike settles
   peakT: 0.15,          // cone opens up in first 15% of trail, then holds
   maxAmplitude: 40,     // wave amplitude scales with width (0 at rocket, peaks then settles)
-  staggerEach: 0.08,    // large stagger → ~2–3 visible sine crests across trail
-  duration: 1.2,
+  staggerEach: 0.12,    // large stagger → ~2–3 visible sine crests across trail
+  duration: 1.8,
   hwTailBurst: 240,     // dramatic flare width at the very far end of the trail
   tailSharpness: 6,     // how concentrated the burst is near t=1 (higher = sharper)
 } as const;
@@ -73,4 +72,10 @@ export const MOBILE_TRAIL_WAVE = {
   halfWidthEnd: 155,
   hwTailBurst: 270,
   maxAmplitude: 50,
+} as const;
+
+export const TIMELINE_WAVE_SPEED = {
+  active: 1,
+  settled: 0.28,
+  transitionDuration: 1.4,
 } as const;
