@@ -55,7 +55,7 @@ const shaderGradientProps: ShaderGradientProps = {
   fov: 45,
   frameRate: 10,
   gizmoHelper: "hide",
-  grain: "on",
+  grain: "off",
   lightType: "3d",
   pixelDensity: 1,
   positionX: 0,

@@ -20,6 +20,7 @@ type ShaderGradientProps = ComponentProps<typeof ShaderGradient> & {
 type BrandShaderBackgroundProps = {
   className?: string;
   lazyLoad?: boolean;
+  shaderProps?: Partial<Omit<ShaderGradientProps, "animate">>;
   style?: CSSProperties;
 };
 
@@ -42,7 +43,8 @@ const brandShaderGradientProps: Omit<ShaderGradientProps, "animate"> = {
   fov: 45,
   frameRate: 10,
   gizmoHelper: "hide",
-  grain: "on",
+  grain: "off",
+  grainBlending: 0.1,
   lightType: "3d",
   pixelDensity: 1,
   positionX: 0,
@@ -69,13 +71,17 @@ const brandShaderGradientProps: Omit<ShaderGradientProps, "animate"> = {
 export default function BrandShaderBackground({
   className,
   lazyLoad = false,
+  shaderProps,
   style,
 }: BrandShaderBackgroundProps) {
   const prefersReducedMotion = usePrefersReducedMotion();
-  const wrapperClassName = [
-    "pointer-events-none h-full w-full",
-    className,
-  ].filter(Boolean).join(" ");
+  const mergedShaderProps = {
+    ...brandShaderGradientProps,
+    ...shaderProps,
+  };
+  const wrapperClassName = ["pointer-events-none h-full w-full", className]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div
@@ -85,13 +91,13 @@ export default function BrandShaderBackground({
       <ShaderGradientCanvas
         className="h-full w-full"
         style={{ height: "100%", width: "100%" }}
-        pixelDensity={brandShaderGradientProps.pixelDensity}
-        fov={brandShaderGradientProps.fov}
+        pixelDensity={mergedShaderProps.pixelDensity}
+        fov={mergedShaderProps.fov}
         pointerEvents="none"
         lazyLoad={lazyLoad}
       >
         <ShaderGradient
-          {...brandShaderGradientProps}
+          {...mergedShaderProps}
           animate={prefersReducedMotion ? "off" : "on"}
         />
       </ShaderGradientCanvas>

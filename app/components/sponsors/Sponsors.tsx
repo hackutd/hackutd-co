@@ -162,7 +162,7 @@ export default function Sponsors() {
         <section
           ref={sectionRef}
           id="sponsors"
-          className="relative px-8 py-32 text-surface-foreground"
+          className="relative bg-surface px-8 py-32 text-surface-foreground"
           {...{ [SPONSORS_SECTION_DATA_ATTR]: "" }}
         >
           <div className="flex items-end justify-between">
@@ -202,7 +202,7 @@ export default function Sponsors() {
       <section
         ref={sectionRef}
         id="sponsors"
-        className="relative z-20 px-8 py-32 text-surface-foreground"
+        className="relative z-20 bg-surface px-8 py-32 text-surface-foreground"
         data-navbar-theme="light"
         {...{ [SPONSORS_SECTION_DATA_ATTR]: "" }}
       >

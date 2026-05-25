@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { forwardRef, type ComponentPropsWithoutRef } from "react";
+import BrandShaderBackground from "@/app/components/background/BrandShaderBackground";
 
 const links = [
   { label: "Instagram", href: "#" },
@@ -7,13 +11,39 @@ const links = [
   { label: "LinkedIn", href: "#" },
 ];
 
-export default function Footer() {
+type FooterProps = ComponentPropsWithoutRef<"footer">;
+
+const footerBaseClassName =
+  "min-h-[440px] overflow-hidden border-t border-black/10 bg-surface px-5 py-8 text-surface-foreground sm:min-h-[400px] sm:px-8 md:min-h-[280px] md:px-10 md:py-8 lg:px-[3.75rem]";
+
+const Footer = forwardRef<HTMLElement, FooterProps>(function Footer(
+  { className, ...props },
+  ref,
+) {
   return (
-    <footer className="fixed inset-x-0 bottom-0 z-0 min-h-[440px] overflow-hidden border-t border-black/10 bg-surface px-5 py-8 text-surface-foreground sm:min-h-[400px] sm:px-8 md:min-h-[280px] md:px-10 md:py-8 lg:px-[3.75rem]">
+    <footer
+      ref={ref}
+      {...props}
+      className={[
+        className ? null : "relative",
+        footerBaseClassName,
+        className,
+      ].filter(Boolean).join(" ")}
+    >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-[52%] opacity-95 [background:radial-gradient(ellipse_at_76%_26%,rgba(243,22,103,0.98)_0%,rgba(243,22,103,0.92)_24%,rgba(243,22,103,0)_47%),radial-gradient(ellipse_at_100%_90%,rgba(108,23,254,0.96)_0%,rgba(108,23,254,0.72)_21%,rgba(108,23,254,0)_44%),linear-gradient(102deg,rgba(255,162,31,0.82)_0%,rgba(255,122,27,0.9)_36%,rgba(243,22,103,0.96)_70%,rgba(108,23,254,0.9)_100%)] md:inset-y-0 md:left-1/2 md:right-0 md:h-auto"
-      />
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[52%] overflow-hidden opacity-95 md:inset-y-0 md:left-1/2 md:right-0 md:h-auto"
+      >
+        <BrandShaderBackground
+          className="scale-[1.35] md:scale-[1.5]"
+          shaderProps={{
+            cDistance: 5.4,
+            cameraZoom: 15,
+            positionX: 0.08,
+            positionY: -0.02,
+          }}
+        />
+      </div>
 
       <div className="relative z-10 flex min-h-[376px] flex-col justify-between gap-10 sm:min-h-[336px] md:min-h-[216px] md:flex-row md:items-end md:justify-between md:gap-8">
         <div className="md:pb-1">
@@ -47,4 +77,6 @@ export default function Footer() {
       </div>
     </footer>
   );
-}
+});
+
+export default Footer;
