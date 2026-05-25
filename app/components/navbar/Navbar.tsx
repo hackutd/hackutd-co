@@ -59,7 +59,7 @@ export default function Navbar() {
             href={link.href}
             className={`group relative pb-1 text-xs transition-colors duration-300 ${
               isLightTheme
-                ? "text-[var(--color-surface-foreground)] hover:opacity-70"
+                ? "text-(--color-surface-foreground) hover:opacity-70"
                 : "text-foreground hover:text-foreground/70"
             }`}
           >
@@ -80,17 +80,17 @@ export default function Navbar() {
       >
         <span
           className={`block h-0.5 w-4 transition-transform duration-200 ${
-            isLightTheme ? "bg-[var(--color-surface-foreground)]" : "bg-foreground"
+            isLightTheme ? "bg-(--color-surface-foreground)" : "bg-foreground"
           } ${isOpen ? "translate-y-1.5 rotate-45" : ""}`}
         />
         <span
           className={`block h-0.5 w-4 transition-opacity duration-200 ${
-            isLightTheme ? "bg-[var(--color-surface-foreground)]" : "bg-foreground"
+            isLightTheme ? "bg-(--color-surface-foreground)" : "bg-foreground"
           } ${isOpen ? "opacity-0" : ""}`}
         />
         <span
           className={`block h-0.5 w-4 transition-transform duration-200 ${
-            isLightTheme ? "bg-[var(--color-surface-foreground)]" : "bg-foreground"
+            isLightTheme ? "bg-(--color-surface-foreground)" : "bg-foreground"
           } ${isOpen ? "-translate-y-1.5 -rotate-45" : ""}`}
         />
       </button>
@@ -100,7 +100,7 @@ export default function Navbar() {
         <div
           className={`fixed inset-0 top-13 z-40 flex flex-col items-center gap-8 pt-16 backdrop-blur-sm md:hidden ${
             isLightTheme
-              ? "bg-[var(--color-surface)]/95 text-[var(--color-surface-foreground)]"
+              ? "bg-surface/95 text-(--color-surface-foreground)"
               : "bg-black/95 text-foreground"
           }`}
         >
@@ -119,7 +119,7 @@ export default function Navbar() {
           <AccentButton
             className={
               isLightTheme
-                ? "focus-visible:ring-offset-[var(--color-surface)]"
+                ? "focus-visible:ring-offset-(--color-surface)"
                 : undefined
             }
           >

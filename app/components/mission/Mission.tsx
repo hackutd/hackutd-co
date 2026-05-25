@@ -133,10 +133,10 @@ export default function Mission() {
         <section
           ref={missionSectionRef}
           data-navbar-theme="light"
-          className={`bg-[var(--color-surface)] ${MISSION_LAYOUT.sectionPadding}`}
+          className={`bg-(--color-surface) ${MISSION_LAYOUT.sectionPadding}`}
         >
           <div className="mx-auto flex min-h-[80vh] max-w-7xl items-center justify-center">
-            <p className="max-w-6xl text-center text-4xl font-normal leading-[1.2] text-[var(--color-surface-foreground)] sm:text-5xl md:text-6xl lg:text-7xl xl:max-w-7xl">
+            <p className="max-w-6xl text-center text-4xl font-normal leading-[1.2] text-(--color-surface-foreground) sm:text-5xl md:text-6xl lg:text-7xl xl:max-w-7xl">
               {renderMissionStatement()}
             </p>
           </div>
@@ -171,7 +171,7 @@ export default function Mission() {
         <div
           className={`mx-auto flex max-w-7xl items-start justify-center ${MISSION_LAYOUT.statementWrapMinHeight} ${MISSION_LAYOUT.statementOffset}`}
         >
-          <p className="max-w-6xl text-center text-4xl font-normal leading-[1.2] text-[var(--color-surface-foreground)] sm:text-5xl md:text-6xl lg:text-7xl xl:max-w-7xl">
+          <p className="max-w-6xl text-center text-4xl font-normal leading-[1.2] text-(--color-surface-foreground) sm:text-5xl md:text-6xl lg:text-7xl xl:max-w-7xl">
             {renderMissionStatement()}
           </p>
         </div>

@@ -10,7 +10,7 @@ export default function Timeline() {
   return (
     <section
       id="hackathons"
-      className={`relative bg-[var(--color-background)] ${TIMELINE_LAYOUT.minHeight}`}
+      className={`relative bg-(--color-background) ${TIMELINE_LAYOUT.minHeight}`}
     >
       <div
         className={`sticky top-0 overflow-hidden ${TIMELINE_LAYOUT.stickyViewportHeight}`}

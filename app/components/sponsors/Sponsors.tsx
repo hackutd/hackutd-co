@@ -9,6 +9,7 @@ import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import { dispatchNavbarThemeOverride } from "../navbar/navbarThemeOverride";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
+import Image from "next/image";
 
 const ReunionTower = lazy(() => import("./ReunionTower"));
 
@@ -122,7 +123,7 @@ export default function Sponsors() {
           end: "top 20%",
           scrub: 1.5,
         },
-      }
+      },
     );
 
     // Scroll progress → drives tower rotation in R3F
@@ -152,7 +153,7 @@ export default function Sponsors() {
             start: "top 85%",
             toggleActions: "play none none none",
           },
-        }
+        },
       );
     }
 
@@ -198,7 +199,7 @@ export default function Sponsors() {
                 rel="noopener noreferrer"
                 className="flex items-center justify-center rounded-lg p-4 transition-colors hover:bg-muted/10"
               >
-                <img
+                <Image
                   src={s.logo || ""}
                   alt={s.name}
                   className="max-h-12 max-w-full object-contain"
@@ -236,10 +237,7 @@ export default function Sponsors() {
         </div>
 
         {/* 3D Reunion Tower — spans multiple pages, sticky canvas */}
-        <div
-          className="relative mt-12"
-          style={{ height: "400vh" }}
-        >
+        <div className="relative mt-12" style={{ height: "400vh" }}>
           <div
             ref={towerWrapRef}
             className="sticky top-0"
@@ -282,7 +280,7 @@ export default function Sponsors() {
               rel="noopener noreferrer"
               className="sponsor-card flex items-center justify-center rounded-xl bg-white/60 p-4 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-lg"
             >
-              <img
+              <Image
                 src={s.logo || ""}
                 alt={s.name}
                 className="max-h-10 max-w-full object-contain md:max-h-12"

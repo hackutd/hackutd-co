@@ -170,7 +170,7 @@ export default function Hero() {
         <div
           ref={starsLayerRef}
           aria-hidden="true"
-          className="absolute inset-0 z-[1]"
+          className="absolute inset-0 z-1"
         >
           {HERO_STARS.map((star) => {
             const style = {
@@ -186,7 +186,7 @@ export default function Hero() {
             return (
               <span
                 key={star.id}
-                className="hero-star absolute bg-[var(--color-amber)]"
+                className="hero-star absolute bg-(--color-amber)"
                 style={style}
               />
             );
@@ -196,7 +196,7 @@ export default function Hero() {
         <div
           ref={cometBackgroundLayerRef}
           aria-hidden="true"
-          className="absolute inset-0 z-[2]"
+          className="absolute inset-0 z-2"
         >
           <CometTrailBackground />
         </div>

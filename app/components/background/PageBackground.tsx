@@ -81,14 +81,11 @@ export default function PageBackground() {
   );
 
   return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-0"
-    >
+    <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
       <div className="absolute inset-0 bg-background" />
       <div
         ref={lightLayerRef}
-        className="absolute inset-0 bg-[var(--color-surface)] opacity-0"
+        className="absolute inset-0 bg-(--color-surface) opacity-0"
       />
     </div>
   );
