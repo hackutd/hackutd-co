@@ -111,36 +111,54 @@ export default function CometTrailBackground() {
         sampleCount,
       );
 
-      const setReveal = (progress: number) => {
+      const setReveal = (progress: number, wavePhase: number) => {
         const p = clamp(progress, 0, 1);
         const headDistance = (1 - p) * spineLength;
         const revealPath = buildRibbonSegmentPath(
           spineSamples,
           spineLength,
           headDistance,
+          {
+            amplitude: isMobile
+              ? COMET_TUNING.wave.mobileAmplitude
+              : COMET_TUNING.wave.amplitude,
+            frequency: COMET_TUNING.wave.frequency,
+            phase: wavePhase,
+          },
         );
 
         maskPath.setAttribute("d", revealPath);
       };
 
       if (prefersReducedMotion) {
-        setReveal(1);
+        setReveal(1, 0);
         return;
       }
 
-      setReveal(COMET_TUNING.animation.initialProgress);
-
       const revealState = {
         progress: COMET_TUNING.animation.initialProgress,
+        wavePhase: 0,
       };
+
+      const renderTrail = () => {
+        setReveal(revealState.progress, revealState.wavePhase);
+      };
+
+      renderTrail();
+
+      gsap.to(revealState, {
+        wavePhase: Math.PI * 2,
+        duration: COMET_TUNING.wave.duration,
+        ease: "none",
+        repeat: -1,
+        onUpdate: renderTrail,
+      });
 
       gsap.to(revealState, {
         progress: 1,
         duration: COMET_TUNING.animation.duration,
         ease: "none",
-        onUpdate: () => {
-          setReveal(revealState.progress);
-        },
+        onUpdate: renderTrail,
         scrollTrigger: {
           trigger,
           start: HERO_SCENE_SCROLL.start,

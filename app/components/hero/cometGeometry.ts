@@ -8,6 +8,12 @@ export type SpineSample = {
   ny: number;
 };
 
+export type RibbonWaveOptions = Readonly<{
+  amplitude: number;
+  frequency: number;
+  phase: number;
+}>;
+
 export function buildStarPoints(outer: number, inner: number) {
   return `0,${-outer} ${inner},${-inner} ${outer},0 ${inner},${inner} 0,${outer} ${-inner},${inner} ${-outer},0 ${-inner},${-inner}`;
 }
@@ -117,10 +123,36 @@ function ribbonWidth(u: number) {
   );
 }
 
+function ribbonWaveOffset(
+  u: number,
+  distanceRatio: number,
+  width: number,
+  wave?: RibbonWaveOptions,
+) {
+  if (!wave || wave.amplitude <= 0 || wave.frequency <= 0) {
+    return 0;
+  }
+
+  const widthRange = COMET_TUNING.ribbon.maxWidth - COMET_TUNING.ribbon.minWidth;
+  const widthFactor =
+    widthRange <= 0
+      ? 1
+      : clamp((width - COMET_TUNING.ribbon.minWidth) / widthRange, 0, 1);
+  const taperFactor = clamp(u, 0, 1);
+
+  return (
+    Math.sin(distanceRatio * Math.PI * 2 * wave.frequency + wave.phase) *
+    wave.amplitude *
+    widthFactor *
+    taperFactor
+  );
+}
+
 export function buildRibbonSegmentPath(
   samples: SpineSample[],
   totalLength: number,
   headDistance: number,
+  wave?: RibbonWaveOptions,
 ) {
   if (totalLength <= 0 || samples.length === 0) {
     return "";
@@ -144,12 +176,21 @@ export function buildRibbonSegmentPath(
     const u = i / sampleCount;
     const distance = clampedHead + u * segmentLength;
     const sample = interpolateSpineSample(samples, totalLength, distance);
+    const width = ribbonWidth(u);
+    const waveOffset = ribbonWaveOffset(
+      u,
+      distance / totalLength,
+      width,
+      wave,
+    );
+    const centerX = sample.x + sample.nx * waveOffset;
+    const centerY = sample.y + sample.ny * waveOffset;
 
-    const half = ribbonWidth(u) * 0.5;
+    const half = width * 0.5;
     left[i] =
-      `${roundCoord(sample.x + sample.nx * half)},${roundCoord(sample.y + sample.ny * half)}`;
+      `${roundCoord(centerX + sample.nx * half)},${roundCoord(centerY + sample.ny * half)}`;
     right[sampleCount - i] =
-      `${roundCoord(sample.x - sample.nx * half)},${roundCoord(sample.y - sample.ny * half)}`;
+      `${roundCoord(centerX - sample.nx * half)},${roundCoord(centerY - sample.ny * half)}`;
   }
 
   return `M ${left.join(" L ")} L ${right.join(" L ")} Z`;

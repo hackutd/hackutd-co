@@ -7,9 +7,8 @@ import { useGSAP } from "@gsap/react";
 import { SPONSORS } from "../../data/sponsors";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import { dispatchNavbarThemeOverride } from "../navbar/navbarThemeOverride";
-import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
-import Image from "next/image";
+import { SPONSORS_SECTION_DATA_ATTR } from "@/app/components/background/sceneConfig";
 
 const ReunionTower = lazy(() => import("./ReunionTower"));
 
@@ -18,7 +17,6 @@ configureScrollTrigger();
 // ── Main component ──────────────────────────────────────────
 export default function Sponsors() {
   const sectionRef = useRef<HTMLElement>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
   const towerWrapRef = useRef<HTMLDivElement>(null);
   const logosRef = useRef<HTMLDivElement>(null);
 
@@ -31,7 +29,6 @@ export default function Sponsors() {
   const lastXRef = useRef(0);
   const dragVelocity = useRef(0);
 
-  const isMobile = useIsMobile();
   const reducedMotion = usePrefersReducedMotion();
 
   // ── Drag-to-rotate on tower container ─────────────────────
@@ -88,26 +85,12 @@ export default function Sponsors() {
     };
   }, [reducedMotion]);
 
-  // ── GSAP: scroll entrance, scroll progress, overlay, navbar
+  // ── GSAP: scroll entrance, scroll progress, navbar
   useGSAP(() => {
     const section = sectionRef.current;
-    const overlay = overlayRef.current;
     const towerWrap = towerWrapRef.current;
     const logos = logosRef.current;
-    if (!section || !overlay || !towerWrap) return;
-
-    // Overlay fade for section exit
-    gsap.set(overlay, { autoAlpha: 0 });
-    gsap.to(overlay, {
-      autoAlpha: 1,
-      ease: "power1.in",
-      scrollTrigger: {
-        trigger: section,
-        start: "center top",
-        end: "bottom top",
-        scrub: 1,
-      },
-    });
+    if (!section || !towerWrap) return;
 
     // Tower rises from below
     gsap.fromTo(
@@ -175,11 +158,12 @@ export default function Sponsors() {
   // ── Reduced-motion fallback ────────────────────────────────
   if (reducedMotion) {
     return (
-      <div className="relative bg-surface">
+      <div className="relative">
         <section
           ref={sectionRef}
           id="sponsors"
           className="relative px-8 py-32 text-surface-foreground"
+          {...{ [SPONSORS_SECTION_DATA_ATTR]: "" }}
         >
           <div className="flex items-end justify-between">
             <h2 className="text-4xl font-bold md:text-5xl">Our Sponsors</h2>
@@ -197,9 +181,9 @@ export default function Sponsors() {
                 href={s.url || "#"}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center rounded-lg p-4 transition-colors hover:bg-muted/10"
+                className="flex items-center justify-center rounded-lg p-4 transition-opacity hover:opacity-75"
               >
-                <Image
+                <img
                   src={s.logo || ""}
                   alt={s.name}
                   className="max-h-12 max-w-full object-contain"
@@ -214,16 +198,13 @@ export default function Sponsors() {
 
   // ── Full 3D section ────────────────────────────────────────
   return (
-    <div className="relative bg-surface">
-      <div
-        ref={overlayRef}
-        className="pointer-events-none absolute inset-0 z-10 bg-background"
-      />
+    <div className="relative">
       <section
         ref={sectionRef}
         id="sponsors"
         className="relative z-20 px-8 py-32 text-surface-foreground"
         data-navbar-theme="light"
+        {...{ [SPONSORS_SECTION_DATA_ATTR]: "" }}
       >
         {/* Header */}
         <div className="flex items-end justify-between">
@@ -278,9 +259,9 @@ export default function Sponsors() {
               href={s.url || "#"}
               target="_blank"
               rel="noopener noreferrer"
-              className="sponsor-card flex items-center justify-center rounded-xl bg-white/60 p-4 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-lg"
+              className="sponsor-card flex items-center justify-center rounded-xl border border-surface-foreground/10 p-4 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-surface-foreground/25 hover:shadow-lg"
             >
-              <Image
+              <img
                 src={s.logo || ""}
                 alt={s.name}
                 className="max-h-10 max-w-full object-contain md:max-h-12"

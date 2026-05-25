@@ -4,29 +4,46 @@ const links = [
   { label: "Instagram", href: "#" },
   { label: "Twitter", href: "#" },
   { label: "Discord", href: "#" },
-  { label: "GitHub", href: "#" },
+  { label: "LinkedIn", href: "#" },
 ];
 
-// this comment exists solely for debugging purposes
 export default function Footer() {
   return (
-    <footer className="border-t border-white/10 px-8 py-12 bg-surface text-surface-foreground">
-      <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-2xl font-bold">HackUTD</p>
-          <p className="mt-1 text-sm text-muted">Happy Hacking</p>
+    <footer className="fixed inset-x-0 bottom-0 z-0 min-h-[440px] overflow-hidden border-t border-black/10 bg-surface px-5 py-8 text-surface-foreground sm:min-h-[400px] sm:px-8 md:min-h-[280px] md:px-10 md:py-8 lg:px-[3.75rem]">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[52%] opacity-95 [background:radial-gradient(ellipse_at_76%_26%,rgba(243,22,103,0.98)_0%,rgba(243,22,103,0.92)_24%,rgba(243,22,103,0)_47%),radial-gradient(ellipse_at_100%_90%,rgba(108,23,254,0.96)_0%,rgba(108,23,254,0.72)_21%,rgba(108,23,254,0)_44%),linear-gradient(102deg,rgba(255,162,31,0.82)_0%,rgba(255,122,27,0.9)_36%,rgba(243,22,103,0.96)_70%,rgba(108,23,254,0.9)_100%)] md:inset-y-0 md:left-1/2 md:right-0 md:h-auto"
+      />
+
+      <div className="relative z-10 flex min-h-[376px] flex-col justify-between gap-10 sm:min-h-[336px] md:min-h-[216px] md:flex-row md:items-end md:justify-between md:gap-8">
+        <div className="md:pb-1">
+          <p className="font-serif text-[2.875rem] font-light leading-none tracking-normal text-[#070d1a] sm:text-[3.625rem] md:text-[4.25rem] lg:text-[5.125rem]">
+            HackUTD
+          </p>
+          <p className="mt-4 font-serif text-[1.375rem] font-light italic leading-none text-[#070d1a]/60 sm:mt-5 sm:text-[1.625rem] md:text-[1.875rem] lg:text-[2rem]">
+            Happy Hacking
+          </p>
+          <p className="mt-5 text-[0.6875rem] font-light uppercase tracking-normal text-[#070d1a]/35 sm:mt-7 sm:text-xs">
+            MADE WITH &lt;3
+          </p>
         </div>
-        <nav className="flex gap-6">
-          {links.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className="text-sm text-muted hover:text-foreground transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+
+        <div className="flex flex-col gap-7 pb-1 sm:items-end md:max-w-[46vw] md:gap-8">
+          <p className="text-[0.6875rem] font-light uppercase tracking-normal text-white/95 sm:text-xs">
+            CONNECT
+          </p>
+          <nav className="grid grid-cols-2 gap-x-10 gap-y-4 sm:flex sm:flex-wrap sm:justify-end sm:gap-x-10 sm:gap-y-3 md:gap-x-8 lg:gap-x-12 xl:gap-x-14">
+            {links.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="text-[0.6875rem] font-light uppercase tracking-normal text-white/85 transition-colors hover:text-white sm:text-xs"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
       </div>
     </footer>
   );

@@ -20,8 +20,12 @@ export default function Home() {
         <Projects />
         <Timeline />
         <Sponsors />
-        <Footer />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none h-[calc(440px+12vh)] sm:h-[calc(400px+12vh)] md:h-[calc(280px+10vh)]"
+        />
       </div>
+      <Footer />
     </>
   );
 }

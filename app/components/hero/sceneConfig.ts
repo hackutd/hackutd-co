@@ -86,6 +86,12 @@ export const COMET_TUNING = {
     samples: 220,
     taperPower: 1,
   },
+  wave: {
+    amplitude: 34,
+    mobileAmplitude: 22,
+    frequency: 2.6,
+    duration: 2.4,
+  },
   animation: {
     duration: 3,
     initialProgress: 0,

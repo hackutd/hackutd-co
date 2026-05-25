@@ -443,7 +443,7 @@ export default function ReunionTower({
         depth: true,
       }}
       camera={{ position: [0, 125, 175], fov: 55, near: 0.1, far: 2000 }}
-      style={{ background: "transparent", touchAction: "pan-y" }}
+      style={{ touchAction: "pan-y" }}
       frameloop="always"
     >
       <ambientLight intensity={0.8} />

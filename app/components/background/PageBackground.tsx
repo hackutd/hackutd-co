@@ -10,8 +10,10 @@ import {
   HERO_SCENE_DATA_ATTR,
   MISSION_STATEMENT_DATA_ATTR,
   PAGE_BG_DARKEN,
+  PAGE_BG_SPONSORS_LIGHTEN,
   PAGE_BG_MOBILE_WHITEOUT_SCRUB,
   PAGE_BG_WHITEOUT,
+  SPONSORS_SECTION_DATA_ATTR,
 } from "./sceneConfig";
 
 configureScrollTrigger();
@@ -40,6 +42,9 @@ export default function PageBackground() {
       );
       const missionStatement = document.querySelector<HTMLElement>(
         `[${MISSION_STATEMENT_DATA_ATTR}]`,
+      );
+      const sponsorsSection = document.querySelector<HTMLElement>(
+        `[${SPONSORS_SECTION_DATA_ATTR}]`,
       );
 
       const whiteoutScrub = isMobile
@@ -75,6 +80,20 @@ export default function PageBackground() {
             },
           },
         );
+      }
+
+      if (sponsorsSection) {
+        gsap.to(lightLayer, {
+          opacity: 1,
+          ease: PAGE_BG_SPONSORS_LIGHTEN.ease,
+          immediateRender: false,
+          scrollTrigger: {
+            trigger: sponsorsSection,
+            start: PAGE_BG_SPONSORS_LIGHTEN.start,
+            end: PAGE_BG_SPONSORS_LIGHTEN.end,
+            scrub: PAGE_BG_SPONSORS_LIGHTEN.scrub,
+          },
+        });
       }
     },
     { dependencies: [isMobile, prefersReducedMotion], revertOnUpdate: true },
