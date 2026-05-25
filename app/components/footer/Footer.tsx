@@ -10,7 +10,7 @@ const links = [
 // this comment exists solely for debugging purposes
 export default function Footer() {
   return (
-    <footer className="border-t border-white/10 px-8 py-12">
+    <footer className="border-t border-white/10 px-8 py-12 bg-surface text-surface-foreground">
       <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-2xl font-bold">HackUTD</p>
