@@ -1,18 +1,23 @@
 export const projects = [
   {
     name: "HackUTD 2026",
-    description: "Our flagship hackathon event site.",
-  },
-  {
-    name: "Lost in the Pages",
-    description: "A creative interactive experience.",
+    label: "Fall 2026",
+    description: "The largest hackathon at UT Dallas returns with new challenge tracks.",
+    link: "https://github.com/hackutd/harp",
+    image: "/oldImg.png",
   },
   {
     name: "Jury",
-    description: "Hackathon judging and scoring platform.",
+    label: "Competition",
+    description: "Industry professionals evaluate projects across execution and impact.",
+    link: "https://github.com/hackutd/harp",
+    image: "/oldImg.png",
   },
   {
     name: "Harp",
-    description: "Internal tooling for organizer workflows.",
+    label: "Spring Event",
+    description: "A creative-focused companion event pairing design and hardware.",
+    link: "https://github.com/hackutd/harp",
+    image: "/oldImg.png",
   },
 ];
