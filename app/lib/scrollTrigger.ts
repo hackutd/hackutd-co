@@ -1,5 +1,6 @@
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { CustomEase } from "gsap/CustomEase";
 
 let isConfigured = false;
 
@@ -8,7 +9,7 @@ export function configureScrollTrigger() {
     return;
   }
 
-  gsap.registerPlugin(ScrollTrigger);
+  gsap.registerPlugin(ScrollTrigger, CustomEase);
   ScrollTrigger.config({
     ignoreMobileResize: true,
   });

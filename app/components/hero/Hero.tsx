@@ -11,9 +11,11 @@ import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import AccentButton from "../ui/AccentButton";
 import { dispatchNavbarThemeOverride } from "../navbar/navbarThemeOverride";
+import { HERO_SCENE_DATA_ATTR } from "../background/sceneConfig";
 import CometAnimation from "./CometAnimation";
 import {
   HERO_COPY,
+  HERO_COMET_SHADER,
   HERO_LAYOUT,
   HERO_NAVBAR_THEME_TRIGGER,
   HERO_SCENE_SCROLL,
@@ -22,14 +24,17 @@ import {
   HERO_WHITEOUT,
   MOBILE_SCRUB,
 } from "./sceneConfig";
+import CometTrailBackground from "./CometTrailBackground";
 
 configureScrollTrigger();
 
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
-  const skylineBackRef = useRef<HTMLImageElement>(null);
-  const skylineFrontRef = useRef<HTMLImageElement>(null);
-  const whiteOverlayRef = useRef<HTMLDivElement>(null);
+  const starsLayerRef = useRef<HTMLDivElement>(null);
+  const cometBackgroundLayerRef = useRef<HTMLDivElement>(null);
+  const skylineLayerRef = useRef<HTMLDivElement>(null);
+  const skylineBackRef = useRef<HTMLDivElement>(null);
+  const cometLayerRef = useRef<HTMLDivElement>(null);
   const heroTextRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -37,19 +42,20 @@ export default function Hero() {
   useGSAP(
     () => {
       const section = sectionRef.current;
+      const starsLayer = starsLayerRef.current;
+      const cometBackgroundLayer = cometBackgroundLayerRef.current;
+      const skylineLayer = skylineLayerRef.current;
       const skylineBack = skylineBackRef.current;
-      const skylineFront = skylineFrontRef.current;
-      const whiteOverlay = whiteOverlayRef.current;
+      const cometLayer = cometLayerRef.current;
       const heroText = heroTextRef.current;
 
-      if (!section || !skylineBack || !skylineFront) {
+      if (!section) {
         return;
       }
 
       if (prefersReducedMotion) {
-        gsap.set([skylineBack, skylineFront], { yPercent: 0 });
-        if (whiteOverlay) {
-          gsap.set(whiteOverlay, { opacity: 0 });
+        if (cometBackgroundLayer) {
+          gsap.set(cometBackgroundLayer, { autoAlpha: 1 });
         }
         if (heroText) {
           gsap.set(heroText, { opacity: 1 });
@@ -59,39 +65,56 @@ export default function Hero() {
 
       const scrub = isMobile ? MOBILE_SCRUB : HERO_SCENE_SCROLL.scrub;
 
-      if (whiteOverlay) {
-        gsap.set(whiteOverlay, { autoAlpha: 0 });
+      if (skylineBack) {
+        gsap.to(skylineBack, {
+          y: HERO_SKYLINE_PARALLAX.backY,
+          ease: HERO_SKYLINE_PARALLAX.ease,
+          scrollTrigger: {
+            trigger: section,
+            start: HERO_SKYLINE_PARALLAX.start,
+            end: HERO_SKYLINE_PARALLAX.end,
+            scrub,
+          },
+        });
       }
+
       if (heroText) {
         gsap.set(heroText, { autoAlpha: 1 });
       }
 
-      const sceneTimeline = gsap.timeline({
-        scrollTrigger: {
-          trigger: section,
-          start: HERO_SCENE_SCROLL.start,
-          end: HERO_SCENE_SCROLL.end,
-          scrub,
-        },
-      });
+      if (cometBackgroundLayer) {
+        gsap.set(cometBackgroundLayer, { autoAlpha: 0 });
+        gsap.to(cometBackgroundLayer, {
+          autoAlpha: 1,
+          ease: HERO_COMET_SHADER.reveal.ease,
+          scrollTrigger: {
+            trigger: section,
+            start: HERO_COMET_SHADER.reveal.start,
+            end: HERO_COMET_SHADER.reveal.end,
+            scrub,
+          },
+        });
+      }
 
-      sceneTimeline.to(
-        skylineBack,
-        {
-          yPercent: HERO_SKYLINE_PARALLAX.backYPercent,
-          ease: "none",
-        },
-        0,
-      );
+      const sceneFadeTargets = [
+        skylineLayer,
+        starsLayer,
+        cometBackgroundLayer,
+        cometLayer,
+      ].filter((el): el is HTMLDivElement => el !== null);
 
-      sceneTimeline.to(
-        skylineFront,
-        {
-          yPercent: HERO_SKYLINE_PARALLAX.frontYPercent,
-          ease: "none",
-        },
-        0,
-      );
+      if (sceneFadeTargets.length > 0) {
+        gsap.to(sceneFadeTargets, {
+          autoAlpha: 0,
+          ease: HERO_WHITEOUT.scene.ease,
+          scrollTrigger: {
+            trigger: section,
+            start: HERO_WHITEOUT.scene.start,
+            end: HERO_WHITEOUT.scene.end,
+            scrub,
+          },
+        });
+      }
 
       if (heroText) {
         gsap.to(heroText, {
@@ -101,19 +124,6 @@ export default function Hero() {
             trigger: section,
             start: HERO_WHITEOUT.text.start,
             end: HERO_WHITEOUT.text.end,
-            scrub,
-          },
-        });
-      }
-
-      if (whiteOverlay) {
-        gsap.to(whiteOverlay, {
-          autoAlpha: 1,
-          ease: HERO_WHITEOUT.overlay.ease,
-          scrollTrigger: {
-            trigger: section,
-            start: HERO_WHITEOUT.overlay.start,
-            end: HERO_WHITEOUT.overlay.end,
             scrub,
           },
         });
@@ -149,11 +159,19 @@ export default function Hero() {
   );
 
   return (
-    <section ref={sectionRef} className={`relative bg-[var(--color-surface)] ${HERO_LAYOUT.minHeight}`}>
+    <section
+      ref={sectionRef}
+      {...{ [HERO_SCENE_DATA_ATTR]: "" }}
+      className={`relative ${HERO_LAYOUT.minHeight}`}
+    >
       <div
-        className={`sticky top-0 overflow-hidden isolate bg-background ${HERO_LAYOUT.stickyViewportHeight}`}
+        className={`sticky top-0 overflow-hidden isolate ${HERO_LAYOUT.stickyViewportHeight}`}
       >
-        <div aria-hidden="true" className="absolute inset-0 z-[1]">
+        <div
+          ref={starsLayerRef}
+          aria-hidden="true"
+          className="absolute inset-0 z-[1]"
+        >
           {HERO_STARS.map((star) => {
             const style = {
               top: `${star.top}%`,
@@ -176,40 +194,44 @@ export default function Hero() {
         </div>
 
         <div
+          ref={cometBackgroundLayerRef}
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[clamp(360px,48vh,580px)] overflow-hidden"
+          className="absolute inset-0 z-[2]"
         >
+          <CometTrailBackground />
+        </div>
+
+        <div
+          ref={skylineLayerRef}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[clamp(200px,36vh,420px)] sm:h-[clamp(280px,42vh,500px)] md:h-[clamp(360px,48vh,580px)] overflow-hidden"
+        >
+          <div ref={skylineBackRef} className="absolute inset-0">
+            <Image
+              src="/skyline-back.png"
+              alt=""
+              width={2048}
+              height={768}
+              priority
+              className="absolute bottom-0 left-1/2 h-full w-auto max-w-none -translate-x-1/2"
+              sizes="100vw"
+            />
+          </div>
           <Image
-            ref={skylineBackRef}
-            src="/skyline1.png"
+            src="/skyline-front.png"
             alt=""
-            width={2431}
-            height={954}
+            width={2048}
+            height={768}
             priority
-            className={`absolute bottom-0 left-1/2 h-[88%] w-auto max-w-none ${HERO_LAYOUT.skylineBackTranslateX} opacity-45`}
-            sizes="100vw"
-          />
-          <Image
-            ref={skylineFrontRef}
-            src="/skyline2.png"
-            alt=""
-            width={1867}
-            height={830}
-            priority
-            className="absolute bottom-0 left-1/2 h-[84%] w-auto max-w-none -translate-x-1/2 opacity-95"
+            className="absolute bottom-0 left-1/2 h-full w-auto max-w-none -translate-x-1/2"
             sizes="100vw"
           />
         </div>
 
         {/* Comet SVG layer */}
-        <div className="absolute inset-0 z-10">
+        <div ref={cometLayerRef} className="absolute inset-0 z-10">
           <CometAnimation />
         </div>
-
-        <div
-          ref={whiteOverlayRef}
-          className="pointer-events-none absolute inset-0 z-30 bg-[var(--color-surface)] opacity-0"
-        />
 
         <div
           ref={heroTextRef}
