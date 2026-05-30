@@ -8,12 +8,13 @@ const rc = "/sponsors/rc.png";
 const axxess = "/sponsors/axxess.png";
 const cognizant = "/sponsors/cognizant.png";
 const scale = "/sponsors/scale.png";
-const nvidia = "/sponsors/nvidia.png";
+
 const nmc2 = "/sponsors/nmc2.png";
 // SVG imports
 // for further context, the reason these are in separate locations is because I didn't want to work on configuring
 // an SVG loader for webpack for the default import; this could be a potential future improvement
 const SVG_LOC = "/svg/sponsors";
+const nvidia = `${SVG_LOC}/nvidia_dark.svg`;
 const google = `${SVG_LOC}/google.svg`;
 const statefarm = `${SVG_LOC}/statefarm.svg`;
 const mlh = `${SVG_LOC}/mlh.svg`;
@@ -27,19 +28,19 @@ const ti = `${SVG_LOC}/ti.svg`;
 const l3 = `${SVG_LOC}/l3.svg`;
 const veolia = `${SVG_LOC}/veolia.png`;
 const CoreLogic = `${SVG_LOC}/CoreLogic.png`;
-const FannieMae = `${SVG_LOC}/FannieMae.png`;
-const Fidelity = `${SVG_LOC}/Fidelity.png`;
+const FannieMae = `${SVG_LOC}/FannieMae_dark.svg`;
+const Fidelity = `${SVG_LOC}/Fidelity_dark.svg`;
 const Frontier = `${SVG_LOC}/Frontier.png`;
 const Geico = `${SVG_LOC}/Geico.png`;
-const Incogni = `${SVG_LOC}/Incogni.png`;
+const Incogni = `${SVG_LOC}/Incogni_dark.png`;
 const MME = `${SVG_LOC}/MME.jpeg`;
-const NordPass = `${SVG_LOC}/NordPass.png`;
-const NordVPN = `${SVG_LOC}/NordVPN.png`;
+const NordPass = `${SVG_LOC}/NordPass_dark.png`;
+const NordVPN = `${SVG_LOC}/NordVPN_dark.svg`;
 const PRHI = `${SVG_LOC}/PRHI.png`;
 const PNC = `${SVG_LOC}/PNC.png`;
 const benq = `${SVG_LOC}/benq.png`;
 const SNAP_AR = `${SVG_LOC}/SnapAR.png`;
-const SNAP_GHOST = `${SVG_LOC}/SnapGhost.png`;
+const SNAP_GHOST = `${SVG_LOC}/SnapGhost_dark.svg`;
 const INFOSYS = `${SVG_LOC}/Infosys.png`;
 const PINATA = `${SVG_LOC}/pinata.png`;
 const tmobile = `${SVG_LOC}/tmobile.svg`;
