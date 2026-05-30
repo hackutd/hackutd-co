@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, lazy, Suspense } from "react";
+import { useRef, useEffect, lazy, Suspense, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -30,6 +30,18 @@ export default function Sponsors() {
   const dragVelocity = useRef(0);
 
   const reducedMotion = usePrefersReducedMotion();
+
+  // ── First-hover indicator state ───────────────────────────
+  const [hasHovered, setHasHovered] = useState(false);
+  const [showIndicator, setShowIndicator] = useState(false);
+
+  const handleMouseEnter = () => {
+    if (!hasHovered && !reducedMotion) {
+      setHasHovered(true);
+      setShowIndicator(true);
+      setTimeout(() => setShowIndicator(false), 2000);
+    }
+  };
 
   // ── Drag-to-rotate on tower container ─────────────────────
   useEffect(() => {
@@ -217,59 +229,87 @@ export default function Sponsors() {
           </a>
         </div>
 
-        {/* 3D Reunion Tower — spans multiple pages, sticky canvas */}
-        <div className="relative mt-12" style={{ height: "400vh" }}>
-          <div
-            ref={towerWrapRef}
-            className="sticky top-0"
-            style={{
-              width: "100%",
-              height: "max(100vh, 1000px)",
-              cursor: "grab",
-              userSelect: "none",
-            }}
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-16">
+          {/* Sponsor logos grid - Left side */}
+          <div 
+            className="w-full lg:w-2/5 order-2 lg:order-1 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:overscroll-contain scrollbar-hide relative"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            onMouseEnter={handleMouseEnter}
           >
-            <Suspense
-              fallback={
-                <div
-                  className="flex items-center justify-center"
-                  style={{ height: towerH }}
-                >
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-surface-foreground/20 border-t-surface-foreground" />
-                </div>
-              }
-            >
-              <ReunionTower
-                scrollProgressRef={scrollProgressRef}
-                dragOffsetRef={dragOffsetRef}
-                sponsors={SPONSORS}
-              />
-            </Suspense>
-          </div>
-        </div>
+            <style dangerouslySetInnerHTML={{ __html: `
+              .scrollbar-hide::-webkit-scrollbar { display: none; }
+            `}} />
 
-        {/* Sponsor logos grid */}
-        <div
-          ref={logosRef}
-          className="mx-auto mt-16 grid max-w-6xl grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
-        >
-          {SPONSORS.map((s) => (
-            <a
-              key={s.name}
-              href={s.url || "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="sponsor-card flex items-center justify-center rounded-xl border border-surface-foreground/10 p-4 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-surface-foreground/25 hover:shadow-lg"
+            {/* Scroll Indicator Overlay */}
+            {showIndicator && (
+              <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none p-4">
+                <div className="bg-surface/80 border border-surface-foreground/10 px-8 py-6 rounded-3xl backdrop-blur-xl shadow-2xl flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-500">
+                  <div className="w-10 h-16 rounded-full border-2 border-surface-foreground/30 flex justify-center p-2">
+                    <div className="w-1 h-3 bg-surface-foreground rounded-full animate-bounce" />
+                  </div>
+                  <span className="text-lg font-bold tracking-[0.2em] text-surface-foreground uppercase">
+                    Scrollable
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div
+              ref={logosRef}
+              className={`grid grid-cols-2 sm:grid-cols-3 gap-4 lg:max-w-none pt-12 lg:pt-12 pb-32 transition-all duration-700 ${
+                showIndicator ? "blur-xl scale-95 opacity-40" : "blur-0 scale-100 opacity-100"
+              }`}
             >
-              <img
-                src={s.logo || ""}
-                alt={s.name}
-                className="max-h-10 max-w-full object-contain md:max-h-12"
-                loading="lazy"
-                draggable={false}
-              />
-            </a>
-          ))}
+              {SPONSORS.map((s) => (
+                <a
+                  key={s.name}
+                  href={s.url || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="sponsor-card flex items-center justify-center rounded-xl border border-surface-foreground/10 p-4 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-surface-foreground/25 hover:shadow-lg"
+                >
+                  <img
+                    src={s.logo || ""}
+                    alt={s.name}
+                    className="max-h-10 max-w-full object-contain md:max-h-12"
+                    loading="lazy"
+                    draggable={false}
+                  />
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* 3D Reunion Tower — Right side */}
+          <div className="w-full lg:w-3/5 order-1 lg:order-2 relative" style={{ height: "400vh" }}>
+            <div
+              ref={towerWrapRef}
+              className="sticky top-0"
+              style={{
+                width: "100%",
+                height: "max(100vh, 1000px)",
+                cursor: "grab",
+                userSelect: "none",
+              }}
+            >
+              <Suspense
+                fallback={
+                  <div
+                    className="flex items-center justify-center"
+                    style={{ height: towerH }}
+                  >
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-surface-foreground/20 border-t-surface-foreground" />
+                  </div>
+                }
+              >
+                <ReunionTower
+                  scrollProgressRef={scrollProgressRef}
+                  dragOffsetRef={dragOffsetRef}
+                  sponsors={SPONSORS}
+                />
+              </Suspense>
+            </div>
+          </div>
         </div>
       </section>
     </div>
