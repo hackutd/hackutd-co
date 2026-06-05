@@ -9,7 +9,7 @@ const axxess = "/sponsors/axxess.png";
 const cognizant = "/sponsors/cognizant.png";
 const scale = "/sponsors/scale.png";
 
-const nmc2 = "/sponsors/nmc2.png";
+const nmc2 = "/sponsors/nmc2_dark.webp";
 // SVG imports
 // for further context, the reason these are in separate locations is because I didn't want to work on configuring
 // an SVG loader for webpack for the default import; this could be a potential future improvement

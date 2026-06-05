@@ -31,17 +31,7 @@ export default function Sponsors() {
 
   const reducedMotion = usePrefersReducedMotion();
 
-  // ── First-hover indicator state ───────────────────────────
-  const [hasHovered, setHasHovered] = useState(false);
-  const [showIndicator, setShowIndicator] = useState(false);
-
-  const handleMouseEnter = () => {
-    if (!hasHovered && !reducedMotion) {
-      setHasHovered(true);
-      setShowIndicator(true);
-      setTimeout(() => setShowIndicator(false), 2000);
-    }
-  };
+  const [hasNudged, setHasNudged] = useState(false);
 
   // ── Drag-to-rotate on tower container ─────────────────────
   useEffect(() => {
@@ -98,7 +88,7 @@ export default function Sponsors() {
   }, [reducedMotion]);
 
   // ── GSAP: scroll entrance, scroll progress, navbar
-  useGSAP(() => {
+  const { contextSafe } = useGSAP(() => {
     const section = sectionRef.current;
     const towerWrap = towerWrapRef.current;
     const logos = logosRef.current;
@@ -165,6 +155,20 @@ export default function Sponsors() {
     return () => nav.kill();
   });
 
+  // ── Nudge animation on hover ──────────────────────────────
+  const handleMouseEnter = contextSafe(() => {
+    if (reducedMotion || !logosRef.current || hasNudged) return;
+
+    setHasNudged(true);
+    gsap.to(logosRef.current, {
+      y: -15,
+      duration: 0.5,
+      yoyo: true,
+      repeat: 1,
+      ease: "sine.inOut",
+    });
+  });
+
   const towerH = "max(100vh, 1000px)";
 
   // ── Reduced-motion fallback ────────────────────────────────
@@ -174,7 +178,7 @@ export default function Sponsors() {
         <section
           ref={sectionRef}
           id="sponsors"
-          className="relative bg-surface px-8 py-32 text-surface-foreground"
+          className="relative bg-surface px-8 text-surface-foreground"
           {...{ [SPONSORS_SECTION_DATA_ATTR]: "" }}
         >
           <div className="flex items-end justify-between">
@@ -240,25 +244,9 @@ export default function Sponsors() {
               .scrollbar-hide::-webkit-scrollbar { display: none; }
             `}} />
 
-            {/* Scroll Indicator Overlay */}
-            {showIndicator && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none p-4">
-                <div className="bg-surface/80 border border-surface-foreground/10 px-8 py-6 rounded-3xl backdrop-blur-xl shadow-2xl flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-500">
-                  <div className="w-10 h-16 rounded-full border-2 border-surface-foreground/30 flex justify-center p-2">
-                    <div className="w-1 h-3 bg-surface-foreground rounded-full animate-bounce" />
-                  </div>
-                  <span className="text-lg font-bold tracking-[0.2em] text-surface-foreground uppercase">
-                    Scrollable
-                  </span>
-                </div>
-              </div>
-            )}
-
             <div
               ref={logosRef}
-              className={`grid grid-cols-2 sm:grid-cols-3 gap-4 lg:max-w-none pt-12 lg:pt-12 pb-32 transition-all duration-700 ${
-                showIndicator ? "blur-xl scale-95 opacity-40" : "blur-0 scale-100 opacity-100"
-              }`}
+              className="grid grid-cols-2 sm:grid-cols-3 gap-4 lg:max-w-none pt-12 lg:pt-12 pb-32"
             >
               {SPONSORS.map((s) => (
                 <a
