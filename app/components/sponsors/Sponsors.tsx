@@ -235,13 +235,29 @@ export default function Sponsors() {
 
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-16">
           {/* Sponsor logos grid - Left side */}
-          <div 
+          <div
             className="w-full lg:w-2/5 order-2 lg:order-1 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:overscroll-contain scrollbar-hide relative"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             onMouseEnter={handleMouseEnter}
           >
             <style dangerouslySetInnerHTML={{ __html: `
               .scrollbar-hide::-webkit-scrollbar { display: none; }
+              .sponsor-card {
+                box-shadow: inset 2px 2px 5px rgba(0,0,0,0.15), inset -2px -2px 5px rgba(255,255,255,0.7);
+                /* Transition specific properties to avoid conflicts and lag */
+                transition-property: box-shadow, border-color;
+                transition-duration: 0.6s, 0.3s;
+                transition-timing-function: ease;
+                /* Only the box-shadow persists for 2s after mouse exit */
+                transition-delay: 2s, 0s;
+                will-change: box-shadow;
+              }
+              .sponsor-card:hover {
+                box-shadow: inset 6px 6px 12px rgba(255,255,255,0.8), inset -6px -6px 12px rgba(0,0,0,0.2);
+                /* Instant entry ensures the effect reaches 100% completion before exit can interrupt it */
+                transition-duration: 0s, 0.1s;
+                transition-delay: 0s, 0s;
+              }
             `}} />
 
             <div
@@ -254,7 +270,7 @@ export default function Sponsors() {
                   href={s.url || "#"}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="sponsor-card flex items-center justify-center rounded-xl border border-surface-foreground/10 p-4 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-surface-foreground/25 hover:shadow-lg"
+                  className="sponsor-card flex items-center justify-center rounded-xl border border-surface-foreground/10 p-4 backdrop-blur-sm hover:border-surface-foreground/25"
                 >
                   <img
                     src={s.logo || ""}
