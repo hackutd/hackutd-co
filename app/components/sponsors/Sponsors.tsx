@@ -243,7 +243,7 @@ export default function Sponsors() {
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-20">
           {/* Sponsor logos grid - Left side */}
           <div
-            className="w-full lg:w-[40%] order-2 lg:order-1 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:overscroll-contain scrollbar-hide relative z-10"
+            className="w-full lg:w-[48%] order-2 lg:order-1 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:overscroll-contain scrollbar-hide relative z-10"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             onMouseEnter={handleMouseEnter}
           >
@@ -271,7 +271,7 @@ export default function Sponsors() {
                 .pancake-grid > :nth-child(6n+4),
                 .pancake-grid > :nth-child(6n+5),
                 .pancake-grid > :nth-child(6n+6) {
-                  transform: translateX(20px);
+                  transform: translateX(40px);
                 }
               }
             `}} />
@@ -302,7 +302,7 @@ export default function Sponsors() {
           </div>
 
           {/* 3D Reunion Tower — Right side */}
-          <div className="w-full lg:w-[50%] order-1 lg:order-2 relative" style={{ height: "400vh" }}>
+          <div className="w-full lg:w-[45%] order-1 lg:order-2 relative" style={{ height: "400vh" }}>
             <div
               ref={towerWrapRef}
               className="sticky top-0"
