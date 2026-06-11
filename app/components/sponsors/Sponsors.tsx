@@ -157,7 +157,14 @@ export default function Sponsors() {
 
   // ── Nudge animation on hover ──────────────────────────────
   const handleMouseEnter = contextSafe(() => {
-    if (reducedMotion || !logosRef.current || hasNudged) return;
+    if (
+      reducedMotion ||
+      !logosRef.current ||
+      hasNudged ||
+      // Only trigger nudge if the device has a cursor (hover support)
+      !window.matchMedia("(hover: hover)").matches
+    )
+      return;
 
     setHasNudged(true);
     gsap.to(logosRef.current, {
@@ -233,10 +240,10 @@ export default function Sponsors() {
           </a>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-16">
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-20">
           {/* Sponsor logos grid - Left side */}
           <div
-            className="w-full lg:w-2/5 order-2 lg:order-1 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:overscroll-contain scrollbar-hide relative"
+            className="w-full lg:w-[40%] order-2 lg:order-1 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:overscroll-contain scrollbar-hide relative z-10"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             onMouseEnter={handleMouseEnter}
           >
@@ -252,40 +259,50 @@ export default function Sponsors() {
                 transition-delay: 2s, 0s;
                 will-change: box-shadow;
               }
-              .sponsor-card:hover {
-                box-shadow: inset 6px 6px 12px rgba(255,255,255,0.8), inset -6px -6px 12px rgba(0,0,0,0.2);
-                /* Instant entry ensures the effect reaches 100% completion before exit can interrupt it */
-                transition-duration: 0s, 0.1s;
-                transition-delay: 0s, 0s;
+              @media (hover: hover) {
+                .sponsor-card:hover {
+                  box-shadow: inset 6px 6px 12px rgba(255,255,255,0.8), inset -6px -6px 12px rgba(0,0,0,0.2);
+                  /* Instant entry ensures the effect reaches 100% completion before exit can interrupt it */
+                  transition-duration: 0s, 0.1s;
+                  transition-delay: 0s, 0s;
+                }
+              }
+              @media (min-width: 640px) {
+                .pancake-grid > :nth-child(6n+4),
+                .pancake-grid > :nth-child(6n+5),
+                .pancake-grid > :nth-child(6n+6) {
+                  transform: translateX(20px);
+                }
               }
             `}} />
 
             <div
               ref={logosRef}
-              className="grid grid-cols-2 sm:grid-cols-3 gap-4 lg:max-w-none pt-12 lg:pt-12 pb-32"
+              className="grid grid-cols-2 sm:grid-cols-3 pancake-grid gap-x-8 gap-y-8 lg:max-w-none pt-12 lg:pt-12 pb-32 px-4 pr-10"
             >
               {SPONSORS.map((s) => (
-                <a
-                  key={s.name}
-                  href={s.url || "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="sponsor-card flex items-center justify-center rounded-xl border border-surface-foreground/10 p-4 backdrop-blur-sm hover:border-surface-foreground/25"
-                >
-                  <img
-                    src={s.logo || ""}
-                    alt={s.name}
-                    className="max-h-10 max-w-full object-contain md:max-h-12"
-                    loading="lazy"
-                    draggable={false}
-                  />
-                </a>
+                <div key={s.name} className="flex-shrink-0 h-full">
+                  <a
+                    href={s.url || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="sponsor-card flex h-full items-center justify-center rounded-xl border border-surface-foreground/10 p-4 backdrop-blur-sm hover:border-surface-foreground/25"
+                  >
+                    <img
+                      src={s.logo || ""}
+                      alt={s.name}
+                      className="max-h-10 max-w-full object-contain md:max-h-12"
+                      loading="lazy"
+                      draggable={false}
+                    />
+                  </a>
+                </div>
               ))}
             </div>
           </div>
 
           {/* 3D Reunion Tower — Right side */}
-          <div className="w-full lg:w-3/5 order-1 lg:order-2 relative" style={{ height: "400vh" }}>
+          <div className="w-full lg:w-[50%] order-1 lg:order-2 relative" style={{ height: "400vh" }}>
             <div
               ref={towerWrapRef}
               className="sticky top-0"
