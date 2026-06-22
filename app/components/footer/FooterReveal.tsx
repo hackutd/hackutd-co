@@ -10,9 +10,6 @@ import Footer from "./Footer";
 
 configureScrollTrigger();
 
-const revealSpacerClassName =
-  "pointer-events-none h-[calc(440px+12vh)] sm:h-[calc(400px+12vh)] md:h-[calc(280px+10vh)]";
-
 function setFooterInteractivity(footer: HTMLElement, isInteractive: boolean) {
   footer.inert = !isInteractive;
 
@@ -37,17 +34,18 @@ export default function FooterReveal() {
         return;
       }
 
-      gsap.set(footer, {
-        autoAlpha: 0,
-      });
+      const syncSpacerHeight = () => {
+        reveal.style.height = `${footer.offsetHeight}px`;
+      };
+
+      syncSpacerHeight();
+
+      gsap.set(footer, { autoAlpha: 0 });
 
       let isFooterVisible = false;
       let isFooterInteractive = false;
 
-      const updateFooterState = (
-        isVisible: boolean,
-        isInteractive: boolean,
-      ) => {
+      const updateFooterState = (isVisible: boolean, isInteractive: boolean) => {
         if (isFooterVisible !== isVisible) {
           isFooterVisible = isVisible;
           gsap.set(footer, { autoAlpha: isVisible ? 1 : 0 });
@@ -83,7 +81,14 @@ export default function FooterReveal() {
         onLeaveBack: () => updateFooterState(false, false),
       });
 
+      const resizeObserver = new ResizeObserver(() => {
+        syncSpacerHeight();
+        ScrollTrigger.refresh();
+      });
+      resizeObserver.observe(footer);
+
       return () => {
+        resizeObserver.disconnect();
         trigger.kill();
       };
     },
@@ -96,11 +101,7 @@ export default function FooterReveal() {
 
   return (
     <>
-      <div
-        ref={revealRef}
-        aria-hidden="true"
-        className={revealSpacerClassName}
-      />
+      <div ref={revealRef} aria-hidden="true" className="pointer-events-none" />
       <Footer
         ref={footerRef}
         aria-hidden="true"
