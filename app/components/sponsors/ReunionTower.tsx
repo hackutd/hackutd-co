@@ -5,10 +5,10 @@ import { Canvas, useFrame, useThree, useLoader } from "@react-three/fiber";
 import { useGLTF, Environment } from "@react-three/drei";
 import * as THREE from "three";
 
-const MODEL_PATH = "/models/reunion_tower_center.glb";
+const MODEL_PATH = "/models/sponsor-globe-flat-4.glb";
 
 // Cylinder radius: MainRoom is ~37.7 after normalization. Place logos just outside.
-const LOGO_RADIUS = 37.2;
+const LOGO_RADIUS = 45.0;
 const LOGO_OFFSET = 0.0; // Tiny offset to prevent z-fighting
 
 const MIN_LOGO_DISPLAY_HEIGHT = 12.0; // "Wayy bigger" height
@@ -72,7 +72,7 @@ function generateSlots(): SponsorPlacement[] {
     for (let c = 0; c < cols; c++) {
       const initialSponsorIndex = r * cols + c;
       const theta = (c * (Math.PI * 2)) / cols + (r * Math.PI) / cols; // Staggered rows
-      const y = r === 0 ? 112 : 130; // Fixed heights in the blue band
+      const y = r === 0 ? 142 : 160; // Fixed heights in the blue band
       
       slots.push({
         theta: theta % (Math.PI * 2),
@@ -277,7 +277,7 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
     const center = new THREE.Vector3();
     box.getSize(size);
     box.getCenter(center);
-    const s = 350 / size.y;
+    const s = 420 / size.y;
     return { normScale: s, centerY: center.y * s };
   }, [clonedScene]);
 
@@ -349,8 +349,9 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
         object={clonedScene}
         scale={[normScale, normScale, normScale]}
         position={[0, -centerY, 0]}
+        rotation={[0, Math.PI + THREE.MathUtils.degToRad(10), 0]}
       />
-      <group ref={sponsorGroupRef} position={[-1.7, 0, 0]}>
+      <group ref={sponsorGroupRef} position={[2.3, 0, 0]}>
         {placements.map((placement, i) => {
           return (
             <Suspense key={`slot-${i}`} fallback={null}>
@@ -397,8 +398,8 @@ function CameraRig({ scrollProgressRef }: { scrollProgressRef: React.RefObject<n
     cam.updateProjectionMatrix();
 
     const targetZ = baseZ + p * 240;
-    const targetY = GLOBE_CENTER_Y - p * 92;
-    const targetLookY = GLOBE_CENTER_Y - 3 - p * 106;
+    const targetY = GLOBE_CENTER_Y;
+    const targetLookY = GLOBE_CENTER_Y;
 
     if (!initialized.current) {
       smoothZ.current = targetZ;
@@ -447,8 +448,8 @@ export default function ReunionTower({
       frameloop="always"
     >
       <ambientLight intensity={0.8} />
-      <directionalLight position={[10, 20, 10]} intensity={2.5} />
-      <directionalLight position={[-6, 12, -8]} intensity={0.6} />
+      <directionalLight position={[0, 0, 100]} intensity={2.5} />
+      <directionalLight position={[0, 0, 80]} intensity={0.6} />
       <hemisphereLight color="#f2f2f2" groundColor="#a3a3a3" intensity={0.8} />
 
       <Suspense fallback={null}>
