@@ -2,22 +2,33 @@
 
 import { useRef } from "react";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import {
-  HERO_SCENE_DATA_ATTR,
-  MISSION_STATEMENT_DATA_ATTR,
-  PAGE_BG_DARKEN,
-  PAGE_BG_SPONSORS_LIGHTEN,
-  PAGE_BG_MOBILE_WHITEOUT_SCRUB,
-  PAGE_BG_WHITEOUT,
-  SPONSORS_SECTION_DATA_ATTR,
+  dispatchNavbarThemeOverride,
+  type NavbarTheme,
+} from "../navbar/navbarThemeOverride";
+import {
+  NAVBAR_LIGHT_THRESHOLD,
+  PAGE_BG_PHASES,
+  PAGE_BG_SMOOTHING,
 } from "./sceneConfig";
 
 configureScrollTrigger();
 
+/**
+ * Owns the page background and the navbar light/dark theme.
+ *
+ * The light layer's opacity is a pure function of scroll position: each
+ * phase gets a plain ScrollTrigger (no tween) and on every update the last
+ * phase in page order with progress > 0 determines the value. A single
+ * quickTo writer applies it with a short catch-up for the scrub feel, so
+ * there are never competing tweens fighting over the same property and the
+ * background can't get stuck in the wrong state after a fast scroll.
+ */
 export default function PageBackground() {
   const lightLayerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
@@ -30,71 +41,79 @@ export default function PageBackground() {
         return;
       }
 
+      gsap.set(lightLayer, { opacity: 0 });
+
       if (prefersReducedMotion) {
-        gsap.set(lightLayer, { opacity: 0 });
+        // Reduced-motion fallbacks paint their own section backgrounds and
+        // declare data-navbar-theme, which useNavbarTheme observes directly.
         return;
       }
 
-      gsap.set(lightLayer, { opacity: 0 });
+      const smoothing = isMobile
+        ? PAGE_BG_SMOOTHING.mobile
+        : PAGE_BG_SMOOTHING.desktop;
+      const setOpacity = gsap.quickTo(lightLayer, "opacity", {
+        duration: smoothing,
+        ease: "none",
+      });
 
-      const heroScene = document.querySelector<HTMLElement>(
-        `[${HERO_SCENE_DATA_ATTR}]`,
-      );
-      const missionStatement = document.querySelector<HTMLElement>(
-        `[${MISSION_STATEMENT_DATA_ATTR}]`,
-      );
-      const sponsorsSection = document.querySelector<HTMLElement>(
-        `[${SPONSORS_SECTION_DATA_ATTR}]`,
-      );
+      let navbarTheme: NavbarTheme | null = null;
 
-      const whiteoutScrub = isMobile
-        ? PAGE_BG_MOBILE_WHITEOUT_SCRUB
-        : PAGE_BG_WHITEOUT.scrub;
+      const phases: {
+        from: number;
+        to: number;
+        easeFn: gsap.EaseFunction;
+        trigger: ScrollTrigger;
+      }[] = [];
 
-      if (heroScene) {
-        gsap.to(lightLayer, {
-          opacity: 1,
-          ease: PAGE_BG_WHITEOUT.ease,
-          scrollTrigger: {
-            trigger: heroScene,
-            start: PAGE_BG_WHITEOUT.start,
-            end: PAGE_BG_WHITEOUT.end,
-            scrub: whiteoutScrub,
-          },
+      for (const phase of PAGE_BG_PHASES) {
+        const el = document.querySelector<HTMLElement>(`[${phase.attr}]`);
+        if (!el) {
+          continue;
+        }
+
+        phases.push({
+          from: phase.from,
+          to: phase.to,
+          easeFn: gsap.parseEase(phase.ease),
+          trigger: ScrollTrigger.create({
+            trigger: el,
+            start: phase.start,
+            end: phase.end,
+            onUpdate: () => update(),
+            onRefresh: () => update(),
+          }),
         });
       }
 
-      if (missionStatement) {
-        gsap.fromTo(
-          lightLayer,
-          { opacity: 1 },
-          {
-            opacity: 0,
-            ease: PAGE_BG_DARKEN.ease,
-            immediateRender: false,
-            scrollTrigger: {
-              trigger: missionStatement,
-              start: PAGE_BG_DARKEN.start,
-              end: PAGE_BG_DARKEN.end,
-              scrub: PAGE_BG_DARKEN.scrub,
-            },
-          },
-        );
+      function update() {
+        let value = 0;
+        for (const phase of phases) {
+          const { progress } = phase.trigger;
+          if (progress > 0) {
+            value = gsap.utils.interpolate(
+              phase.from,
+              phase.to,
+              phase.easeFn(progress),
+            );
+          }
+        }
+
+        setOpacity(value);
+
+        const nextTheme: NavbarTheme =
+          value >= NAVBAR_LIGHT_THRESHOLD ? "light" : "dark";
+        if (nextTheme !== navbarTheme) {
+          navbarTheme = nextTheme;
+          dispatchNavbarThemeOverride(nextTheme);
+        }
       }
 
-      if (sponsorsSection) {
-        gsap.to(lightLayer, {
-          opacity: 1,
-          ease: PAGE_BG_SPONSORS_LIGHTEN.ease,
-          immediateRender: false,
-          scrollTrigger: {
-            trigger: sponsorsSection,
-            start: PAGE_BG_SPONSORS_LIGHTEN.start,
-            end: PAGE_BG_SPONSORS_LIGHTEN.end,
-            scrub: PAGE_BG_SPONSORS_LIGHTEN.scrub,
-          },
-        });
-      }
+      update();
+
+      return () => {
+        dispatchNavbarThemeOverride(null);
+      };
     },
     { dependencies: [isMobile, prefersReducedMotion], revertOnUpdate: true },
   );

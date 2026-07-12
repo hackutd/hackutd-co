@@ -65,12 +65,6 @@ export const HERO_SKYLINE_PARALLAX = {
   ease: "none",
 } as const;
 
-export const HERO_NAVBAR_THEME_TRIGGER = {
-  start: "84% bottom",
-  end: "bottom top",
-  theme: "light",
-} as const;
-
 export const COMET_TUNING = {
   spine: `
     M 735,870

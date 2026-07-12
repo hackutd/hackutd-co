@@ -32,7 +32,7 @@ export default function Projects() {
             <p className="mb-1 text-xs uppercase text-muted/60">{featured.label}</p>
             <h3 className="text-3xl font-medium">{featured.name}</h3>
             <p className="mt-3 text-sm text-muted/60">{featured.description}</p>
-            <a href={featured.link} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-xs font-semibold text-[#b5294e] transition-all duration-150 hover:text-sm">Learn More →</a>
+            <a href={featured.link} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-xs font-semibold text-accent transition-all duration-150 hover:text-sm">Learn More →</a>
           </div>
         </div>
 
@@ -44,7 +44,7 @@ export default function Projects() {
                 <p className="mb-1 text-xs uppercase text-muted/60">{project.label}</p>
                 <h3 className="text-3xl font-light">{project.name}</h3>
                 <p className="mt-3 text-sm text-muted/60">{project.description}</p>
-                <a href={project.link} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-xs font-semibold text-[#b5294e] transition-all duration-150 hover:text-sm">Learn More →</a>
+                <a href={project.link} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-xs font-semibold text-accent transition-all duration-150 hover:text-sm">Learn More →</a>
               </div>
               <Image src={project.image} alt={project.name} width={160} height={160} className="-mr-4 self-center object-contain" />
             </div>

@@ -6,9 +6,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { SPONSORS } from "../../data/sponsors";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
-import { dispatchNavbarThemeOverride } from "../navbar/navbarThemeOverride";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
-import { SPONSORS_SECTION_DATA_ATTR } from "@/app/components/background/sceneConfig";
 
 const ReunionTower = lazy(() => import("./ReunionTower"));
 
@@ -85,7 +83,7 @@ export default function Sponsors() {
     };
   }, [reducedMotion]);
 
-  // ── GSAP: scroll entrance, scroll progress, navbar
+  // ── GSAP: scroll entrance, scroll progress
   useGSAP(() => {
     const section = sectionRef.current;
     const towerWrap = towerWrapRef.current;
@@ -139,18 +137,6 @@ export default function Sponsors() {
         },
       );
     }
-
-    // Navbar theme
-    const nav = ScrollTrigger.create({
-      trigger: section,
-      start: "top 10%",
-      end: "bottom 10%",
-      onEnter: () => dispatchNavbarThemeOverride("light"),
-      onEnterBack: () => dispatchNavbarThemeOverride("light"),
-      onLeave: () => dispatchNavbarThemeOverride(null),
-      onLeaveBack: () => dispatchNavbarThemeOverride(null),
-    });
-    return () => nav.kill();
   });
 
   const towerH = "max(100vh, 1000px)";
@@ -163,7 +149,7 @@ export default function Sponsors() {
           ref={sectionRef}
           id="sponsors"
           className="relative bg-surface px-8 py-32 text-surface-foreground"
-          {...{ [SPONSORS_SECTION_DATA_ATTR]: "" }}
+          data-navbar-theme="light"
         >
           <div className="flex items-end justify-between">
             <h2 className="text-4xl font-bold md:text-5xl">Our Sponsors</h2>
@@ -203,8 +189,6 @@ export default function Sponsors() {
         ref={sectionRef}
         id="sponsors"
         className="relative z-20 bg-surface px-8 py-32 text-surface-foreground"
-        data-navbar-theme="light"
-        {...{ [SPONSORS_SECTION_DATA_ATTR]: "" }}
       >
         {/* Header */}
         <div className="flex items-end justify-between">
