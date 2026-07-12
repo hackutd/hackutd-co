@@ -27,6 +27,7 @@ configureScrollTrigger();
 
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
   const starsLayerRef = useRef<HTMLDivElement>(null);
   const cometBackgroundLayerRef = useRef<HTMLDivElement>(null);
   const skylineLayerRef = useRef<HTMLDivElement>(null);
@@ -94,6 +95,7 @@ export default function Hero() {
       }
 
       const sceneFadeTargets = [
+        backdropRef.current,
         skylineLayer,
         starsLayer,
         cometBackgroundLayer,
@@ -133,11 +135,18 @@ export default function Hero() {
     <section
       ref={sectionRef}
       {...{ [HERO_SCENE_DATA_ATTR]: "" }}
-      className={`relative ${HERO_LAYOUT.minHeight}`}
+      className={`theme-scope-dark relative text-foreground ${HERO_LAYOUT.minHeight}`}
     >
       <div
         className={`sticky top-0 overflow-hidden isolate ${HERO_LAYOUT.stickyViewportHeight}`}
       >
+        {/* Opaque dark backdrop so the hero art direction stays dark in the
+            light site theme; it fades out with the rest of the scene. */}
+        <div
+          ref={backdropRef}
+          aria-hidden="true"
+          className="absolute inset-0 z-0 bg-black"
+        />
         <div
           ref={starsLayerRef}
           aria-hidden="true"

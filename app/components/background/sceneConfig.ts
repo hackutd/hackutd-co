@@ -70,5 +70,12 @@ export const PAGE_BG_SMOOTHING = {
   mobile: 0.6,
 } as const;
 
+/**
+ * When a scroll jump moves the computed value by more than this in one
+ * update (e.g. Home/End or a fast fling), the layer snaps instead of
+ * easing so an opaque section edge is never crossed mid-catch-up.
+ */
+export const PAGE_BG_SNAP_DELTA = 0.35;
+
 /** Light-layer opacity at which the navbar switches to its light theme */
 export const NAVBAR_LIGHT_THRESHOLD = 0.5;

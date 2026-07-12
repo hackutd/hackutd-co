@@ -32,7 +32,7 @@ function renderMissionStatement() {
 function renderDirectorsPanel() {
   return (
     <div className="flex flex-col items-center">
-      <div className="h-64 w-full max-w-lg rounded-lg bg-white/5" />
+      <div className="h-64 w-full max-w-lg rounded-lg bg-foreground/5" />
       <blockquote className="mt-8 max-w-lg text-center text-muted">
         <p>{missionContent.directorsMessage.quote}</p>
         <footer className="mt-4 font-medium text-foreground">
@@ -41,7 +41,7 @@ function renderDirectorsPanel() {
       </blockquote>
       <div className="mt-8 flex gap-2">
         {Array.from({ length: MISSION_DECORATION_COUNT }).map((_, i) => (
-          <div key={i} className="h-10 w-10 rounded-full bg-white/10" />
+          <div key={i} className="h-10 w-10 rounded-full bg-foreground/10" />
         ))}
       </div>
     </div>

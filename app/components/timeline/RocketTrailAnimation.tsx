@@ -193,7 +193,7 @@ export default function RocketTrailAnimation() {
       >
         <svg
           viewBox="0 0 1371 402"
-          className="w-screen"
+          className="w-screen text-foreground"
           style={{ height: "auto", minWidth: isMobile ? "300px" : "900px", overflow: "visible" }}
           aria-hidden="true"
           xmlns="http://www.w3.org/2000/svg"
@@ -284,7 +284,7 @@ export default function RocketTrailAnimation() {
                     x={0}
                     y={labelBaseY}
                     textAnchor="middle"
-                    fill="white"
+                    fill="currentColor"
                     fontSize={yearFontSize}
                     fontWeight="700"
                     fontFamily="var(--font-satoshi, sans-serif)"
@@ -295,7 +295,7 @@ export default function RocketTrailAnimation() {
                     x={0}
                     y={labelBaseY + nameFontSize * 1.6}
                     textAnchor="middle"
-                    fill="white"
+                    fill="currentColor"
                     fontSize={nameFontSize}
                     fontWeight="600"
                     letterSpacing={nameLetterSpacing}

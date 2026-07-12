@@ -15,6 +15,7 @@ import {
   NAVBAR_LIGHT_THRESHOLD,
   PAGE_BG_PHASES,
   PAGE_BG_SMOOTHING,
+  PAGE_BG_SNAP_DELTA,
 } from "./sceneConfig";
 
 configureScrollTrigger();
@@ -99,6 +100,10 @@ export default function PageBackground() {
           }
         }
 
+        const current = Number(gsap.getProperty(lightLayer, "opacity"));
+        if (Math.abs(value - current) >= PAGE_BG_SNAP_DELTA) {
+          gsap.set(lightLayer, { opacity: value });
+        }
         setOpacity(value);
 
         const nextTheme: NavbarTheme =
