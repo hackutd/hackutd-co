@@ -2,7 +2,7 @@
 
 import { Suspense, useRef, useMemo, useEffect, useState } from "react";
 import { Canvas, useFrame, useThree, useLoader } from "@react-three/fiber";
-import { useGLTF, Environment } from "@react-three/drei";
+import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 
 const MODEL_PATH = "/models/sponsor-globe-flat-4.glb";
@@ -281,13 +281,23 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
     return { normScale: s, centerY: center.y * s };
   }, [clonedScene]);
 
-  // Find PlatonicSphere and apply transparency to the whole structure
+  // Find PlatonicSphere and apply transparency + add black edge outlines to everything
   useEffect(() => {
     const mats: THREE.Material[] = [];
+    const edgeMat = new THREE.LineBasicMaterial({ color: 0x000000 });
+
+    // Collect sphere UUIDs first so we can use a different edge threshold
+    const sphereUuids = new Set<string>();
+    const sphereNode = clonedScene.getObjectByName("PlatonicSphere");
+    if (sphereNode) {
+      globeRef.current = sphereNode;
+      sphereNode.traverse((n) => sphereUuids.add(n.uuid));
+    }
+
+    const darkenFactor = 0.55; // Tune this: lower = darker (0.0–1.0)
+
     clonedScene.traverse((child) => {
       if (child.name === "PlatonicSphere") {
-        globeRef.current = child;
-
         // Apply transparency to the sphere and all its sub-meshes (bars, connectors, etc.)
         child.traverse((node) => {
           if (node instanceof THREE.Mesh) {
@@ -296,9 +306,29 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
             node.material.opacity = 0.6;
             node.material.depthWrite = false;
             node.renderOrder = 3; // Render AFTER logos (renderOrder=2) so sphere appears in front
+            if ("color" in node.material) {
+              node.material.color.set(0xb0b0b0);
+            }
             mats.push(node.material as THREE.Material);
           }
         });
+      }
+
+      // Uniform gray for all non-sphere meshes
+      if (child instanceof THREE.Mesh && !sphereUuids.has(child.uuid)) {
+        child.material = child.material.clone();
+        if ("color" in child.material) {
+          child.material.color.set(0xb0b0b0);
+        }
+      }
+
+      // Add black edge outlines — higher threshold on sphere = fewer edges drawn
+      if (child instanceof THREE.Mesh) {
+        const isSphere = sphereUuids.has(child.uuid);
+        const edges = new THREE.EdgesGeometry(child.geometry, isSphere ? 55 : 25);
+        const lines = new THREE.LineSegments(edges, edgeMat);
+        if (child.renderOrder === 3) lines.renderOrder = 3;
+        child.add(lines);
       }
     });
     globeMaterialsRef.current = mats;
@@ -444,13 +474,14 @@ export default function ReunionTower({
         depth: true,
       }}
       camera={{ position: [0, 125, 175], fov: 55, near: 0.1, far: 2000 }}
-      style={{ touchAction: "pan-y" }}
+      style={{
+        touchAction: "pan-y",
+        maskImage: "linear-gradient(to bottom, black 90%, transparent 100%)",
+        WebkitMaskImage: "linear-gradient(to bottom, black 90%, transparent 100%)",
+      }}
       frameloop="always"
     >
-      <ambientLight intensity={0.8} />
-      <directionalLight position={[0, 0, 100]} intensity={2.5} />
-      <directionalLight position={[0, 0, 80]} intensity={0.6} />
-      <hemisphereLight color="#f2f2f2" groundColor="#a3a3a3" intensity={0.8} />
+      <ambientLight intensity={3.5} />
 
       <Suspense fallback={null}>
         <TowerModel
@@ -458,7 +489,6 @@ export default function ReunionTower({
           dragOffsetRef={dragOffsetRef}
           sponsors={sponsors}
         />
-        <Environment preset="city" />
       </Suspense>
 
       <CameraRig scrollProgressRef={scrollProgressRef} />
