@@ -140,9 +140,12 @@ export default function CometAnimation() {
   useGSAP(
     () => {
       const gradientEl = gradientRef.current;
-      if (!gradientEl) {
+      const wrapper = wrapperRef.current;
+      if (!gradientEl || !wrapper) {
         return;
       }
+
+      const trigger = wrapper.closest("section") ?? wrapper.parentElement;
 
       const { x1, y1, x2, y2, drift } = COMET_TUNING.gradient;
 
@@ -195,7 +198,6 @@ export default function CometAnimation() {
         paused: true,
       });
 
-      const trigger = wrapperRef.current?.closest("section");
       if (!trigger) {
         orbit.play();
         return;
@@ -208,6 +210,8 @@ export default function CometAnimation() {
         onToggle: (self) => (self.isActive ? orbit.play() : orbit.pause()),
       });
 
+      // The hero is on screen at load, so start the tween from its initial
+      // state rather than relying on onToggle firing for it.
       if (visibility.isActive) {
         orbit.play();
       }

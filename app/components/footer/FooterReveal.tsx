@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -23,6 +23,7 @@ function setFooterInteractivity(footer: HTMLElement, isInteractive: boolean) {
 export default function FooterReveal() {
   const revealRef = useRef<HTMLDivElement>(null);
   const footerRef = useRef<HTMLElement>(null);
+  const [shaderActive, setShaderActive] = useState(false);
   const prefersReducedMotion = usePrefersReducedMotion();
 
   useGSAP(
@@ -49,6 +50,7 @@ export default function FooterReveal() {
         if (isFooterVisible !== isVisible) {
           isFooterVisible = isVisible;
           gsap.set(footer, { autoAlpha: isVisible ? 1 : 0 });
+          setShaderActive(isVisible);
         }
 
         if (isFooterInteractive !== isInteractive) {
@@ -116,6 +118,7 @@ export default function FooterReveal() {
       <Footer
         ref={footerRef}
         aria-hidden="true"
+        shaderActive={shaderActive}
         className="fixed inset-x-0 bottom-0 z-0 opacity-0"
       />
     </>

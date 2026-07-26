@@ -109,6 +109,8 @@ export default function CometTrailBackground() {
         onToggle: (self) => (self.isActive ? wave.play() : wave.pause()),
       });
 
+      // The hero is on screen at load, so start the tween from its initial
+      // state rather than relying on onToggle firing for it.
       if (visibility.isActive) {
         wave.play();
       }
@@ -160,7 +162,7 @@ export default function CometTrailBackground() {
             className="h-full w-full"
             style={{ height: "100%", width: "100%" }}
           >
-            <BrandShaderBackground lazyLoad={false} />
+            <BrandShaderBackground />
           </div>
         </foreignObject>
       </svg>
