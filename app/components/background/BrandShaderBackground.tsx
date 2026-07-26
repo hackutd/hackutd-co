@@ -20,6 +20,7 @@ type ShaderGradientProps = ComponentProps<typeof ShaderGradient> & {
 type BrandShaderBackgroundProps = {
   className?: string;
   lazyLoad?: boolean;
+  rootMargin?: string;
   shaderProps?: Partial<Omit<ShaderGradientProps, "animate">>;
   style?: CSSProperties;
 };
@@ -70,7 +71,8 @@ const brandShaderGradientProps: Omit<ShaderGradientProps, "animate"> = {
 
 export default function BrandShaderBackground({
   className,
-  lazyLoad = false,
+  lazyLoad = true,
+  rootMargin = "25%",
   shaderProps,
   style,
 }: BrandShaderBackgroundProps) {
@@ -95,6 +97,8 @@ export default function BrandShaderBackground({
         fov={mergedShaderProps.fov}
         pointerEvents="none"
         lazyLoad={lazyLoad}
+        threshold={0}
+        rootMargin={rootMargin}
       >
         <ShaderGradient
           {...mergedShaderProps}

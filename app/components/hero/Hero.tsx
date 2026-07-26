@@ -3,21 +3,18 @@
 import type { CSSProperties } from "react";
 import { useRef } from "react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import Image from "next/image";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import AccentButton from "../ui/AccentButton";
-import { dispatchNavbarThemeOverride } from "../navbar/navbarThemeOverride";
 import { HERO_SCENE_DATA_ATTR } from "../background/sceneConfig";
 import CometAnimation from "./CometAnimation";
 import {
   HERO_COPY,
   HERO_COMET_SHADER,
   HERO_LAYOUT,
-  HERO_NAVBAR_THEME_TRIGGER,
   HERO_SCENE_SCROLL,
   HERO_SKYLINE_PARALLAX,
   HERO_STARS,
@@ -128,32 +125,6 @@ export default function Hero() {
           },
         });
       }
-
-      let navbarThemeOverride: "light" | "dark" | null = null;
-      const setNavbarThemeOverride = (theme: "light" | "dark" | null) => {
-        if (navbarThemeOverride === theme) {
-          return;
-        }
-
-        navbarThemeOverride = theme;
-        dispatchNavbarThemeOverride(theme);
-      };
-
-      const navbarThemeTrigger = ScrollTrigger.create({
-        trigger: section,
-        start: HERO_NAVBAR_THEME_TRIGGER.start,
-        end: HERO_NAVBAR_THEME_TRIGGER.end,
-        onEnter: () => setNavbarThemeOverride(HERO_NAVBAR_THEME_TRIGGER.theme),
-        onEnterBack: () =>
-          setNavbarThemeOverride(HERO_NAVBAR_THEME_TRIGGER.theme),
-        onLeave: () => setNavbarThemeOverride(null),
-        onLeaveBack: () => setNavbarThemeOverride(null),
-      });
-
-      return () => {
-        navbarThemeTrigger.kill();
-        setNavbarThemeOverride(null);
-      };
     },
     { scope: sectionRef, dependencies: [isMobile, prefersReducedMotion] },
   );

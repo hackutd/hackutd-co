@@ -1,10 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import AccentButton from "../ui/AccentButton";
 import useNavbarTheme from "./useNavbarTheme";
+import ThemeToggle, {
+  applySiteTheme,
+  getServerSiteTheme,
+  readSiteTheme,
+  subscribeSiteTheme,
+  type SiteTheme,
+} from "./ThemeToggle";
 
 const NAV_LINKS = [
   { href: "#hackathons", label: "WHO WE ARE" },
@@ -14,8 +21,22 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const siteTheme = useSyncExternalStore(
+    subscribeSiteTheme,
+    readSiteTheme,
+    getServerSiteTheme,
+  );
   const theme = useNavbarTheme();
   const isLightTheme = theme === "light";
+  // The white/black logo assets track the actual underlying color: the
+  // "light" navbar phase sits on the surface color, which is dark when the
+  // user picks the light site theme.
+  const showBlackLogo = isLightTheme !== (siteTheme === "light");
+
+  const toggleSiteTheme = () => {
+    const next: SiteTheme = siteTheme === "dark" ? "light" : "dark";
+    applySiteTheme(next);
+  };
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
@@ -34,7 +55,7 @@ export default function Navbar() {
             width={2048}
             height={585}
             className={`absolute inset-0 h-6 w-auto transition-opacity duration-300 md:h-8 ${
-              isLightTheme ? "opacity-0" : "opacity-100"
+              showBlackLogo ? "opacity-0" : "opacity-100"
             }`}
             priority
           />
@@ -44,7 +65,7 @@ export default function Navbar() {
             width={2048}
             height={585}
             className={`absolute inset-0 h-6 w-auto transition-opacity duration-300 md:h-8 ${
-              isLightTheme ? "opacity-100" : "opacity-0"
+              showBlackLogo ? "opacity-100" : "opacity-0"
             }`}
             priority
           />
@@ -67,6 +88,11 @@ export default function Navbar() {
             <span className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-pink transition-transform duration-300 group-hover:scale-x-100" />
           </Link>
         ))}
+        <ThemeToggle
+          theme={siteTheme}
+          onToggle={toggleSiteTheme}
+          isLightNavbar={isLightTheme}
+        />
         <AccentButton>Gallery</AccentButton>
       </div>
 
@@ -116,6 +142,11 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
+          <ThemeToggle
+            theme={siteTheme}
+            onToggle={toggleSiteTheme}
+            isLightNavbar={isLightTheme}
+          />
           <AccentButton
             className={
               isLightTheme
