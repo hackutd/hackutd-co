@@ -2,6 +2,7 @@
 
 import { useId, useRef } from "react";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { CustomEase } from "gsap/CustomEase";
 import { useGSAP } from "@gsap/react";
 import BrandShaderBackground from "@/app/components/background/BrandShaderBackground";
@@ -93,13 +94,13 @@ export default function RocketTrailAnimation() {
       });
 
       if (prefersReducedMotion) {
-        gsap.set(assembly, { x: 0 });
+        gsap.set(assembly, { autoAlpha: 1, x: 0 });
         gsap.set(markers, { opacity: 1 });
         return;
       }
 
       // Scroll animation: rocket slides in from right
-      gsap.set(assembly, { x: "100vw" });
+      gsap.set(assembly, { autoAlpha: 1, x: "100vw" });
       gsap.set(markers, { opacity: 1 });
 
       // --- Wave animation (created first so scroll callbacks can reference it) ---
@@ -116,8 +117,8 @@ export default function RocketTrailAnimation() {
       };
       const staggerCfg = { each: staggerEach, repeat: -1, yoyo: true };
 
-      const topWave = gsap.to(topEdge,    { y: waveY, stagger: staggerCfg, ease: "sine.inOut", duration });
-      const botWave = gsap.to(bottomEdge, { y: waveY, stagger: staggerCfg, ease: "sine.inOut", duration });
+      const topWave = gsap.to(topEdge,    { y: waveY, stagger: staggerCfg, ease: "sine.inOut", duration, paused: true });
+      const botWave = gsap.to(bottomEdge, { y: waveY, stagger: staggerCfg, ease: "sine.inOut", duration, paused: true });
 
       // Marker tweens — each marker syncs to the trail point at its x position.
       // Matching the stagger delay (idx * staggerEach) keeps it phase-locked with the polygon.
@@ -130,13 +131,27 @@ export default function RocketTrailAnimation() {
         const hw  = trailHW(t, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT, hwTailBurst, tailSharpness);
         const amp = maxAmplitude * Math.min(1, (hw - halfWidthMin) / (halfWidthPeak - halfWidthMin));
         markerTweens.push(
-          gsap.to(el, { y: `+=${amp}`, delay: idx * staggerEach, duration, ease: "sine.inOut", repeat: -1, yoyo: true }),
+          gsap.to(el, { y: `+=${amp}`, delay: idx * staggerEach, duration, ease: "sine.inOut", repeat: -1, yoyo: true, paused: true }),
         );
       });
 
       // Collect all wave tweens so speed control is applied uniformly
       const allWaveTweens = [topWave, botWave, ...markerTweens];
       allWaveTweens.forEach(tw => tw.timeScale(TIMELINE_WAVE_SPEED.active));
+
+      // Run the wave tweens only while the timeline section is on screen
+      const waveVisibility = ScrollTrigger.create({
+        trigger,
+        start: "top bottom",
+        end: "bottom top",
+        onToggle: (self) => allWaveTweens.forEach(tw => tw.paused(!self.isActive)),
+      });
+
+      // A reload restores scroll position, so the section can already be in
+      // view here — start from that state rather than relying on onToggle.
+      if (waveVisibility.isActive) {
+        allWaveTweens.forEach(tw => tw.paused(false));
+      }
 
       let rocketDone = false;
       const setWaveSpeed = (slow: boolean) => {
@@ -171,7 +186,11 @@ export default function RocketTrailAnimation() {
 
       tl.to(assembly, { x: 0, ease: CustomEase.create("rocketSlide", ROCKET_SLIDE_EASE), duration: 0.88 }, 0);
     },
-    { scope: clipRef, dependencies: [isMobile, prefersReducedMotion] },
+    {
+      scope: clipRef,
+      dependencies: [isMobile, prefersReducedMotion],
+      revertOnUpdate: true,
+    },
   );
 
   // Font sizes scale with the SVG (which scales with viewport width).
@@ -189,11 +208,11 @@ export default function RocketTrailAnimation() {
       {/* assemblyRef is what GSAP translates horizontally */}
       <div
         ref={assemblyRef}
-        className="absolute top-1/2 left-0 -translate-y-1/2"
+        className="invisible absolute top-1/2 left-0 -translate-y-1/2"
       >
         <svg
           viewBox="0 0 1371 402"
-          className="w-screen"
+          className="w-screen text-surface-foreground"
           style={{ height: "auto", minWidth: isMobile ? "300px" : "900px", overflow: "visible" }}
           aria-hidden="true"
           xmlns="http://www.w3.org/2000/svg"
@@ -246,18 +265,18 @@ export default function RocketTrailAnimation() {
               className="h-full w-full"
               style={{ height: "100%", width: "100%" }}
             >
-              <BrandShaderBackground lazyLoad={false} />
+              <BrandShaderBackground />
             </div>
           </foreignObject>
 
           {/* Rocket body fill */}
-          <path d={ROCKET_FILL_PATH} fill="#242425" />
+          <path d={ROCKET_FILL_PATH} fill="currentColor" />
 
           {/* Rocket outline */}
           <path
             d={ROCKET_STROKE_PATH}
             fill="none"
-            stroke="white"
+            stroke="currentColor"
             strokeWidth="3"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -284,7 +303,7 @@ export default function RocketTrailAnimation() {
                     x={0}
                     y={labelBaseY}
                     textAnchor="middle"
-                    fill="white"
+                    fill="currentColor"
                     fontSize={yearFontSize}
                     fontWeight="700"
                     fontFamily="var(--font-satoshi, sans-serif)"
@@ -295,7 +314,7 @@ export default function RocketTrailAnimation() {
                     x={0}
                     y={labelBaseY + nameFontSize * 1.6}
                     textAnchor="middle"
-                    fill="white"
+                    fill="currentColor"
                     fontSize={nameFontSize}
                     fontWeight="600"
                     letterSpacing={nameLetterSpacing}

@@ -1,51 +1,71 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
+import Image from "next/image";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { missionContent } from "@/app/data/mission";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import { MISSION_STATEMENT_DATA_ATTR } from "../background/sceneConfig";
-import { dispatchNavbarThemeOverride } from "../navbar/navbarThemeOverride";
-import {
-  DIRECTORS_NAVBAR_THEME_TRIGGER,
-  DIRECTORS_PIN,
-  MISSION_DECORATION_COUNT,
-  MISSION_LAYOUT,
-} from "./sceneConfig";
+import BlurStatement from "./BlurStatement";
+import { DIRECTORS_CARD, DIRECTORS_PIN, MISSION_LAYOUT } from "./sceneConfig";
 
 configureScrollTrigger();
 
-function renderMissionStatement() {
-  return (
-    <>
-      {missionContent.statement.prefix}{" "}
-      <span className="font-semibold">{missionContent.statement.emphasis}</span>{" "}
-      students to{" "}
-      <span className="italic text-pink">
-        {missionContent.statement.highlight}{" "}
-      </span>
-      {missionContent.statement.suffix}
-    </>
-  );
-}
+/**
+ * The statement is painted in flat surface ink — the per-word blur reveal in
+ * <BlurStatement /> now supplies the softening the old static bottom-fade
+ * gradient used to, and a `background-clip: text` fill can't survive the
+ * per-word filters that reveal drives.
+ */
+const MISSION_STATEMENT_CLASS_NAME =
+  "relative w-full text-center font-serif text-[2rem] font-normal leading-[1.2] text-(--color-surface-foreground) sm:text-[2.5rem] md:text-[3.25rem] lg:text-[4rem]";
+
+const MISSION_ANCHOR = (
+  <span
+    id="about"
+    aria-hidden="true"
+    className="pointer-events-none absolute left-1/2 top-1/2 h-px w-px scroll-mt-[50svh] md:scroll-mt-[50vh]"
+  />
+);
 
 function renderDirectorsPanel() {
+  const { eyebrow, quote, authors, role, photo } =
+    missionContent.directorsMessage;
+
   return (
-    <div className="flex flex-col items-center">
-      <div className="h-64 w-full max-w-lg rounded-lg bg-white/5" />
-      <blockquote className="mt-8 max-w-lg text-center text-muted">
-        <p>{missionContent.directorsMessage.quote}</p>
-        <footer className="mt-4 font-medium text-foreground">
-          — {missionContent.directorsMessage.authors}
-        </footer>
-      </blockquote>
-      <div className="mt-8 flex gap-2">
-        {Array.from({ length: MISSION_DECORATION_COUNT }).map((_, i) => (
-          <div key={i} className="h-10 w-10 rounded-full bg-white/10" />
-        ))}
+    <div className={`flex flex-col items-center ${DIRECTORS_CARD.width}`}>
+      {/* Directors photo — sits above the card and overhangs its top edge */}
+      <div
+        className={`relative z-10 overflow-hidden border border-foreground/10 bg-foreground/5 ${DIRECTORS_CARD.photo}`}
+      >
+        <Image
+          src={photo.src}
+          alt={photo.alt}
+          fill
+          sizes={DIRECTORS_CARD.photoSizes}
+          className="object-cover object-center"
+        />
+      </div>
+
+      <div
+        className={`relative w-full rounded-3xl border border-foreground/10 bg-(--color-card) text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] ${DIRECTORS_CARD.overlap} ${DIRECTORS_CARD.padding}`}
+      >
+        <p className="text-[0.6875rem] uppercase tracking-[0.18em] text-muted">
+          {eyebrow}
+        </p>
+
+        <blockquote className="mx-auto mt-6 max-w-[42ch] text-lg italic leading-[1.5] md:mt-8 md:text-xl">
+          <p>{quote}</p>
+        </blockquote>
+
+        <div className="mx-auto mt-10 h-px w-[73%] bg-foreground/10" />
+
+        <p className="mt-6 font-medium">{authors}</p>
+        <p className="mt-2 text-[0.6875rem] uppercase tracking-[0.14em] text-muted">
+          {role}
+        </p>
       </div>
     </div>
   );
@@ -56,6 +76,31 @@ export default function Mission() {
   const directorsSectionRef = useRef<HTMLElement>(null);
   const directorsContentRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
+
+  useEffect(() => {
+    const missionSection = missionSectionRef.current;
+
+    if (!missionSection) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        document.documentElement.toggleAttribute(
+          "data-mission-scrollbar",
+          entry.isIntersecting,
+        );
+      },
+      { threshold: 0.05 },
+    );
+
+    observer.observe(missionSection);
+
+    return () => {
+      observer.disconnect();
+      document.documentElement.removeAttribute("data-mission-scrollbar");
+    };
+  }, []);
 
   useGSAP(
     () => {
@@ -90,37 +135,6 @@ export default function Mission() {
           scrub: DIRECTORS_PIN.scrub,
         },
       });
-
-      // Navbar theme — switch to dark when directors section enters
-      let navbarThemeOverride: "light" | "dark" | null = null;
-      const setNavbarThemeOverride = (theme: "light" | "dark" | null) => {
-        if (navbarThemeOverride === theme) {
-          return;
-        }
-        navbarThemeOverride = theme;
-        dispatchNavbarThemeOverride(theme);
-      };
-
-      const navbarThemeTrigger = ScrollTrigger.create({
-        trigger: directorsSection,
-        start: DIRECTORS_NAVBAR_THEME_TRIGGER.start,
-        end: DIRECTORS_NAVBAR_THEME_TRIGGER.end,
-        onEnter: () =>
-          setNavbarThemeOverride(
-            DIRECTORS_NAVBAR_THEME_TRIGGER.theme as "dark",
-          ),
-        onEnterBack: () =>
-          setNavbarThemeOverride(
-            DIRECTORS_NAVBAR_THEME_TRIGGER.theme as "dark",
-          ),
-        onLeave: () => setNavbarThemeOverride(null),
-        onLeaveBack: () => setNavbarThemeOverride(null),
-      });
-
-      return () => {
-        navbarThemeTrigger.kill();
-        setNavbarThemeOverride(null);
-      };
     },
     {
       dependencies: [prefersReducedMotion],
@@ -135,10 +149,13 @@ export default function Mission() {
           data-navbar-theme="light"
           className={`bg-(--color-surface) ${MISSION_LAYOUT.sectionPadding}`}
         >
-          <div className="mx-auto flex min-h-[80vh] max-w-7xl items-center justify-center">
-            <p className="max-w-6xl text-center text-4xl font-normal leading-[1.2] text-(--color-surface-foreground) sm:text-5xl md:text-6xl lg:text-7xl xl:max-w-7xl">
-              {renderMissionStatement()}
-            </p>
+          <div className="flex min-h-[80vh] w-full items-center justify-center">
+            <BlurStatement
+              text={missionContent.statement}
+              className={MISSION_STATEMENT_CLASS_NAME}
+            >
+              {MISSION_ANCHOR}
+            </BlurStatement>
           </div>
         </section>
 
@@ -146,10 +163,7 @@ export default function Mission() {
           ref={directorsSectionRef}
           className="bg-background px-8 py-24 md:px-12 md:py-32"
         >
-          <div
-            ref={directorsContentRef}
-            className="flex flex-col items-center"
-          >
+          <div ref={directorsContentRef} className="flex w-full justify-center">
             {renderDirectorsPanel()}
           </div>
         </section>
@@ -164,16 +178,18 @@ export default function Mission() {
           sections. */}
       <section
         ref={missionSectionRef}
-        data-navbar-theme="light"
         {...{ [MISSION_STATEMENT_DATA_ATTR]: "" }}
         className={`relative z-20 ${MISSION_LAYOUT.sectionPadding} ${MISSION_LAYOUT.sectionMinHeight}`}
       >
         <div
-          className={`mx-auto flex max-w-7xl items-start justify-center ${MISSION_LAYOUT.statementWrapMinHeight} ${MISSION_LAYOUT.statementOffset}`}
+          className={`flex w-full items-start justify-center ${MISSION_LAYOUT.statementWrapMinHeight} ${MISSION_LAYOUT.statementOffset}`}
         >
-          <p className="max-w-6xl text-center text-4xl font-normal leading-[1.2] text-(--color-surface-foreground) sm:text-5xl md:text-6xl lg:text-7xl xl:max-w-7xl">
-            {renderMissionStatement()}
-          </p>
+          <BlurStatement
+            text={missionContent.statement}
+            className={MISSION_STATEMENT_CLASS_NAME}
+          >
+            {MISSION_ANCHOR}
+          </BlurStatement>
         </div>
       </section>
 
@@ -183,10 +199,7 @@ export default function Mission() {
         className="relative z-20"
       >
         <div className="flex h-screen items-center justify-center px-8 md:px-12">
-          <div
-            ref={directorsContentRef}
-            className="flex flex-col items-center"
-          >
+          <div ref={directorsContentRef} className="flex w-full justify-center">
             {renderDirectorsPanel()}
           </div>
         </div>

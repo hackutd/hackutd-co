@@ -1,6 +1,7 @@
 "use client";
 
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { useRef } from "react";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
@@ -139,9 +140,12 @@ export default function CometAnimation() {
   useGSAP(
     () => {
       const gradientEl = gradientRef.current;
-      if (!gradientEl) {
+      const wrapper = wrapperRef.current;
+      if (!gradientEl || !wrapper) {
         return;
       }
+
+      const trigger = wrapper.closest("section") ?? wrapper.parentElement;
 
       const { x1, y1, x2, y2, drift } = COMET_TUNING.gradient;
 
@@ -179,8 +183,11 @@ export default function CometAnimation() {
 
       setGradientOrbit(0);
 
+      // Moving the gradient invalidates a path behind a full-viewport
+      // feGaussianBlur, so every frame of this costs a large re-raster. Park it
+      // whenever the hero is off screen instead of paying for it page-wide.
       const orbitState = { progress: 0 };
-      gsap.to(orbitState, {
+      const orbit = gsap.to(orbitState, {
         progress: 1,
         duration: drift.duration,
         ease: "none",
@@ -188,7 +195,26 @@ export default function CometAnimation() {
         onUpdate: () => {
           setGradientOrbit(orbitState.progress);
         },
+        paused: true,
       });
+
+      if (!trigger) {
+        orbit.play();
+        return;
+      }
+
+      const visibility = ScrollTrigger.create({
+        trigger,
+        start: "top bottom",
+        end: "bottom top",
+        onToggle: (self) => (self.isActive ? orbit.play() : orbit.pause()),
+      });
+
+      // The hero is on screen at load, so start the tween from its initial
+      // state rather than relying on onToggle firing for it.
+      if (visibility.isActive) {
+        orbit.play();
+      }
     },
     { scope: wrapperRef, dependencies: [prefersReducedMotion] },
   );
@@ -257,7 +283,7 @@ export default function CometAnimation() {
               COMET_TUNING.star.outer,
               COMET_TUNING.star.inner,
             )}
-            fill="var(--color-foreground)"
+            fill="var(--color-amber)"
           />
         </g>
       </svg>

@@ -8,24 +8,89 @@
   --color-amber: #ffa21f;
   --color-black: #1a1a1a;
 
-  /* Semantic tokens */
-  --color-background: #1a1a1a;
-  --color-foreground: #ffffff;
-  --color-muted: #a3a3a3;
-  --color-surface: #f2f2f2;
-  --color-surface-foreground: #1a1a1a;
+  /* Semantic tokens — theme-aware, values declared on :root and
+     [data-theme="light"] below */
+  --color-background: var(--theme-background);
+  --color-foreground: var(--theme-foreground);
+  --color-muted: var(--theme-muted);
+  --color-surface: var(--theme-surface);
+  --color-surface-foreground: var(--theme-surface-foreground);
+  --color-card: var(--theme-card);
+  --color-curtain: var(--theme-curtain);
   --color-primary: #6c17fe;
   --color-accent: #f31667;
 
   /* Font */
   --font-sans: var(--font-satoshi);
-  --font-serif: var(--font-cormorant);
+  --font-serif: var(--font-petrona);
+}
+
+/* Both themes are declared as attribute selectors so any subtree can opt into
+   the opposite palette — the theme curtain paints itself with the incoming
+   theme's background while the page is still on the outgoing one. */
+:root,
+[data-theme="dark"] {
+  --page-scrollbar-size: 20px;
+  --theme-background: #1a1a1a;
+  --theme-foreground: #ffffff;
+  --theme-muted: #a3a3a3;
+  --theme-surface: #f2f2f2;
+  --theme-surface-foreground: #1a1a1a;
+  --theme-card: #171717;
+  /* One step off the background so the panel stays readable as a distinct
+     sheet against the page it's about to reveal. */
+  --theme-curtain: #262626;
+  /* Inversion amount for logo art drawn as a flat black glyph, so it reads as
+     foreground against whichever palette its subtree is on. */
+  --logo-invert: 1;
+}
+
+[data-theme="light"] {
+  --theme-background: #f2f2f2;
+  --theme-foreground: #1a1a1a;
+  --theme-muted: #5f5f5f;
+  --theme-surface: #1a1a1a;
+  --theme-surface-foreground: #ffffff;
+  --theme-card: #ffffff;
+  --theme-curtain: #e2e2e2;
+  --logo-invert: 0;
+}
+
+html[data-mission-scrollbar] {
+  --page-scrollbar-size: 32px;
 }
 
 html,
 body {
   background: var(--color-background);
   color: var(--color-foreground);
+}
+
+/* ── Scrollbars — thicker, theme-aware ── */
+* {
+  scrollbar-width: auto;
+  scrollbar-color: color-mix(in srgb, var(--color-foreground) 28%, transparent)
+    transparent;
+}
+
+::-webkit-scrollbar {
+  width: var(--page-scrollbar-size);
+  height: var(--page-scrollbar-size);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+  background-color: color-mix(in srgb, var(--color-foreground) 28%, transparent);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--color-foreground) 45%, transparent);
 }
 
 @keyframes hero-star-twinkle {

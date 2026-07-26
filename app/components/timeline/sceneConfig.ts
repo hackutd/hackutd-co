@@ -50,6 +50,14 @@ export const TIMELINE_LAYOUT = {
 
 export const MOBILE_TIMELINE_SCRUB = 0.6;
 
+// Fade the sticky rocket scene before the opaque Sponsors section arrives.
+export const TIMELINE_EXIT_FADE = {
+  start: "72% bottom",
+  end: "90% bottom",
+  ease: "power1.in",
+  scrub: 0.3,
+} as const;
+
 export const TRAIL_WAVE = {
   numPoints: 80,
   startX: 202,

@@ -119,7 +119,7 @@ export function TeamConstellation({
       >
         <svg
           aria-hidden="true"
-          className="absolute inset-0 h-full w-full overflow-visible"
+          className="absolute inset-0 h-full w-full overflow-visible text-foreground"
           viewBox={`0 0 ${box.width} ${box.height}`}
         >
           {layout.edges.map((edge, index) => {
@@ -132,7 +132,8 @@ export function TeamConstellation({
                 y1={trimmedEdge.y1}
                 x2={trimmedEdge.x2}
                 y2={trimmedEdge.y2}
-                stroke="rgba(255, 255, 255, 0.16)"
+                stroke="currentColor"
+                strokeOpacity="0.16"
                 strokeWidth="4"
                 strokeLinecap="round"
               />
@@ -183,8 +184,8 @@ export function TeamConstellation({
                 aria-label={`${node.person.name}, ${node.person.role}`}
                 className={`flex items-center justify-center rounded-full border transition-[transform,box-shadow,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
                   node.isLead
-                    ? "constellation-lead border-[3px] border-pink bg-[#1f1f1f] text-white/56 hover:scale-[1.04]"
-                    : "border-[3px] border-white/12 bg-[#1f1f1f] text-white/32 hover:scale-[1.07]"
+                    ? "constellation-lead border-[3px] border-pink bg-(--color-card) text-foreground/56 hover:scale-[1.04]"
+                    : "border-[3px] border-foreground/12 bg-(--color-card) text-foreground/32 hover:scale-[1.07]"
                 }`}
                 style={nodeButtonStyle}
                 onClick={
@@ -219,13 +220,13 @@ export function TeamConstellation({
 
       {showCaption ? (
         <div className="mt-6 w-[15rem] text-left">
-          <p className="text-[0.72rem] uppercase tracking-[0.18em] text-white/30">
+          <p className="text-[0.72rem] uppercase tracking-[0.18em] text-foreground/30">
             {layout.template.name}
           </p>
           <h3 className="text-3xl font-medium tracking-[-0.03em] text-foreground">
             {layout.team.label}
           </h3>
-          <p className="mt-2 text-[0.78rem] uppercase tracking-[0.1em] text-white/34">
+          <p className="mt-2 text-[0.78rem] uppercase tracking-[0.1em] text-foreground/34">
             {memberCountLabel}
           </p>
         </div>

@@ -1,13 +1,13 @@
 "use client";
 
-import type { ComponentProps } from "react";
 import { useRef } from "react";
-import { ShaderGradient, ShaderGradientCanvas } from "@shadergradient/react";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
+import BrandShaderBackground from "../background/BrandShaderBackground";
 import {
   COMET_TUNING,
   HERO_SCENE_SCROLL,
@@ -21,63 +21,6 @@ import {
 } from "./cometGeometry";
 
 configureScrollTrigger();
-
-type ShaderGradientProps = ComponentProps<typeof ShaderGradient> & {
-  axesHelper?: string;
-  bgColor1?: string;
-  bgColor2?: string;
-  destination?: string;
-  embedMode?: string;
-  fov?: number;
-  format?: string;
-  frameRate?: number;
-  gizmoHelper?: string;
-  pixelDensity?: number;
-};
-
-const shaderGradientProps: ShaderGradientProps = {
-  animate: "on",
-  axesHelper: "off",
-  bgColor1: "#000000",
-  bgColor2: "#000000",
-  brightness: 1.5,
-  cAzimuthAngle: 110,
-  cDistance: 7.1,
-  cPolarAngle: 104,
-  cameraZoom: 10.5,
-  color1: "#6C17FE",
-  color3: "#FFA21F",
-  color2: "#F31667",
-  destination: "onCanvas",
-  embedMode: "off",
-  envPreset: "dawn",
-  format: "gif",
-  fov: 45,
-  frameRate: 10,
-  gizmoHelper: "hide",
-  grain: "off",
-  lightType: "3d",
-  pixelDensity: 1,
-  positionX: 0,
-  positionY: -0.05,
-  positionZ: 0,
-  range: "disabled",
-  rangeEnd: 40,
-  rangeStart: 0,
-  reflection: 0.1,
-  rotationX: 28,
-  rotationY: -18,
-  rotationZ: -32,
-  shader: "defaults",
-  type: "sphere",
-  uAmplitude: 2.2,
-  uDensity: 1.7,
-  uFrequency: 5.5,
-  uSpeed: 0.18,
-  uStrength: 0.85,
-  uTime: 0,
-  wireframe: false,
-};
 
 export default function CometTrailBackground() {
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -146,13 +89,31 @@ export default function CometTrailBackground() {
 
       renderTrail();
 
-      gsap.to(revealState, {
+      // The wave rebuilds a several-hundred-point ribbon path and writes it to
+      // an SVG mask on every frame. Left unattended it keeps doing that for the
+      // whole page, stealing frames from sections that are nowhere near the
+      // hero — so it only runs while the hero is actually on screen.
+      const wave = gsap.to(revealState, {
         wavePhase: Math.PI * 2,
         duration: COMET_TUNING.wave.duration,
         ease: "none",
         repeat: -1,
         onUpdate: renderTrail,
+        paused: true,
       });
+
+      const visibility = ScrollTrigger.create({
+        trigger,
+        start: "top bottom",
+        end: "bottom top",
+        onToggle: (self) => (self.isActive ? wave.play() : wave.pause()),
+      });
+
+      // The hero is on screen at load, so start the tween from its initial
+      // state rather than relying on onToggle firing for it.
+      if (visibility.isActive) {
+        wave.play();
+      }
 
       gsap.to(revealState, {
         progress: 1,
@@ -201,15 +162,7 @@ export default function CometTrailBackground() {
             className="h-full w-full"
             style={{ height: "100%", width: "100%" }}
           >
-            <ShaderGradientCanvas
-              className="h-full w-full"
-              style={{ height: "100%", width: "100%" }}
-              pixelDensity={shaderGradientProps.pixelDensity}
-              fov={shaderGradientProps.fov}
-              pointerEvents="none"
-            >
-              <ShaderGradient {...shaderGradientProps} />
-            </ShaderGradientCanvas>
+            <BrandShaderBackground />
           </div>
         </foreignObject>
       </svg>

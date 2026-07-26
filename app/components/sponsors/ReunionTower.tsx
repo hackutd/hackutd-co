@@ -67,7 +67,7 @@ function generateSlots(): SponsorPlacement[] {
   const slots: SponsorPlacement[] = [];
   const rows = 2;
   const cols = SLOT_COUNT / rows;
-  
+
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const initialSponsorIndex = r * cols + c;
@@ -463,35 +463,56 @@ export default function ReunionTower({
   dragOffsetRef,
   sponsors,
 }: ReunionTowerProps) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+
+  // Render frames only while the tower is on screen
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { rootMargin: "25%" },
+    );
+    observer.observe(wrapper);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <Canvas
-      dpr={[1, 1.5]}
-      gl={{
-        antialias: true,
-        alpha: true,
-        powerPreference: "high-performance",
-        stencil: false,
-        depth: true,
-      }}
-      camera={{ position: [0, 125, 175], fov: 55, near: 0.1, far: 2000 }}
-      style={{
-        touchAction: "pan-y",
-        maskImage: "linear-gradient(to bottom, black 90%, transparent 100%)",
-        WebkitMaskImage: "linear-gradient(to bottom, black 90%, transparent 100%)",
-      }}
-      frameloop="always"
-    >
-      <ambientLight intensity={3.5} />
+    <div ref={wrapperRef} className="h-full w-full">
+      <Canvas
+        dpr={[1, 1.5]}
+        gl={{
+          antialias: true,
+          alpha: true,
+          powerPreference: "high-performance",
+          stencil: false,
+          depth: true,
+        }}
+        camera={{ position: [0, 125, 175], fov: 55, near: 0.1, far: 2000 }}
+        style={{
+          touchAction: "pan-y",
+          maskImage: "linear-gradient(to bottom, black 90%, transparent 100%)",
+          WebkitMaskImage:
+            "linear-gradient(to bottom, black 90%, transparent 100%)",
+        }}
+        frameloop={inView ? "always" : "never"}
+      >
+        {/* The model carries its own flat gray colors and drawn edges, so a
+            single flat ambient light is all it needs — directional lights and
+            an Environment probe would shade the uniform gray unevenly. */}
+        <ambientLight intensity={3.5} />
 
-      <Suspense fallback={null}>
-        <TowerModel
-          scrollProgressRef={scrollProgressRef}
-          dragOffsetRef={dragOffsetRef}
-          sponsors={sponsors}
-        />
-      </Suspense>
+        <Suspense fallback={null}>
+          <TowerModel
+            scrollProgressRef={scrollProgressRef}
+            dragOffsetRef={dragOffsetRef}
+            sponsors={sponsors}
+          />
+        </Suspense>
 
-      <CameraRig scrollProgressRef={scrollProgressRef} />
-    </Canvas>
+        <CameraRig scrollProgressRef={scrollProgressRef} />
+      </Canvas>
+    </div>
   );
 }
