@@ -127,10 +127,17 @@ function useWhiteDiscardMaterial(texture: THREE.Texture) {
 // from the viewBox, and returns stable object-URLs safe to pass to TextureLoader.
 const SVG_RASTER_SIZE = 512; // px — enough for crisp logos on the tower
 
+// 1x1 transparent PNG. Substituted for any logo URL that fails to load so a
+// single broken asset can't reject the whole useLoader batch and crash the
+// page (the alphaTest in the logo material makes it render as invisible).
+const PLACEHOLDER_TEXTURE_URL =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+
 async function patchSvgUrl(url: string): Promise<string> {
   if (!url.toLowerCase().endsWith(".svg")) return url;
   try {
     const res = await fetch(url);
+    if (!res.ok) return url;
     const text = await res.text();
     const parser = new DOMParser();
     const doc = parser.parseFromString(text, "image/svg+xml");
@@ -169,6 +176,20 @@ async function patchSvgUrl(url: string): Promise<string> {
   }
 }
 
+// Resolves to the original URL if the browser can load it as an image,
+// otherwise to a transparent placeholder (e.g. 404s on case-sensitive hosts).
+function loadableOrPlaceholder(url: string): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(url);
+    img.onerror = () => {
+      console.warn("[sponsor logo] Failed to load, hiding logo:", url);
+      resolve(PLACEHOLDER_TEXTURE_URL);
+    };
+    img.src = url;
+  });
+}
+
 // Patches all SVG URLs in a list before they reach TextureLoader.
 // Returns null while async patching is in progress so the caller can wait.
 function usePatchedSvgUrls(urls: string[]): string[] | null {
@@ -180,7 +201,9 @@ function usePatchedSvgUrls(urls: string[]): string[] | null {
     let cancelled = false;
     const createdObjectUrls: string[] = [];
 
-    Promise.all(urls.map((u) => patchSvgUrl(u))).then((results) => {
+    Promise.all(
+      urls.map((u) => patchSvgUrl(u).then(loadableOrPlaceholder)),
+    ).then((results) => {
       if (cancelled) {
         results.forEach((r) => { if (r.startsWith("blob:")) URL.revokeObjectURL(r); });
         return;
@@ -342,8 +365,14 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
   const safeLogoUrls = usePatchedSvgUrls(logoUrls);
 
   // Batch-load all textures to get real aspect ratios BEFORE placement.
-  // Falls back to original URLs while SVG patching is still in progress.
-  const textures = useLoader(THREE.TextureLoader, safeLogoUrls ?? logoUrls);
+  // While patching/validation is in progress, load placeholders instead of the
+  // raw URLs — an unvalidated URL that 404s would reject the whole batch and
+  // take down the page.
+  const pendingUrls = useMemo(
+    () => logoUrls.map(() => PLACEHOLDER_TEXTURE_URL),
+    [logoUrls],
+  );
+  const textures = useLoader(THREE.TextureLoader, safeLogoUrls ?? pendingUrls);
 
   // Static layout of slots
   const placements = useMemo(() => generateSlots(), []);
