@@ -94,13 +94,13 @@ export default function RocketTrailAnimation() {
       });
 
       if (prefersReducedMotion) {
-        gsap.set(assembly, { x: 0 });
+        gsap.set(assembly, { autoAlpha: 1, x: 0 });
         gsap.set(markers, { opacity: 1 });
         return;
       }
 
       // Scroll animation: rocket slides in from right
-      gsap.set(assembly, { x: "100vw" });
+      gsap.set(assembly, { autoAlpha: 1, x: "100vw" });
       gsap.set(markers, { opacity: 1 });
 
       // --- Wave animation (created first so scroll callbacks can reference it) ---
@@ -140,12 +140,18 @@ export default function RocketTrailAnimation() {
       allWaveTweens.forEach(tw => tw.timeScale(TIMELINE_WAVE_SPEED.active));
 
       // Run the wave tweens only while the timeline section is on screen
-      ScrollTrigger.create({
+      const waveVisibility = ScrollTrigger.create({
         trigger,
         start: "top bottom",
         end: "bottom top",
         onToggle: (self) => allWaveTweens.forEach(tw => tw.paused(!self.isActive)),
       });
+
+      // A reload restores scroll position, so the section can already be in
+      // view here — start from that state rather than relying on onToggle.
+      if (waveVisibility.isActive) {
+        allWaveTweens.forEach(tw => tw.paused(false));
+      }
 
       let rocketDone = false;
       const setWaveSpeed = (slow: boolean) => {
@@ -180,7 +186,11 @@ export default function RocketTrailAnimation() {
 
       tl.to(assembly, { x: 0, ease: CustomEase.create("rocketSlide", ROCKET_SLIDE_EASE), duration: 0.88 }, 0);
     },
-    { scope: clipRef, dependencies: [isMobile, prefersReducedMotion] },
+    {
+      scope: clipRef,
+      dependencies: [isMobile, prefersReducedMotion],
+      revertOnUpdate: true,
+    },
   );
 
   // Font sizes scale with the SVG (which scales with viewport width).
@@ -198,11 +208,11 @@ export default function RocketTrailAnimation() {
       {/* assemblyRef is what GSAP translates horizontally */}
       <div
         ref={assemblyRef}
-        className="absolute top-1/2 left-0 -translate-y-1/2"
+        className="invisible absolute top-1/2 left-0 -translate-y-1/2"
       >
         <svg
           viewBox="0 0 1371 402"
-          className="w-screen text-foreground"
+          className="w-screen text-surface-foreground"
           style={{ height: "auto", minWidth: isMobile ? "300px" : "900px", overflow: "visible" }}
           aria-hidden="true"
           xmlns="http://www.w3.org/2000/svg"
@@ -260,13 +270,13 @@ export default function RocketTrailAnimation() {
           </foreignObject>
 
           {/* Rocket body fill */}
-          <path d={ROCKET_FILL_PATH} fill="#242425" />
+          <path d={ROCKET_FILL_PATH} fill="currentColor" />
 
           {/* Rocket outline */}
           <path
             d={ROCKET_STROKE_PATH}
             fill="none"
-            stroke="white"
+            stroke="currentColor"
             strokeWidth="3"
             strokeLinecap="round"
             strokeLinejoin="round"

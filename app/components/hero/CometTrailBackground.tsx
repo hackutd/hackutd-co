@@ -89,7 +89,11 @@ export default function CometTrailBackground() {
 
       renderTrail();
 
-      const waveTween = gsap.to(revealState, {
+      // The wave rebuilds a several-hundred-point ribbon path and writes it to
+      // an SVG mask on every frame. Left unattended it keeps doing that for the
+      // whole page, stealing frames from sections that are nowhere near the
+      // hero — so it only runs while the hero is actually on screen.
+      const wave = gsap.to(revealState, {
         wavePhase: Math.PI * 2,
         duration: COMET_TUNING.wave.duration,
         ease: "none",
@@ -98,13 +102,18 @@ export default function CometTrailBackground() {
         paused: true,
       });
 
-      // Run the wave only while the hero scene is on screen
-      ScrollTrigger.create({
+      const visibility = ScrollTrigger.create({
         trigger,
         start: "top bottom",
         end: "bottom top",
-        onToggle: (self) => waveTween.paused(!self.isActive),
+        onToggle: (self) => (self.isActive ? wave.play() : wave.pause()),
       });
+
+      // The hero is on screen at load, so start the tween from its initial
+      // state rather than relying on onToggle firing for it.
+      if (visibility.isActive) {
+        wave.play();
+      }
 
       gsap.to(revealState, {
         progress: 1,

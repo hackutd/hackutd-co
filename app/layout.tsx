@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { Cormorant_Garamond } from "next/font/google";
+import { Petrona } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const satoshi = localFont({
@@ -9,10 +10,11 @@ const satoshi = localFont({
   weight: "300 900",
 });
 
-const cormorant = Cormorant_Garamond({
+const petrona = Petrona({
   subsets: ["latin"],
-  weight: ["300", "400", "600"],
-  variable: "--font-cormorant",
+  weight: "variable",
+  style: ["normal", "italic"],
+  variable: "--font-petrona",
 });
 
 export const metadata: Metadata = {
@@ -28,12 +30,14 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${satoshi.variable} ${cormorant.variable} h-full antialiased`}
+      className={`${satoshi.variable} ${petrona.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
         {/* Apply the persisted theme before first paint to avoid a flash */}
-        <script
+        <Script
+          id="site-theme-initializer"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html:
               'try{if(localStorage.getItem("site-theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}',

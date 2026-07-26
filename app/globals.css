@@ -16,21 +16,33 @@
   --color-surface: var(--theme-surface);
   --color-surface-foreground: var(--theme-surface-foreground);
   --color-card: var(--theme-card);
+  --color-curtain: var(--theme-curtain);
   --color-primary: #6c17fe;
   --color-accent: #f31667;
 
   /* Font */
   --font-sans: var(--font-satoshi);
-  --font-serif: var(--font-cormorant);
+  --font-serif: var(--font-petrona);
 }
 
-:root {
+/* Both themes are declared as attribute selectors so any subtree can opt into
+   the opposite palette — the theme curtain paints itself with the incoming
+   theme's background while the page is still on the outgoing one. */
+:root,
+[data-theme="dark"] {
+  --page-scrollbar-size: 20px;
   --theme-background: #1a1a1a;
   --theme-foreground: #ffffff;
   --theme-muted: #a3a3a3;
   --theme-surface: #f2f2f2;
   --theme-surface-foreground: #1a1a1a;
   --theme-card: #171717;
+  /* One step off the background so the panel stays readable as a distinct
+     sheet against the page it's about to reveal. */
+  --theme-curtain: #262626;
+  /* Inversion amount for logo art drawn as a flat black glyph, so it reads as
+     foreground against whichever palette its subtree is on. */
+  --logo-invert: 1;
 }
 
 [data-theme="light"] {
@@ -40,6 +52,12 @@
   --theme-surface: #1a1a1a;
   --theme-surface-foreground: #ffffff;
   --theme-card: #ffffff;
+  --theme-curtain: #e2e2e2;
+  --logo-invert: 0;
+}
+
+html[data-mission-scrollbar] {
+  --page-scrollbar-size: 32px;
 }
 
 html,
@@ -56,8 +74,8 @@ body {
 }
 
 ::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+  width: var(--page-scrollbar-size);
+  height: var(--page-scrollbar-size);
 }
 
 ::-webkit-scrollbar-track {

@@ -183,8 +183,11 @@ export default function CometAnimation() {
 
       setGradientOrbit(0);
 
+      // Moving the gradient invalidates a path behind a full-viewport
+      // feGaussianBlur, so every frame of this costs a large re-raster. Park it
+      // whenever the hero is off screen instead of paying for it page-wide.
       const orbitState = { progress: 0 };
-      const orbitTween = gsap.to(orbitState, {
+      const orbit = gsap.to(orbitState, {
         progress: 1,
         duration: drift.duration,
         ease: "none",
@@ -195,16 +198,22 @@ export default function CometAnimation() {
         paused: true,
       });
 
-      // Run the gradient orbit only while the hero scene is on screen
-      if (trigger) {
-        ScrollTrigger.create({
-          trigger,
-          start: "top bottom",
-          end: "bottom top",
-          onToggle: (self) => orbitTween.paused(!self.isActive),
-        });
-      } else {
-        orbitTween.play();
+      if (!trigger) {
+        orbit.play();
+        return;
+      }
+
+      const visibility = ScrollTrigger.create({
+        trigger,
+        start: "top bottom",
+        end: "bottom top",
+        onToggle: (self) => (self.isActive ? orbit.play() : orbit.pause()),
+      });
+
+      // The hero is on screen at load, so start the tween from its initial
+      // state rather than relying on onToggle firing for it.
+      if (visibility.isActive) {
+        orbit.play();
       }
     },
     { scope: wrapperRef, dependencies: [prefersReducedMotion] },
@@ -274,7 +283,7 @@ export default function CometAnimation() {
               COMET_TUNING.star.outer,
               COMET_TUNING.star.inner,
             )}
-            fill="var(--color-foreground)"
+            fill="var(--color-amber)"
           />
         </g>
       </svg>
