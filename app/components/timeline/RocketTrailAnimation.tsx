@@ -2,6 +2,7 @@
 
 import { useId, useRef } from "react";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { CustomEase } from "gsap/CustomEase";
 import { useGSAP } from "@gsap/react";
 import BrandShaderBackground from "@/app/components/background/BrandShaderBackground";
@@ -116,8 +117,8 @@ export default function RocketTrailAnimation() {
       };
       const staggerCfg = { each: staggerEach, repeat: -1, yoyo: true };
 
-      const topWave = gsap.to(topEdge,    { y: waveY, stagger: staggerCfg, ease: "sine.inOut", duration });
-      const botWave = gsap.to(bottomEdge, { y: waveY, stagger: staggerCfg, ease: "sine.inOut", duration });
+      const topWave = gsap.to(topEdge,    { y: waveY, stagger: staggerCfg, ease: "sine.inOut", duration, paused: true });
+      const botWave = gsap.to(bottomEdge, { y: waveY, stagger: staggerCfg, ease: "sine.inOut", duration, paused: true });
 
       // Marker tweens — each marker syncs to the trail point at its x position.
       // Matching the stagger delay (idx * staggerEach) keeps it phase-locked with the polygon.
@@ -130,13 +131,21 @@ export default function RocketTrailAnimation() {
         const hw  = trailHW(t, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT, hwTailBurst, tailSharpness);
         const amp = maxAmplitude * Math.min(1, (hw - halfWidthMin) / (halfWidthPeak - halfWidthMin));
         markerTweens.push(
-          gsap.to(el, { y: `+=${amp}`, delay: idx * staggerEach, duration, ease: "sine.inOut", repeat: -1, yoyo: true }),
+          gsap.to(el, { y: `+=${amp}`, delay: idx * staggerEach, duration, ease: "sine.inOut", repeat: -1, yoyo: true, paused: true }),
         );
       });
 
       // Collect all wave tweens so speed control is applied uniformly
       const allWaveTweens = [topWave, botWave, ...markerTweens];
       allWaveTweens.forEach(tw => tw.timeScale(TIMELINE_WAVE_SPEED.active));
+
+      // Run the wave tweens only while the timeline section is on screen
+      ScrollTrigger.create({
+        trigger,
+        start: "top bottom",
+        end: "bottom top",
+        onToggle: (self) => allWaveTweens.forEach(tw => tw.paused(!self.isActive)),
+      });
 
       let rocketDone = false;
       const setWaveSpeed = (slow: boolean) => {
@@ -246,7 +255,7 @@ export default function RocketTrailAnimation() {
               className="h-full w-full"
               style={{ height: "100%", width: "100%" }}
             >
-              <BrandShaderBackground lazyLoad={false} />
+              <BrandShaderBackground />
             </div>
           </foreignObject>
 
