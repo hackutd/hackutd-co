@@ -140,12 +140,18 @@ export default function RocketTrailAnimation() {
       allWaveTweens.forEach(tw => tw.timeScale(TIMELINE_WAVE_SPEED.active));
 
       // Run the wave tweens only while the timeline section is on screen
-      ScrollTrigger.create({
+      const waveVisibility = ScrollTrigger.create({
         trigger,
         start: "top bottom",
         end: "bottom top",
         onToggle: (self) => allWaveTweens.forEach(tw => tw.paused(!self.isActive)),
       });
+
+      // A reload restores scroll position, so the section can already be in
+      // view here — start from that state rather than relying on onToggle.
+      if (waveVisibility.isActive) {
+        allWaveTweens.forEach(tw => tw.paused(false));
+      }
 
       let rocketDone = false;
       const setWaveSpeed = (slow: boolean) => {
