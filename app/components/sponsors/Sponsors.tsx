@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, lazy, Suspense } from "react";
+import { useRef, useEffect, lazy, Suspense, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -28,6 +28,8 @@ export default function Sponsors() {
   const dragVelocity = useRef(0);
 
   const reducedMotion = usePrefersReducedMotion();
+
+  const [hasNudged, setHasNudged] = useState(false);
 
   // ── Drag-to-rotate on tower container ─────────────────────
   useEffect(() => {
@@ -84,7 +86,7 @@ export default function Sponsors() {
   }, [reducedMotion]);
 
   // ── GSAP: scroll entrance, scroll progress
-  useGSAP(() => {
+  const { contextSafe } = useGSAP(() => {
     const section = sectionRef.current;
     const towerWrap = towerWrapRef.current;
     const logos = logosRef.current;
@@ -139,6 +141,27 @@ export default function Sponsors() {
     }
   });
 
+  // ── Nudge animation on hover ──────────────────────────────
+  const handleMouseEnter = contextSafe(() => {
+    if (
+      reducedMotion ||
+      !logosRef.current ||
+      hasNudged ||
+      // Only trigger nudge if the device has a cursor (hover support)
+      !window.matchMedia("(hover: hover)").matches
+    )
+      return;
+
+    setHasNudged(true);
+    gsap.to(logosRef.current, {
+      y: -15,
+      duration: 0.5,
+      yoyo: true,
+      repeat: 1,
+      ease: "sine.inOut",
+    });
+  });
+
   const towerH = "max(100vh, 1000px)";
 
   // ── Reduced-motion fallback ────────────────────────────────
@@ -148,7 +171,7 @@ export default function Sponsors() {
         <section
           ref={sectionRef}
           id="sponsors"
-          className="relative bg-surface px-8 py-32 text-surface-foreground"
+          className="relative bg-surface px-8 text-surface-foreground"
           data-navbar-theme="light"
         >
           <div className="flex items-end justify-between">
@@ -189,6 +212,7 @@ export default function Sponsors() {
         ref={sectionRef}
         id="sponsors"
         className="relative z-20 bg-surface px-8 py-32 text-surface-foreground"
+        data-navbar-theme="light"
       >
         {/* Header */}
         <div className="flex items-end justify-between">
@@ -201,59 +225,97 @@ export default function Sponsors() {
           </a>
         </div>
 
-        {/* 3D Reunion Tower — spans multiple pages, sticky canvas */}
-        <div className="relative mt-12" style={{ height: "400vh" }}>
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-20">
+          {/* Sponsor logos grid - Left side */}
           <div
-            ref={towerWrapRef}
-            className="sticky top-0"
-            style={{
-              width: "100%",
-              height: "max(100vh, 1000px)",
-              cursor: "grab",
-              userSelect: "none",
-            }}
+            className="w-full lg:w-[48%] order-2 lg:order-1 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:overscroll-contain scrollbar-hide relative z-10"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            onMouseEnter={handleMouseEnter}
           >
-            <Suspense
-              fallback={
-                <div
-                  className="flex items-center justify-center"
-                  style={{ height: towerH }}
-                >
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-surface-foreground/20 border-t-surface-foreground" />
-                </div>
+            <style dangerouslySetInnerHTML={{ __html: `
+              .scrollbar-hide::-webkit-scrollbar { display: none; }
+              .sponsor-card {
+                box-shadow: inset 2px 2px 5px rgba(0,0,0,0.15), inset -2px -2px 5px rgba(255,255,255,0.7);
+                /* Transition specific properties to avoid conflicts and lag */
+                transition-property: box-shadow, border-color;
+                transition-duration: 0.6s, 0.3s;
+                transition-timing-function: ease;
+                /* Only the box-shadow persists for 2s after mouse exit */
+                transition-delay: 2s, 0s;
+                will-change: box-shadow;
               }
-            >
-              <ReunionTower
-                scrollProgressRef={scrollProgressRef}
-                dragOffsetRef={dragOffsetRef}
-                sponsors={SPONSORS}
-              />
-            </Suspense>
-          </div>
-        </div>
+              @media (hover: hover) {
+                .sponsor-card:hover {
+                  box-shadow: inset 6px 6px 12px rgba(255,255,255,0.8), inset -6px -6px 12px rgba(0,0,0,0.2);
+                  /* Instant entry ensures the effect reaches 100% completion before exit can interrupt it */
+                  transition-duration: 0s, 0.1s;
+                  transition-delay: 0s, 0s;
+                }
+              }
+              @media (min-width: 640px) {
+                .pancake-grid > :nth-child(6n+4),
+                .pancake-grid > :nth-child(6n+5),
+                .pancake-grid > :nth-child(6n+6) {
+                  transform: translateX(40px);
+                }
+              }
+            `}} />
 
-        {/* Sponsor logos grid */}
-        <div
-          ref={logosRef}
-          className="mx-auto mt-16 grid max-w-6xl grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
-        >
-          {SPONSORS.map((s) => (
-            <a
-              key={s.name}
-              href={s.url || "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="sponsor-card flex items-center justify-center rounded-xl border border-surface-foreground/10 p-4 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-surface-foreground/25 hover:shadow-lg"
+            <div
+              ref={logosRef}
+              className="grid grid-cols-2 sm:grid-cols-3 pancake-grid gap-x-8 gap-y-8 lg:max-w-none pt-12 lg:pt-12 pb-32 px-4 pr-10"
             >
-              <img
-                src={s.logo || ""}
-                alt={s.name}
-                className="max-h-10 max-w-full object-contain md:max-h-12"
-                loading="lazy"
-                draggable={false}
-              />
-            </a>
-          ))}
+              {SPONSORS.map((s) => (
+                <div key={s.name} className="flex-shrink-0 h-full">
+                  <a
+                    href={s.url || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="sponsor-card flex h-full items-center justify-center rounded-xl border border-surface-foreground/10 p-4 backdrop-blur-sm hover:border-surface-foreground/25"
+                  >
+                    <img
+                      src={s.logo || ""}
+                      alt={s.name}
+                      className="max-h-10 max-w-full object-contain md:max-h-12"
+                      loading="lazy"
+                      draggable={false}
+                    />
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 3D Reunion Tower — Right side */}
+          <div className="w-full lg:w-[45%] order-1 lg:order-2 relative" style={{ height: "400vh" }}>
+            <div
+              ref={towerWrapRef}
+              className="sticky top-0"
+              style={{
+                width: "100%",
+                height: "max(100vh, 1000px)",
+                cursor: "grab",
+                userSelect: "none",
+              }}
+            >
+              <Suspense
+                fallback={
+                  <div
+                    className="flex items-center justify-center"
+                    style={{ height: towerH }}
+                  >
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-surface-foreground/20 border-t-surface-foreground" />
+                  </div>
+                }
+              >
+                <ReunionTower
+                  scrollProgressRef={scrollProgressRef}
+                  dragOffsetRef={dragOffsetRef}
+                  sponsors={SPONSORS}
+                />
+              </Suspense>
+            </div>
+          </div>
         </div>
       </section>
     </div>

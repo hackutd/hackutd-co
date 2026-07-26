@@ -2,13 +2,13 @@
 
 import { Suspense, useRef, useMemo, useEffect, useState } from "react";
 import { Canvas, useFrame, useThree, useLoader } from "@react-three/fiber";
-import { useGLTF, Environment } from "@react-three/drei";
+import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 
-const MODEL_PATH = "/models/reunion_tower_center.glb";
+const MODEL_PATH = "/models/sponsor-globe-flat-4.glb";
 
 // Cylinder radius: MainRoom is ~37.7 after normalization. Place logos just outside.
-const LOGO_RADIUS = 37.2;
+const LOGO_RADIUS = 45.0;
 const LOGO_OFFSET = 0.0; // Tiny offset to prevent z-fighting
 
 const MIN_LOGO_DISPLAY_HEIGHT = 12.0; // "Wayy bigger" height
@@ -72,7 +72,7 @@ function generateSlots(): SponsorPlacement[] {
     for (let c = 0; c < cols; c++) {
       const initialSponsorIndex = r * cols + c;
       const theta = (c * (Math.PI * 2)) / cols + (r * Math.PI) / cols; // Staggered rows
-      const y = r === 0 ? 112 : 130; // Fixed heights in the blue band
+      const y = r === 0 ? 142 : 160; // Fixed heights in the blue band
       
       slots.push({
         theta: theta % (Math.PI * 2),
@@ -277,17 +277,27 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
     const center = new THREE.Vector3();
     box.getSize(size);
     box.getCenter(center);
-    const s = 350 / size.y;
+    const s = 420 / size.y;
     return { normScale: s, centerY: center.y * s };
   }, [clonedScene]);
 
-  // Find PlatonicSphere and apply transparency to the whole structure
+  // Find PlatonicSphere and apply transparency + add black edge outlines to everything
   useEffect(() => {
     const mats: THREE.Material[] = [];
+    const edgeMat = new THREE.LineBasicMaterial({ color: 0x000000 });
+
+    // Collect sphere UUIDs first so we can use a different edge threshold
+    const sphereUuids = new Set<string>();
+    const sphereNode = clonedScene.getObjectByName("PlatonicSphere");
+    if (sphereNode) {
+      globeRef.current = sphereNode;
+      sphereNode.traverse((n) => sphereUuids.add(n.uuid));
+    }
+
+    const darkenFactor = 0.55; // Tune this: lower = darker (0.0–1.0)
+
     clonedScene.traverse((child) => {
       if (child.name === "PlatonicSphere") {
-        globeRef.current = child;
-
         // Apply transparency to the sphere and all its sub-meshes (bars, connectors, etc.)
         child.traverse((node) => {
           if (node instanceof THREE.Mesh) {
@@ -296,9 +306,29 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
             node.material.opacity = 0.6;
             node.material.depthWrite = false;
             node.renderOrder = 3; // Render AFTER logos (renderOrder=2) so sphere appears in front
+            if ("color" in node.material) {
+              node.material.color.set(0xb0b0b0);
+            }
             mats.push(node.material as THREE.Material);
           }
         });
+      }
+
+      // Uniform gray for all non-sphere meshes
+      if (child instanceof THREE.Mesh && !sphereUuids.has(child.uuid)) {
+        child.material = child.material.clone();
+        if ("color" in child.material) {
+          child.material.color.set(0xb0b0b0);
+        }
+      }
+
+      // Add black edge outlines — higher threshold on sphere = fewer edges drawn
+      if (child instanceof THREE.Mesh) {
+        const isSphere = sphereUuids.has(child.uuid);
+        const edges = new THREE.EdgesGeometry(child.geometry, isSphere ? 55 : 25);
+        const lines = new THREE.LineSegments(edges, edgeMat);
+        if (child.renderOrder === 3) lines.renderOrder = 3;
+        child.add(lines);
       }
     });
     globeMaterialsRef.current = mats;
@@ -349,8 +379,9 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
         object={clonedScene}
         scale={[normScale, normScale, normScale]}
         position={[0, -centerY, 0]}
+        rotation={[0, Math.PI + THREE.MathUtils.degToRad(10), 0]}
       />
-      <group ref={sponsorGroupRef} position={[-1.7, 0, 0]}>
+      <group ref={sponsorGroupRef} position={[2.3, 0, 0]}>
         {placements.map((placement, i) => {
           return (
             <Suspense key={`slot-${i}`} fallback={null}>
@@ -397,8 +428,8 @@ function CameraRig({ scrollProgressRef }: { scrollProgressRef: React.RefObject<n
     cam.updateProjectionMatrix();
 
     const targetZ = baseZ + p * 240;
-    const targetY = GLOBE_CENTER_Y - p * 92;
-    const targetLookY = GLOBE_CENTER_Y - 3 - p * 106;
+    const targetY = GLOBE_CENTER_Y;
+    const targetLookY = GLOBE_CENTER_Y;
 
     if (!initialized.current) {
       smoothZ.current = targetZ;
@@ -459,13 +490,18 @@ export default function ReunionTower({
           depth: true,
         }}
         camera={{ position: [0, 125, 175], fov: 55, near: 0.1, far: 2000 }}
-        style={{ touchAction: "pan-y" }}
+        style={{
+          touchAction: "pan-y",
+          maskImage: "linear-gradient(to bottom, black 90%, transparent 100%)",
+          WebkitMaskImage:
+            "linear-gradient(to bottom, black 90%, transparent 100%)",
+        }}
         frameloop={inView ? "always" : "never"}
       >
-        <ambientLight intensity={0.8} />
-        <directionalLight position={[10, 20, 10]} intensity={2.5} />
-        <directionalLight position={[-6, 12, -8]} intensity={0.6} />
-        <hemisphereLight color="#f2f2f2" groundColor="#a3a3a3" intensity={0.8} />
+        {/* The model carries its own flat gray colors and drawn edges, so a
+            single flat ambient light is all it needs — directional lights and
+            an Environment probe would shade the uniform gray unevenly. */}
+        <ambientLight intensity={3.5} />
 
         <Suspense fallback={null}>
           <TowerModel
@@ -473,7 +509,6 @@ export default function ReunionTower({
             dragOffsetRef={dragOffsetRef}
             sponsors={sponsors}
           />
-          <Environment preset="city" />
         </Suspense>
 
         <CameraRig scrollProgressRef={scrollProgressRef} />
