@@ -50,6 +50,13 @@ export const TIMELINE_LAYOUT = {
 
 export const MOBILE_TIMELINE_SCRUB = 0.6;
 
+// Sticky scene fade-out during the page background's dark → light
+// crossfade (scroll range comes from TIMELINE_LIGHTEN_PHASE).
+export const TIMELINE_EXIT_FADE = {
+  ease: "power1.in",
+  scrub: 0.3,
+} as const;
+
 export const TRAIL_WAVE = {
   numPoints: 80,
   startX: 202,

@@ -406,7 +406,7 @@ export default function Teams() {
             opacity: star.opacity,
           };
           return (
-            <span key={star.id} className="absolute rounded-full bg-white" style={starStyle} />
+            <span key={star.id} className="absolute rounded-full bg-foreground" style={starStyle} />
           );
         })}
       </div>
@@ -421,7 +421,7 @@ export default function Teams() {
         >
           {mobileStars}
           <div className="relative mx-auto max-w-6xl">
-            <p className="text-[0.62rem] uppercase tracking-[0.2em] text-white/26">
+            <p className="text-[0.62rem] uppercase tracking-[0.2em] text-foreground/26">
               {TEAMS_COPY.eyebrow}
             </p>
             <h2 className={TEAMS_LAYOUT.mobileHeading}>
@@ -455,7 +455,7 @@ export default function Teams() {
       <section
         id="team"
         ref={mobileSectionRef}
-        className="relative bg-background"
+        className="relative"
         style={{ minHeight: `${100 + ORDERED_OFFICER_TEAMS.length * 22}vh` }}
       >
         <div className={`sticky top-0 overflow-hidden ${isAndroid ? TEAMS_LAYOUT.mobileViewportHeightAndroid : TEAMS_LAYOUT.mobileViewportHeight}`}>
@@ -467,7 +467,7 @@ export default function Teams() {
               className="shrink-0 overflow-y-auto px-5 pt-16 pb-3"
               style={{ maxHeight: isAndroid ? "52%" : "50%" }}
             >
-              <p className="text-[0.62rem] uppercase tracking-[0.2em] text-white/26">
+              <p className="text-[0.62rem] uppercase tracking-[0.2em] text-foreground/26">
                 {TEAMS_COPY.eyebrow}
               </p>
               <h2 className={TEAMS_LAYOUT.mobileHeading}>
@@ -481,7 +481,7 @@ export default function Teams() {
                 style={{ opacity: descVisible ? 1 : 0 }}
               >
                 {ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.description ? (
-                  <p className="text-sm leading-relaxed text-white/50">
+                  <p className="text-sm leading-relaxed text-foreground/50">
                     {ORDERED_OFFICER_TEAMS[displayedTeamIndex]!.description}
                   </p>
                 ) : null}
@@ -493,15 +493,15 @@ export default function Teams() {
                       alt={`${ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.label} team`}
                       width={400}
                       height={96}
-                      className="w-full rounded-xl object-cover border border-white/10"
+                      className="w-full rounded-xl object-cover border border-foreground/10"
                       style={{ maxHeight: "96px" }}
                     />
                   ) : (
                     <div
-                      className="flex w-full items-center justify-center rounded-xl border border-white/8 bg-white/[0.02]"
+                      className="flex w-full items-center justify-center rounded-xl border border-foreground/8 bg-foreground/[0.02]"
                       style={{ height: "72px" }}
                     >
-                      <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/20">
+                      <p className="text-[0.68rem] uppercase tracking-[0.18em] text-foreground/20">
                         Group photo coming soon
                       </p>
                     </div>
@@ -541,8 +541,8 @@ export default function Teams() {
                   key={i}
                   className={`h-1 rounded-full transition-all duration-300 ${
                     i === displayedTeamIndex
-                      ? "w-4 bg-white/60"
-                      : "w-1 bg-white/20"
+                      ? "w-4 bg-foreground/60"
+                      : "w-1 bg-foreground/20"
                   }`}
                 />
               ))}
@@ -572,7 +572,7 @@ export default function Teams() {
             return (
               <span
                 key={star.id}
-                className="absolute rounded-full bg-white"
+                className="absolute rounded-full bg-foreground"
                 style={starStyle}
               />
             );
@@ -580,7 +580,7 @@ export default function Teams() {
         </div>
 
         <div className="relative mx-auto max-w-7xl">
-          <p className="text-[0.62rem] uppercase tracking-[0.2em] text-white/26">
+          <p className="text-[0.62rem] uppercase tracking-[0.2em] text-foreground/26">
             {TEAMS_COPY.eyebrow}
           </p>
           <h2 className={TEAMS_LAYOUT.mobileHeading}>
@@ -593,7 +593,7 @@ export default function Teams() {
             {desktopLayouts.map((layout) => (
               <div
                 key={layout.team.id}
-                className="rounded-[28px] border border-white/10 bg-white/[0.03] p-6"
+                className="rounded-[28px] border border-foreground/10 bg-foreground/[0.03] p-6"
               >
                 <TeamConstellation
                   layout={layout}
@@ -618,7 +618,7 @@ export default function Teams() {
     <section
       id="team"
       ref={sectionRef}
-      className={`relative bg-background ${TEAMS_LAYOUT.desktopSectionMinHeight}`}
+      className={`relative ${TEAMS_LAYOUT.desktopSectionMinHeight}`}
     >
       <div className={`sticky top-0 overflow-visible ${TEAMS_LAYOUT.desktopViewportHeight}`}>
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
@@ -634,7 +634,7 @@ export default function Teams() {
             return (
               <span
                 key={star.id}
-                className="absolute rounded-full bg-white"
+                className="absolute rounded-full bg-foreground"
                 style={starStyle}
               />
             );
@@ -643,7 +643,7 @@ export default function Teams() {
 
         <div className={TEAMS_LAYOUT.desktopContainer}>
           <div className={`relative z-30 ${TEAMS_LAYOUT.introWidth}`}>
-            <p className="text-[0.62rem] uppercase tracking-[0.2em] text-white/26">
+            <p className="text-[0.62rem] uppercase tracking-[0.2em] text-foreground/26">
               {TEAMS_COPY.eyebrow}
             </p>
             <h2 className={TEAMS_LAYOUT.desktopHeading}>
@@ -652,7 +652,7 @@ export default function Teams() {
               {TEAMS_COPY.heading[1]}
             </h2>
             <p
-              className="mt-5 text-lg leading-relaxed text-white/50 transition-opacity duration-200"
+              className="mt-5 text-lg leading-relaxed text-foreground/50 transition-opacity duration-200"
               style={{ opacity: descVisible ? 1 : 0 }}
             >
               {ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.description ?? ""}
@@ -669,15 +669,15 @@ export default function Teams() {
                   alt={`${ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.label} team`}
                   width={320}
                   height={200}
-                  className="w-full rounded-2xl object-cover border border-white/10"
+                  className="w-full rounded-2xl object-cover border border-foreground/10"
                   style={{ maxWidth: "320px" }}
                 />
               ) : (
                 <div
-                  className="flex w-full items-center justify-center rounded-2xl border border-white/8 bg-white/[0.02]"
+                  className="flex w-full items-center justify-center rounded-2xl border border-foreground/8 bg-foreground/[0.02]"
                   style={{ maxWidth: "320px", height: "200px" }}
                 >
-                  <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/20">
+                  <p className="text-[0.68rem] uppercase tracking-[0.18em] text-foreground/20">
                     Group photo coming soon
                   </p>
                 </div>

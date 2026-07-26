@@ -26,7 +26,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${satoshi.variable} ${cormorant.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      className={`${satoshi.variable} ${cormorant.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <head>
+        {/* Apply the persisted theme before first paint to avoid a flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{if(localStorage.getItem("site-theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}',
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

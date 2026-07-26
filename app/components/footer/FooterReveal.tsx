@@ -81,14 +81,25 @@ export default function FooterReveal() {
         onLeaveBack: () => updateFooterState(false, false),
       });
 
-      const resizeObserver = new ResizeObserver(() => {
+      let lastFooterHeight = footer.offsetHeight;
+      const debouncedRefresh = gsap.delayedCall(0.2, () => {
         syncSpacerHeight();
         ScrollTrigger.refresh();
+      });
+      debouncedRefresh.pause();
+
+      const resizeObserver = new ResizeObserver(() => {
+        if (footer.offsetHeight === lastFooterHeight) {
+          return;
+        }
+        lastFooterHeight = footer.offsetHeight;
+        debouncedRefresh.restart(true);
       });
       resizeObserver.observe(footer);
 
       return () => {
         resizeObserver.disconnect();
+        debouncedRefresh.kill();
         trigger.kill();
       };
     },

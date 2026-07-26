@@ -2,15 +2,12 @@
 
 import { useRef } from "react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { missionContent } from "@/app/data/mission";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import { MISSION_STATEMENT_DATA_ATTR } from "../background/sceneConfig";
-import { dispatchNavbarThemeOverride } from "../navbar/navbarThemeOverride";
 import {
-  DIRECTORS_NAVBAR_THEME_TRIGGER,
   DIRECTORS_PIN,
   MISSION_DECORATION_COUNT,
   MISSION_LAYOUT,
@@ -35,7 +32,7 @@ function renderMissionStatement() {
 function renderDirectorsPanel() {
   return (
     <div className="flex flex-col items-center">
-      <div className="h-64 w-full max-w-lg rounded-lg bg-white/5" />
+      <div className="h-64 w-full max-w-lg rounded-lg bg-foreground/5" />
       <blockquote className="mt-8 max-w-lg text-center text-muted">
         <p>{missionContent.directorsMessage.quote}</p>
         <footer className="mt-4 font-medium text-foreground">
@@ -44,7 +41,7 @@ function renderDirectorsPanel() {
       </blockquote>
       <div className="mt-8 flex gap-2">
         {Array.from({ length: MISSION_DECORATION_COUNT }).map((_, i) => (
-          <div key={i} className="h-10 w-10 rounded-full bg-white/10" />
+          <div key={i} className="h-10 w-10 rounded-full bg-foreground/10" />
         ))}
       </div>
     </div>
@@ -90,37 +87,6 @@ export default function Mission() {
           scrub: DIRECTORS_PIN.scrub,
         },
       });
-
-      // Navbar theme — switch to dark when directors section enters
-      let navbarThemeOverride: "light" | "dark" | null = null;
-      const setNavbarThemeOverride = (theme: "light" | "dark" | null) => {
-        if (navbarThemeOverride === theme) {
-          return;
-        }
-        navbarThemeOverride = theme;
-        dispatchNavbarThemeOverride(theme);
-      };
-
-      const navbarThemeTrigger = ScrollTrigger.create({
-        trigger: directorsSection,
-        start: DIRECTORS_NAVBAR_THEME_TRIGGER.start,
-        end: DIRECTORS_NAVBAR_THEME_TRIGGER.end,
-        onEnter: () =>
-          setNavbarThemeOverride(
-            DIRECTORS_NAVBAR_THEME_TRIGGER.theme as "dark",
-          ),
-        onEnterBack: () =>
-          setNavbarThemeOverride(
-            DIRECTORS_NAVBAR_THEME_TRIGGER.theme as "dark",
-          ),
-        onLeave: () => setNavbarThemeOverride(null),
-        onLeaveBack: () => setNavbarThemeOverride(null),
-      });
-
-      return () => {
-        navbarThemeTrigger.kill();
-        setNavbarThemeOverride(null);
-      };
     },
     {
       dependencies: [prefersReducedMotion],
@@ -164,7 +130,6 @@ export default function Mission() {
           sections. */}
       <section
         ref={missionSectionRef}
-        data-navbar-theme="light"
         {...{ [MISSION_STATEMENT_DATA_ATTR]: "" }}
         className={`relative z-20 ${MISSION_LAYOUT.sectionPadding} ${MISSION_LAYOUT.sectionMinHeight}`}
       >

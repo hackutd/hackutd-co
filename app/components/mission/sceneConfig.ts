@@ -17,10 +17,4 @@ export const DIRECTORS_PIN = {
   initialYPercent: 12,
 } as const;
 
-export const DIRECTORS_NAVBAR_THEME_TRIGGER = {
-  start: "top 60%",
-  end: "bottom top",
-  theme: "dark",
-} as const;
-
 export const MISSION_DECORATION_COUNT = 6;
