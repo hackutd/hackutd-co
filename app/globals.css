@@ -42,17 +42,6 @@
   --theme-card: #ffffff;
 }
 
-/* Sections whose art direction is always dark (e.g. the hero scene)
-   opt out of the user theme by re-declaring the theme variables. */
-.theme-scope-dark {
-  --theme-background: #1a1a1a;
-  --theme-foreground: #ffffff;
-  --theme-muted: #a3a3a3;
-  --theme-surface: #f2f2f2;
-  --theme-surface-foreground: #1a1a1a;
-  --theme-card: #171717;
-}
-
 html,
 body {
   background: var(--color-background);
