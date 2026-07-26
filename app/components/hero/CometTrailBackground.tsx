@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
@@ -88,12 +89,21 @@ export default function CometTrailBackground() {
 
       renderTrail();
 
-      gsap.to(revealState, {
+      const waveTween = gsap.to(revealState, {
         wavePhase: Math.PI * 2,
         duration: COMET_TUNING.wave.duration,
         ease: "none",
         repeat: -1,
         onUpdate: renderTrail,
+        paused: true,
+      });
+
+      // Run the wave only while the hero scene is on screen
+      ScrollTrigger.create({
+        trigger,
+        start: "top bottom",
+        end: "bottom top",
+        onToggle: (self) => waveTween.paused(!self.isActive),
       });
 
       gsap.to(revealState, {
@@ -143,7 +153,7 @@ export default function CometTrailBackground() {
             className="h-full w-full"
             style={{ height: "100%", width: "100%" }}
           >
-            <BrandShaderBackground lazyLoad={false} />
+            <BrandShaderBackground />
           </div>
         </foreignObject>
       </svg>

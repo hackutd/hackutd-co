@@ -16,13 +16,15 @@ const links: FooterLink[] = [
   { label: "GitHub", href: "https://github.com/hackutd" },
 ];
 
-type FooterProps = ComponentPropsWithoutRef<"footer">;
+type FooterProps = ComponentPropsWithoutRef<"footer"> & {
+  shaderActive?: boolean;
+};
 
 const footerBaseClassName =
   "min-h-[440px] overflow-hidden border-t border-black/10 bg-surface px-5 py-8 text-surface-foreground sm:min-h-[400px] sm:px-8 md:min-h-[280px] md:px-10 md:py-8 lg:px-[3.75rem]";
 
 const Footer = forwardRef<HTMLElement, FooterProps>(function Footer(
-  { className, ...props },
+  { className, shaderActive = true, ...props },
   ref,
 ) {
   const year = new Date().getFullYear();
@@ -43,6 +45,7 @@ const Footer = forwardRef<HTMLElement, FooterProps>(function Footer(
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 overflow-hidden opacity-95 [container-type:size]"
       >
+        {shaderActive && (
         <BrandShaderBackground
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 scale-[1.5]"
           style={{ width: "max(100cqw, 100cqh)", height: "max(100cqw, 100cqh)" }}
@@ -53,6 +56,7 @@ const Footer = forwardRef<HTMLElement, FooterProps>(function Footer(
             positionY: -0.02,
           }}
         />
+        )}
       </div>
 
       <div className="relative z-10 flex min-h-[376px] flex-col justify-between gap-10 sm:min-h-[336px] md:min-h-[216px] md:flex-row md:items-end md:justify-between md:gap-8">

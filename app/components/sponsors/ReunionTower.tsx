@@ -67,7 +67,7 @@ function generateSlots(): SponsorPlacement[] {
   const slots: SponsorPlacement[] = [];
   const rows = 2;
   const cols = SLOT_COUNT / rows;
-  
+
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const initialSponsorIndex = r * cols + c;
@@ -432,35 +432,52 @@ export default function ReunionTower({
   dragOffsetRef,
   sponsors,
 }: ReunionTowerProps) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+
+  // Render frames only while the tower is on screen
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { rootMargin: "25%" },
+    );
+    observer.observe(wrapper);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <Canvas
-      dpr={[1, 1.5]}
-      gl={{
-        antialias: true,
-        alpha: true,
-        powerPreference: "high-performance",
-        stencil: false,
-        depth: true,
-      }}
-      camera={{ position: [0, 125, 175], fov: 55, near: 0.1, far: 2000 }}
-      style={{ touchAction: "pan-y" }}
-      frameloop="always"
-    >
-      <ambientLight intensity={0.8} />
-      <directionalLight position={[10, 20, 10]} intensity={2.5} />
-      <directionalLight position={[-6, 12, -8]} intensity={0.6} />
-      <hemisphereLight color="#f2f2f2" groundColor="#a3a3a3" intensity={0.8} />
+    <div ref={wrapperRef} className="h-full w-full">
+      <Canvas
+        dpr={[1, 1.5]}
+        gl={{
+          antialias: true,
+          alpha: true,
+          powerPreference: "high-performance",
+          stencil: false,
+          depth: true,
+        }}
+        camera={{ position: [0, 125, 175], fov: 55, near: 0.1, far: 2000 }}
+        style={{ touchAction: "pan-y" }}
+        frameloop={inView ? "always" : "never"}
+      >
+        <ambientLight intensity={0.8} />
+        <directionalLight position={[10, 20, 10]} intensity={2.5} />
+        <directionalLight position={[-6, 12, -8]} intensity={0.6} />
+        <hemisphereLight color="#f2f2f2" groundColor="#a3a3a3" intensity={0.8} />
 
-      <Suspense fallback={null}>
-        <TowerModel
-          scrollProgressRef={scrollProgressRef}
-          dragOffsetRef={dragOffsetRef}
-          sponsors={sponsors}
-        />
-        <Environment preset="city" />
-      </Suspense>
+        <Suspense fallback={null}>
+          <TowerModel
+            scrollProgressRef={scrollProgressRef}
+            dragOffsetRef={dragOffsetRef}
+            sponsors={sponsors}
+          />
+          <Environment preset="city" />
+        </Suspense>
 
-      <CameraRig scrollProgressRef={scrollProgressRef} />
-    </Canvas>
+        <CameraRig scrollProgressRef={scrollProgressRef} />
+      </Canvas>
+    </div>
   );
 }

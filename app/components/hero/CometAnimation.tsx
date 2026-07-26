@@ -1,6 +1,7 @@
 "use client";
 
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { useRef } from "react";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
@@ -139,9 +140,12 @@ export default function CometAnimation() {
   useGSAP(
     () => {
       const gradientEl = gradientRef.current;
-      if (!gradientEl) {
+      const wrapper = wrapperRef.current;
+      if (!gradientEl || !wrapper) {
         return;
       }
+
+      const trigger = wrapper.closest("section") ?? wrapper.parentElement;
 
       const { x1, y1, x2, y2, drift } = COMET_TUNING.gradient;
 
@@ -180,7 +184,7 @@ export default function CometAnimation() {
       setGradientOrbit(0);
 
       const orbitState = { progress: 0 };
-      gsap.to(orbitState, {
+      const orbitTween = gsap.to(orbitState, {
         progress: 1,
         duration: drift.duration,
         ease: "none",
@@ -188,7 +192,20 @@ export default function CometAnimation() {
         onUpdate: () => {
           setGradientOrbit(orbitState.progress);
         },
+        paused: true,
       });
+
+      // Run the gradient orbit only while the hero scene is on screen
+      if (trigger) {
+        ScrollTrigger.create({
+          trigger,
+          start: "top bottom",
+          end: "bottom top",
+          onToggle: (self) => orbitTween.paused(!self.isActive),
+        });
+      } else {
+        orbitTween.play();
+      }
     },
     { scope: wrapperRef, dependencies: [prefersReducedMotion] },
   );
