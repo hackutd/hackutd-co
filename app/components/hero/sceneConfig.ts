@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 export type HeroStar = {
   id: number;
   size: number;
@@ -32,12 +34,17 @@ export const WHITEOUT_SCROLL = {
 export const HERO_LAYOUT = {
   minHeight: "min-h-[250vh] md:min-h-[400vh]",
   stickyViewportHeight: "h-[100svh] md:h-screen",
+  /**
+   * Sits the statement above dead center, clear of the skyline. Padding on the
+   * centering container rather than a transform, since GSAP owns `transform`
+   * on that element — the copy lifts by half this value.
+   */
+  textLift: "pb-[clamp(40px,10vh,120px)]",
 } as const;
 
 export const HERO_COPY = {
-  heading: "The Largest 24-Hour Hackathon in Texas.",
-  body: "Join hundreds of hackers, creators, and innovators for a weekend of coding, collaboration, and chaos where ideas become reality.",
-  ctaLabel: "Coming Soon",
+  statement:
+    "We inspire students to innovate and learn new technologies through hackathons, 24-hour events with challenges, free food & merch, and fun games & activities.",
 } as const;
 
 export const HERO_WHITEOUT = {
@@ -58,12 +65,231 @@ export const HERO_WHITEOUT = {
   },
 } as const;
 
-export const HERO_SKYLINE_PARALLAX = {
-  start: "top top",
-  end: "65% bottom",
-  backY: -40,
-  ease: "none",
+/**
+ * The skyline plate is 2172x588, so 27.1vw is the height at which the art spans
+ * the viewport exactly. The floor keeps it readable on narrow phones and the cap
+ * keeps it off the hero copy on short landscape viewports; at either limit the
+ * mask's `cover` sizing trims the sides or the sky rather than lifting the
+ * buildings off the bottom edge.
+ */
+export const HERO_SKYLINE = {
+  /**
+   * Published as a custom property on the sticky viewport because the sky
+   * elements size and place themselves off the band height too — one number
+   * keeps the whole composition in proportion at every viewport.
+   */
+  heightVar: "--hero-skyline-h",
+  height: "min(max(27.1vw, 170px), 45vh)",
+  /**
+   * Shared by the skyline band and the sky layer so the two boxes stay exactly
+   * registered; the sky element coordinates are fractions of this box. The
+   * small bottom offset keeps the building bases off the viewport edge.
+   */
+  layerBox: "h-[var(--hero-skyline-h)] bottom-[clamp(8px,3vh,36px)]",
 } as const;
+
+/**
+ * The skyline is line art, so it is drawn as a painted rectangle masked by the
+ * artwork's alpha rather than as an `<img>`. That takes one asset instead of a
+ * black plate and a white plate: the fill is `--color-foreground`, which the
+ * theme already flips from white to near-black, so the buildings recolor
+ * themselves with no second file and no swap logic.
+ *
+ * `cover` / `bottom` mirror what `object-cover object-bottom` did for the image
+ * pair. The `-webkit-` pairs are kept for older Safari, matching the masked
+ * navbar seam.
+ */
+const SKYLINE_ART = "url(/hero/skyline_black.png)";
+
+export const HERO_SKYLINE_MASK: CSSProperties = {
+  maskImage: SKYLINE_ART,
+  WebkitMaskImage: SKYLINE_ART,
+  maskSize: "cover",
+  WebkitMaskSize: "cover",
+  maskPosition: "bottom",
+  WebkitMaskPosition: "bottom",
+  maskRepeat: "no-repeat",
+  WebkitMaskRepeat: "no-repeat",
+};
+
+export type HeroSkyMotion = "drift-left" | "drift-right" | "cross" | "rise";
+
+export type HeroSkyElement = {
+  id: string;
+  art: string;
+  /** Intrinsic width ÷ height of the trimmed artwork. */
+  aspect: number;
+  /** Center of the element, as a fraction of the skyline band's box. */
+  fx: number;
+  fy: number;
+  /** Width as a multiple of the band height, so it scales with the buildings. */
+  width: number;
+  motion: HeroSkyMotion;
+  /** Seconds per drift leg. Varied per cloud so the flock never beats as one. */
+  duration?: number;
+  /** Extra viewport-relative lift for elements that sit above the cloud band. */
+  verticalLift?: string;
+  /** Thins the flock out on small screens. */
+  className?: string;
+};
+
+const CLOUD_LEFT = {
+  art: "/hero/dallas_cloud_left_transparent.png",
+  aspect: 3.4861,
+} as const;
+
+const CLOUD_RIGHT = {
+  art: "/hero/dallas_cloud_right_transparent.png",
+  aspect: 4.1379,
+} as const;
+
+/**
+ * Positions traced from the reference Dallas plate: `fx`/`fy` are the element's
+ * center as a fraction of the skyline band, so the sky keeps its arrangement
+ * relative to the buildings at any viewport rather than drifting apart from
+ * them. The left and right groups drift toward one another before reversing.
+ */
+/**
+ * Raises the whole flock off the rooflines, as a multiple of the band height so
+ * the lift scales with the composition. Applied uniformly in
+ * `heroSkyElementStyle`, which keeps the `fy` values above readable as the
+ * reference plate's own proportions.
+ */
+export const HERO_SKY_LIFT = 0.32;
+
+export const HERO_SKY_ELEMENTS: HeroSkyElement[] = [
+  {
+    id: "plane",
+    art: "/hero/dallas_airplane_transparent.png",
+    aspect: 3.2821,
+    fx: 0.16,
+    fy: 0.09,
+    width: 0.245,
+    motion: "cross",
+    verticalLift: "clamp(130px, 26svh, 260px)",
+  },
+  {
+    id: "cloud-a",
+    ...CLOUD_LEFT,
+    fx: 0.09,
+    fy: 0.35,
+    width: 0.4,
+    motion: "drift-right",
+    duration: 21,
+  },
+  {
+    id: "cloud-b",
+    ...CLOUD_RIGHT,
+    fx: 0.22,
+    fy: 0.25,
+    width: 0.34,
+    motion: "drift-right",
+    duration: 25,
+    className: "hidden sm:block",
+  },
+  {
+    id: "cloud-c",
+    ...CLOUD_LEFT,
+    fx: 0.42,
+    fy: 0.17,
+    width: 0.32,
+    motion: "drift-right",
+    duration: 18,
+  },
+  {
+    id: "cloud-d",
+    ...CLOUD_RIGHT,
+    fx: 0.65,
+    fy: 0.21,
+    width: 0.3,
+    motion: "drift-left",
+    duration: 23,
+    className: "hidden sm:block",
+  },
+  {
+    id: "cloud-e",
+    ...CLOUD_LEFT,
+    fx: 0.755,
+    fy: 0.13,
+    width: 0.36,
+    motion: "drift-left",
+    duration: 27,
+  },
+  {
+    id: "cloud-f",
+    ...CLOUD_RIGHT,
+    fx: 0.905,
+    fy: 0.3,
+    width: 0.38,
+    motion: "drift-left",
+    duration: 19,
+    className: "hidden md:block",
+  },
+  {
+    id: "balloon",
+    art: "/hero/dallas_hot_air_balloon_transparent.png",
+    aspect: 0.7143,
+    fx: 0.82,
+    fy: -0.05,
+    width: 0.1,
+    motion: "rise",
+  },
+];
+
+export const HERO_SKY_MOTION = {
+  /**
+   * Clouds breathe in and out of their reference spot rather than crossing the
+   * screen. A linear leg removes the eased pause that previously made each
+   * reversal read as stop-and-go motion.
+   */
+  cloud: { xPercent: 40, ease: "none" },
+  /**
+   * The plane flies in one direction and wraps edge-to-edge. Its exact x range
+   * is measured in `SkyElements` because the artwork scales with the skyline.
+   */
+  plane: {
+    duration: 48,
+    ease: "none",
+  },
+  /**
+   * `from`/`to` are multiples of the band height. The balloon begins in view
+   * and floats back down instead of fading out and jumping to its start.
+   */
+  balloon: {
+    from: 0,
+    to: -0.65,
+    duration: 28,
+    swayPercent: 22,
+    swayDuration: 8,
+  },
+} as const;
+
+/**
+ * Same stencil trick as the skyline — the artwork supplies only the alpha and
+ * `bg-foreground` supplies the ink, so every sky element recolors with the
+ * theme. Each box is cut to its art's aspect, hence `100% 100%` rather than the
+ * band's `cover`.
+ */
+export function heroSkyElementStyle(element: HeroSkyElement): CSSProperties {
+  const art = `url(${element.art})`;
+  const band = `var(${HERO_SKYLINE.heightVar})`;
+  const halfWidth = element.width / 2;
+  const rise = element.width / element.aspect / 2 + HERO_SKY_LIFT;
+
+  return {
+    width: `calc(${band} * ${element.width})`,
+    aspectRatio: `${element.aspect}`,
+    left: `calc(${(element.fx * 100).toFixed(2)}% - ${band} * ${halfWidth})`,
+    top: `calc(${(element.fy * 100).toFixed(2)}% - ${band} * ${rise.toFixed(5)} - ${element.verticalLift ?? "0px"})`,
+    maskImage: art,
+    WebkitMaskImage: art,
+    maskSize: "100% 100%",
+    WebkitMaskSize: "100% 100%",
+    maskRepeat: "no-repeat",
+    WebkitMaskRepeat: "no-repeat",
+    willChange: "transform",
+  };
+}
 
 export const COMET_TUNING = {
   spine: `
@@ -164,7 +390,7 @@ function createHeroStars(count: number): HeroStar[] {
 
   return Array.from({ length: count }, (_, index) => ({
     id: index,
-    size: 4 + next() * 4.2,
+    size: 6 + next() * 5.6,
     top: 8 + next() * 56,
     left: 4 + next() * 92,
     opacity: 0.35 + next() * 0.5,

@@ -4,19 +4,19 @@ import type { CSSProperties } from "react";
 import { useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-import Image from "next/image";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
-import AccentButton from "../ui/AccentButton";
 import { HERO_SCENE_DATA_ATTR } from "../background/sceneConfig";
 import CometAnimation from "./CometAnimation";
+import SkyElements from "./SkyElements";
 import {
   HERO_COPY,
   HERO_COMET_SHADER,
   HERO_LAYOUT,
   HERO_SCENE_SCROLL,
-  HERO_SKYLINE_PARALLAX,
+  HERO_SKYLINE,
+  HERO_SKYLINE_MASK,
   HERO_STARS,
   HERO_WHITEOUT,
   MOBILE_SCRUB,
@@ -29,8 +29,8 @@ export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const starsLayerRef = useRef<HTMLDivElement>(null);
   const cometBackgroundLayerRef = useRef<HTMLDivElement>(null);
+  const skyLayerRef = useRef<HTMLDivElement>(null);
   const skylineLayerRef = useRef<HTMLDivElement>(null);
-  const skylineBackRef = useRef<HTMLDivElement>(null);
   const cometLayerRef = useRef<HTMLDivElement>(null);
   const heroTextRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
@@ -41,8 +41,8 @@ export default function Hero() {
       const section = sectionRef.current;
       const starsLayer = starsLayerRef.current;
       const cometBackgroundLayer = cometBackgroundLayerRef.current;
+      const skyLayer = skyLayerRef.current;
       const skylineLayer = skylineLayerRef.current;
-      const skylineBack = skylineBackRef.current;
       const cometLayer = cometLayerRef.current;
       const heroText = heroTextRef.current;
 
@@ -61,19 +61,6 @@ export default function Hero() {
       }
 
       const scrub = isMobile ? MOBILE_SCRUB : HERO_SCENE_SCROLL.scrub;
-
-      if (skylineBack) {
-        gsap.to(skylineBack, {
-          y: HERO_SKYLINE_PARALLAX.backY,
-          ease: HERO_SKYLINE_PARALLAX.ease,
-          scrollTrigger: {
-            trigger: section,
-            start: HERO_SKYLINE_PARALLAX.start,
-            end: HERO_SKYLINE_PARALLAX.end,
-            scrub,
-          },
-        });
-      }
 
       if (heroText) {
         gsap.set(heroText, { autoAlpha: 1 });
@@ -94,6 +81,7 @@ export default function Hero() {
       }
 
       const sceneFadeTargets = [
+        skyLayer,
         skylineLayer,
         starsLayer,
         cometBackgroundLayer,
@@ -136,6 +124,9 @@ export default function Hero() {
       className={`relative ${HERO_LAYOUT.minHeight}`}
     >
       <div
+        style={
+          { [HERO_SKYLINE.heightVar]: HERO_SKYLINE.height } as CSSProperties
+        }
         className={`sticky top-0 overflow-hidden isolate ${HERO_LAYOUT.stickyViewportHeight}`}
       >
         <div
@@ -172,32 +163,25 @@ export default function Hero() {
           <CometTrailBackground />
         </div>
 
+        {/* Sky before buildings: same z, so DOM order alone puts the flock
+            behind the skyline. */}
+        <SkyElements ref={skyLayerRef} />
+
+        {/* Pinned to the foot of the sticky viewport at every size: the layer is
+            as tall as the art needs to span the full width, floored so it stays
+            substantial on phones and capped so it can't swallow short landscape
+            viewports. At either limit the mask's `cover` sizing trims the sides
+            or the sky, never lifting the buildings off the layer's own floor.
+
+            `bg-foreground` is the ink; the artwork is only the stencil (see
+            HERO_SKYLINE_MASK), so the skyline follows the site theme by way of
+            the same token as body text — no per-theme asset, no swap. */}
         <div
           ref={skylineLayerRef}
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[clamp(200px,36vh,420px)] sm:h-[clamp(280px,42vh,500px)] md:h-[clamp(360px,48vh,580px)] overflow-hidden"
-        >
-          <div ref={skylineBackRef} className="absolute inset-0">
-            <Image
-              src="/skyline-back.png"
-              alt=""
-              width={2048}
-              height={768}
-              priority
-              className="absolute bottom-0 left-1/2 h-full w-auto max-w-none -translate-x-1/2"
-              sizes="100vw"
-            />
-          </div>
-          <Image
-            src="/skyline-front.png"
-            alt=""
-            width={2048}
-            height={768}
-            priority
-            className="absolute bottom-0 left-1/2 h-full w-auto max-w-none -translate-x-1/2"
-            sizes="100vw"
-          />
-        </div>
+          style={HERO_SKYLINE_MASK}
+          className={`pointer-events-none absolute inset-x-0 z-0 bg-foreground ${HERO_SKYLINE.layerBox}`}
+        />
 
         {/* Comet SVG layer */}
         <div ref={cometLayerRef} className="absolute inset-0 z-10">
@@ -206,21 +190,11 @@ export default function Hero() {
 
         <div
           ref={heroTextRef}
-          className="relative z-20 flex h-full flex-col items-center justify-center px-5 text-center md:px-8"
+          className={`relative z-20 flex h-full flex-col items-center justify-center px-5 text-center md:px-8 ${HERO_LAYOUT.textLift}`}
         >
-          <h1 className="max-w-[16ch] text-3xl font-semibold leading-[1.1] sm:max-w-[20ch] sm:text-4xl md:max-w-4xl md:text-5xl lg:text-6xl">
-            {HERO_COPY.heading}
+          <h1 className="w-full min-w-0 max-w-[24ch] font-serif text-2xl font-normal leading-[1.15] sm:max-w-[30ch] sm:text-3xl md:max-w-[38ch] md:text-4xl lg:text-[2.75rem]">
+            {HERO_COPY.statement}
           </h1>
-          <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted sm:max-w-lg sm:text-base md:max-w-2xl md:text-lg">
-            {HERO_COPY.body}
-          </p>
-          <AccentButton
-            variant="panel"
-            size="sm"
-            className="mt-6 min-w-36 p-4 md:mt-8 md:min-w-44"
-          >
-            {HERO_COPY.ctaLabel}
-          </AccentButton>
         </div>
       </div>
     </section>

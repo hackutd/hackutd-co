@@ -1,6 +1,7 @@
 "use client";
 
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { useRef } from "react";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
@@ -179,8 +180,11 @@ export default function CometAnimation() {
 
       setGradientOrbit(0);
 
+      // Moving the gradient invalidates a path behind a full-viewport
+      // feGaussianBlur, so every frame of this costs a large re-raster. Park it
+      // whenever the hero is off screen instead of paying for it page-wide.
       const orbitState = { progress: 0 };
-      gsap.to(orbitState, {
+      const orbit = gsap.to(orbitState, {
         progress: 1,
         duration: drift.duration,
         ease: "none",
@@ -188,7 +192,25 @@ export default function CometAnimation() {
         onUpdate: () => {
           setGradientOrbit(orbitState.progress);
         },
+        paused: true,
       });
+
+      const trigger = wrapperRef.current?.closest("section");
+      if (!trigger) {
+        orbit.play();
+        return;
+      }
+
+      const visibility = ScrollTrigger.create({
+        trigger,
+        start: "top bottom",
+        end: "bottom top",
+        onToggle: (self) => (self.isActive ? orbit.play() : orbit.pause()),
+      });
+
+      if (visibility.isActive) {
+        orbit.play();
+      }
     },
     { scope: wrapperRef, dependencies: [prefersReducedMotion] },
   );
@@ -257,7 +279,7 @@ export default function CometAnimation() {
               COMET_TUNING.star.outer,
               COMET_TUNING.star.inner,
             )}
-            fill="var(--color-foreground)"
+            fill="var(--color-amber)"
           />
         </g>
       </svg>

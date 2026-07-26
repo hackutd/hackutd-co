@@ -29,17 +29,14 @@ export type PageBgPhase = {
 };
 
 /**
- * Dark → light before the Sponsors section arrives. Completing the
- * crossfade while the Timeline still fills the viewport (rather than
- * while the opaque Sponsors edge is already visible) is what prevents
- * the hard seam line at the section boundary.
+ * Base → surface shortly before the pinned rocket animation starts.
  */
 export const TIMELINE_LIGHTEN_PHASE = {
   attr: TIMELINE_SECTION_DATA_ATTR,
   from: 0,
   to: 1,
-  start: "72% bottom",
-  end: "96% bottom",
+  start: "top 45%",
+  end: "top 10%",
   ease: "power1.out",
 } as const satisfies PageBgPhase;
 
