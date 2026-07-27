@@ -5,7 +5,10 @@
 "use client";
 
 import Image from "next/image";
+import { useLayoutEffect, useRef } from "react";
 import type { OfficerMember } from "./constellationLayout";
+
+const VIEWPORT_CLAMP_MARGIN = 16;
 
 export function getInitials(name: string) {
   const segments = name.trim().split(/\s+/).filter(Boolean);
@@ -30,8 +33,34 @@ export function NodeTooltip({
   setActiveTeamId: (teamId: string | null) => void;
   scheduleTooltipClose: () => void;
 }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+
+    const rect = card.getBoundingClientRect();
+    let deltaX = 0;
+    let deltaY = 0;
+
+    if (rect.top < VIEWPORT_CLAMP_MARGIN) {
+      deltaY = VIEWPORT_CLAMP_MARGIN - rect.top;
+    } else if (rect.bottom > window.innerHeight - VIEWPORT_CLAMP_MARGIN) {
+      deltaY = window.innerHeight - VIEWPORT_CLAMP_MARGIN - rect.bottom;
+    }
+
+    if (rect.left < VIEWPORT_CLAMP_MARGIN) {
+      deltaX = VIEWPORT_CLAMP_MARGIN - rect.left;
+    } else if (rect.right > window.innerWidth - VIEWPORT_CLAMP_MARGIN) {
+      deltaX = window.innerWidth - VIEWPORT_CLAMP_MARGIN - rect.right;
+    }
+
+    card.style.transform = deltaX !== 0 || deltaY !== 0 ? `translate(${deltaX}px, ${deltaY}px)` : "";
+  }, []);
+
   return (
     <div
+      ref={cardRef}
       className={`absolute z-40 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border border-foreground/12 bg-background/95 px-5 py-4 text-left shadow-[0_24px_64px_rgba(0,0,0,0.6)] backdrop-blur-md ${placement}`}
       onMouseEnter={() => {
         clearTooltipClose();
