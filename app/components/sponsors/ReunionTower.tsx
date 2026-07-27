@@ -6,6 +6,9 @@ import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 
 const MODEL_PATH = "/models/sponsor-globe-flat-4.glb";
+const AUTO_ROTATION_SPEED = 0.3;
+const MAX_FRAME_DELTA = 1 / 30;
+const ROTATION_SMOOTHING = 0.08;
 
 // Cylinder radius: MainRoom is ~37.7 after normalization. Place logos just outside.
 const LOGO_RADIUS = 45.0;
@@ -389,12 +392,20 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
 
     if (!globeRef.current) return;
 
-    autoAngle.current += delta * 0.3;
+    // The canvas stops rendering while off-screen. Clamp the first frame after
+    // it resumes so elapsed off-screen time cannot become a rotation burst.
+    autoAngle.current += Math.min(delta, MAX_FRAME_DELTA) * AUTO_ROTATION_SPEED;
     const scrollAngle = scroll * Math.PI * 2;
     const dragAngle = (dragOffsetRef.current ?? 0) * 0.01;
     const target = autoAngle.current + scrollAngle + dragAngle;
 
-    smoothRotation.current += (target - smoothRotation.current) * 0.08;
+    // ScrollTrigger can update while the canvas is paused. On re-entry, follow
+    // the equivalent nearest angle instead of chasing a full stale revolution.
+    const shortestRotationDelta = Math.atan2(
+      Math.sin(target - smoothRotation.current),
+      Math.cos(target - smoothRotation.current),
+    );
+    smoothRotation.current += shortestRotationDelta * ROTATION_SMOOTHING;
 
     if (sponsorGroupRef.current) {
       sponsorGroupRef.current.rotation.y = smoothRotation.current;
@@ -431,6 +442,8 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
 // ── Globe bounding sphere for camera fit (world-space) ──
 const GLOBE_CENTER_Y = 125;
 const GLOBE_BOUNDING_R = 38;
+const CAMERA_FIT_OFFSET = 1.6;
+const CAMERA_VERTICAL_OFFSET = 6;
 
 // ── Camera rig ──────────────────────────────────────────────
 function CameraRig({ scrollProgressRef }: { scrollProgressRef: React.RefObject<number> }) {
@@ -449,16 +462,16 @@ function CameraRig({ scrollProgressRef }: { scrollProgressRef: React.RefObject<n
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect);
     const effectiveFov = Math.min(vFov, hFov);
 
-    const fitOffset = 1.3;
-    const baseZ = (GLOBE_BOUNDING_R / Math.sin(effectiveFov / 2)) * fitOffset;
+    const baseZ =
+      (GLOBE_BOUNDING_R / Math.sin(effectiveFov / 2)) * CAMERA_FIT_OFFSET;
 
     cam.near = baseZ / 100;
     cam.far = (baseZ + 240) * 3;
     cam.updateProjectionMatrix();
 
     const targetZ = baseZ + p * 240;
-    const targetY = GLOBE_CENTER_Y;
-    const targetLookY = GLOBE_CENTER_Y;
+    const targetY = GLOBE_CENTER_Y + CAMERA_VERTICAL_OFFSET;
+    const targetLookY = GLOBE_CENTER_Y + CAMERA_VERTICAL_OFFSET;
 
     if (!initialized.current) {
       smoothZ.current = targetZ;

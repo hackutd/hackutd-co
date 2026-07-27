@@ -29,15 +29,19 @@ export type PageBgPhase = {
 };
 
 /**
- * Base → surface shortly before the pinned rocket animation starts.
+ * Base → surface as the rocket slides in.
+ *
+ * `start` matches TIMELINE_SCROLL.start ("top top") so the lighten begins on
+ * the same scroll frame the rocket starts entering from the right, and runs
+ * for a further 30vh of scroll while the rocket travels across the viewport.
  */
 export const TIMELINE_LIGHTEN_PHASE = {
   attr: TIMELINE_SECTION_DATA_ATTR,
   from: 0,
   to: 1,
-  start: "top 45%",
-  end: "top 10%",
-  ease: "power1.out",
+  start: "top top",
+  end: "top -30%",
+  ease: "power1.inOut",
 } as const satisfies PageBgPhase;
 
 /** Phases in page order: hero whiteout → mission darken → timeline lighten */

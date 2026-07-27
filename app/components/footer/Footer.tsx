@@ -17,14 +17,19 @@ const links: FooterLink[] = [
 ];
 
 type FooterProps = ComponentPropsWithoutRef<"footer"> & {
-  shaderActive?: boolean;
+  /**
+   * How the WebGL background is mounted. `"lazy"` lets the canvas observe
+   * itself; `"on"`/`"off"` hand that decision to the caller so it can pre-mount
+   * the canvas before the footer is revealed.
+   */
+  shaderMount?: "lazy" | "on" | "off";
 };
 
 const footerBaseClassName =
   "min-h-[440px] overflow-hidden border-t border-black/10 bg-surface px-5 py-8 text-surface-foreground sm:min-h-[400px] sm:px-8 md:min-h-[280px] md:px-10 md:py-8 lg:px-[3.75rem]";
 
 const Footer = forwardRef<HTMLElement, FooterProps>(function Footer(
-  { className, shaderActive = true, ...props },
+  { className, shaderMount = "lazy", ...props },
   ref,
 ) {
   const year = new Date().getFullYear();
@@ -45,17 +50,21 @@ const Footer = forwardRef<HTMLElement, FooterProps>(function Footer(
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 overflow-hidden opacity-95 [container-type:size]"
       >
-        {shaderActive && (
-        <BrandShaderBackground
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 scale-[1.5]"
-          style={{ width: "max(100cqw, 100cqh)", height: "max(100cqw, 100cqh)" }}
-          shaderProps={{
-            cDistance: 5.4,
-            cameraZoom: 15,
-            positionX: 0.08,
-            positionY: -0.02,
-          }}
-        />
+        {shaderMount !== "off" && (
+          <BrandShaderBackground
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 scale-[1.5]"
+            style={{
+              width: "max(100cqw, 100cqh)",
+              height: "max(100cqw, 100cqh)",
+            }}
+            lazyLoad={shaderMount === "lazy"}
+            shaderProps={{
+              cDistance: 5.4,
+              cameraZoom: 15,
+              positionX: 0.08,
+              positionY: -0.02,
+            }}
+          />
         )}
       </div>
 

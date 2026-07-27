@@ -7,6 +7,7 @@ import { CustomEase } from "gsap/CustomEase";
 import { useGSAP } from "@gsap/react";
 import BrandShaderBackground from "@/app/components/background/BrandShaderBackground";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
+import { useNearViewport } from "@/app/hooks/useNearViewport";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import {
@@ -48,6 +49,13 @@ export default function RocketTrailAnimation() {
 
   const isMobile = useIsMobile();
   const prefersReducedMotion = usePrefersReducedMotion();
+  // The trail canvas is parked a full viewport to the right inside an
+  // overflow-hidden box, so the canvas's own lazy observer can't see it until
+  // the rocket has already slid into frame — by which point the trail shows the
+  // page background instead of the gradient. Watching the unclipped section box
+  // instead mounts it while the section is still approaching, and the rocket
+  // only starts moving once that section reaches the top of the viewport.
+  const shaderActive = useNearViewport(clipRef);
 
   useGSAP(
     () => {
@@ -265,7 +273,7 @@ export default function RocketTrailAnimation() {
               className="h-full w-full"
               style={{ height: "100%", width: "100%" }}
             >
-              <BrandShaderBackground />
+              {shaderActive && <BrandShaderBackground lazyLoad={false} />}
             </div>
           </foreignObject>
 

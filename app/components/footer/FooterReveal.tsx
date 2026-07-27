@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
+import { useNearViewport } from "@/app/hooks/useNearViewport";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import Footer from "./Footer";
 
@@ -23,8 +24,12 @@ function setFooterInteractivity(footer: HTMLElement, isInteractive: boolean) {
 export default function FooterReveal() {
   const revealRef = useRef<HTMLDivElement>(null);
   const footerRef = useRef<HTMLElement>(null);
-  const [shaderActive, setShaderActive] = useState(false);
   const prefersReducedMotion = usePrefersReducedMotion();
+  // Mount the shader ahead of the curtain so its first frame is already painted
+  // when the footer becomes visible — mounting on the reveal itself leaves the
+  // panel on its flat `bg-surface` for a beat. The reveal starts the moment the
+  // spacer enters the viewport, so all of the lead time has to come from here.
+  const shaderActive = useNearViewport(revealRef, "200%");
 
   useGSAP(
     () => {
@@ -50,7 +55,6 @@ export default function FooterReveal() {
         if (isFooterVisible !== isVisible) {
           isFooterVisible = isVisible;
           gsap.set(footer, { autoAlpha: isVisible ? 1 : 0 });
-          setShaderActive(isVisible);
         }
 
         if (isFooterInteractive !== isInteractive) {
@@ -118,7 +122,7 @@ export default function FooterReveal() {
       <Footer
         ref={footerRef}
         aria-hidden="true"
-        shaderActive={shaderActive}
+        shaderMount={shaderActive ? "on" : "off"}
         className="fixed inset-x-0 bottom-0 z-0 opacity-0"
       />
     </>

@@ -14,13 +14,27 @@ import { DIRECTORS_CARD, DIRECTORS_PIN, MISSION_LAYOUT } from "./sceneConfig";
 configureScrollTrigger();
 
 /**
- * The statement is painted in flat surface ink — the per-word blur reveal in
- * <BlurStatement /> now supplies the softening the old static bottom-fade
- * gradient used to, and a `background-clip: text` fill can't survive the
- * per-word filters that reveal drives.
+ * Body is set in the sans; the key words marked in the copy come back in the
+ * serif (see MISSION_KEY_WORD_DELIMITER), so the statement carries its own
+ * emphasis rather than being one uniform face.
+ *
+ * It is painted in surface ink and <BlurStatement /> ramps each word back from
+ * it (see MISSION_STATEMENT_INK), so the top lines read at full strength and
+ * the closing lines sit back. The ramp is per-word `color-mix` rather than a
+ * `background-clip: text` gradient because that fill can't survive the per-word
+ * filters the blur reveal drives.
+ *
+ * Sizing is bounded by the block having to fit the viewport while it reveals:
+ * the statement is 441 characters, and its height grows with the *square* of
+ * the type size (bigger type both sets fewer characters per line and makes each
+ * line taller). At the 4rem this used before the hero copy was folded in, 441
+ * characters runs about ten lines — taller than the viewport, so the closing
+ * lines would still be below the fold when they resolve. 3.75rem with tightened
+ * leading is the largest that keeps the whole block on screen at the point the
+ * last word comes sharp; past that, the copy has to get shorter.
  */
 const MISSION_STATEMENT_CLASS_NAME =
-  "relative w-full text-center font-serif text-[2rem] font-normal leading-[1.2] text-(--color-surface-foreground) sm:text-[2.5rem] md:text-[3.25rem] lg:text-[4rem]";
+  "relative w-full text-center font-sans text-[1.75rem] font-normal leading-[1.1] text-(--color-surface-foreground) sm:text-[2.25rem] md:text-[3rem] lg:text-[3.75rem]";
 
 const MISSION_ANCHOR = (
   <span

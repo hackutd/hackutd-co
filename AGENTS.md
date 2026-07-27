@@ -8,11 +8,13 @@ HackUTD organization website — a single-page Next.js 16 App Router site for th
 
 ## Commands
 
-- `npm run dev` — local dev server at localhost:3000
+- `npm run dev` — local dev server at localhost:3000. **Agents must NOT start this.** The user runs the dev server and verifies visual/scroll behavior themselves; finish the code and hand it back for feedback.
 - `npm run build` — production build (run before PRs)
 - `npm run lint` — ESLint with Next.js Core Web Vitals + TypeScript rules (run before PRs)
 
 No test runner is configured.
+
+Known pre-existing lint errors (not introduced by new work): `react-hooks/immutability` in `app/components/hero/`, `react-hooks/refs` in `app/components/sponsors/Sponsors.tsx`.
 
 ## Architecture
 

@@ -15,7 +15,9 @@ configureScrollTrigger();
 // ── Main component ──────────────────────────────────────────
 export default function Sponsors() {
   const sectionRef = useRef<HTMLElement>(null);
+  const sceneRef = useRef<HTMLDivElement>(null);
   const towerWrapRef = useRef<HTMLDivElement>(null);
+  const logosTrackRef = useRef<HTMLDivElement>(null);
   const logosRef = useRef<HTMLDivElement>(null);
 
   // Shared refs for R3F scene
@@ -85,12 +87,14 @@ export default function Sponsors() {
     };
   }, [reducedMotion]);
 
-  // ── GSAP: scroll entrance, scroll progress
+  // ── GSAP: scroll entrance, shared logo/globe progress ─────
   const { contextSafe } = useGSAP(() => {
     const section = sectionRef.current;
+    const scene = sceneRef.current;
     const towerWrap = towerWrapRef.current;
+    const logosTrack = logosTrackRef.current;
     const logos = logosRef.current;
-    if (!section || !towerWrap) return;
+    if (reducedMotion || !section || !scene || !towerWrap) return;
 
     // Tower rises from below
     gsap.fromTo(
@@ -109,14 +113,51 @@ export default function Sponsors() {
       },
     );
 
-    // Scroll progress → drives tower rotation in R3F
-    ScrollTrigger.create({
-      trigger: section,
-      start: "top bottom",
-      end: "bottom top",
-      onUpdate: (self) => {
+    // On desktop, one document-scroll range advances both the logo rail and
+    // the R3F globe. The logo column is clipped rather than independently
+    // scrollable, so wheel/touch input can never get trapped in the rail.
+    const media = gsap.matchMedia();
+    media.add("(min-width: 1024px)", () => {
+      if (!logosTrack) return;
+
+      const syncGlobeProgress = (self: ScrollTrigger) => {
         scrollProgressRef.current = self.progress;
-      },
+      };
+
+      gsap.fromTo(
+        logosTrack,
+        { y: 0 },
+        {
+          y: () =>
+            -Math.max(
+              0,
+              logosTrack.scrollHeight - (logosTrack.parentElement?.clientHeight ?? 0),
+            ),
+          ease: "none",
+          scrollTrigger: {
+            trigger: scene,
+            start: "top top",
+            end: "bottom bottom",
+            scrub: true,
+            invalidateOnRefresh: true,
+            onUpdate: syncGlobeProgress,
+            onRefresh: syncGlobeProgress,
+          },
+        },
+      );
+    });
+    media.add("(max-width: 1023px)", () => {
+      ScrollTrigger.create({
+        trigger: scene,
+        start: "top top",
+        end: "bottom bottom",
+        onUpdate: (self) => {
+          scrollProgressRef.current = self.progress;
+        },
+        onRefresh: (self) => {
+          scrollProgressRef.current = self.progress;
+        },
+      });
     });
 
     // Sponsor logos stagger in
@@ -139,28 +180,36 @@ export default function Sponsors() {
         },
       );
     }
+
+    return () => media.revert();
+  }, {
+    scope: sectionRef,
+    dependencies: [reducedMotion],
+    revertOnUpdate: true,
   });
 
   // ── Nudge animation on hover ──────────────────────────────
-  const handleMouseEnter = contextSafe(() => {
-    if (
-      reducedMotion ||
-      !logosRef.current ||
-      hasNudged ||
-      // Only trigger nudge if the device has a cursor (hover support)
-      !window.matchMedia("(hover: hover)").matches
-    )
-      return;
+  const handleMouseEnter = () => {
+    contextSafe(() => {
+      if (
+        reducedMotion ||
+        !logosRef.current ||
+        hasNudged ||
+        // Only trigger nudge if the device has a cursor (hover support)
+        !window.matchMedia("(hover: hover)").matches
+      )
+        return;
 
-    setHasNudged(true);
-    gsap.to(logosRef.current, {
-      y: -15,
-      duration: 0.5,
-      yoyo: true,
-      repeat: 1,
-      ease: "sine.inOut",
-    });
-  });
+      setHasNudged(true);
+      gsap.to(logosRef.current, {
+        y: -15,
+        duration: 0.5,
+        yoyo: true,
+        repeat: 1,
+        ease: "sine.inOut",
+      });
+    })();
+  };
 
   const towerH = "max(100vh, 1000px)";
 
@@ -225,15 +274,16 @@ export default function Sponsors() {
           </a>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-20">
+        <div
+          ref={sceneRef}
+          className="flex flex-col gap-8 lg:flex-row lg:gap-20"
+        >
           {/* Sponsor logos grid - Left side */}
           <div
-            className="w-full lg:w-[48%] order-2 lg:order-1 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:overscroll-contain scrollbar-hide relative z-10"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            className="relative z-10 order-2 w-full lg:sticky lg:top-0 lg:order-1 lg:h-screen lg:w-[48%] lg:overflow-hidden"
             onMouseEnter={handleMouseEnter}
           >
             <style dangerouslySetInnerHTML={{ __html: `
-              .scrollbar-hide::-webkit-scrollbar { display: none; }
               .sponsor-card {
                 box-shadow: inset 2px 2px 5px rgba(0,0,0,0.15), inset -2px -2px 5px rgba(255,255,255,0.7);
                 /* Transition specific properties to avoid conflicts and lag */
@@ -261,33 +311,35 @@ export default function Sponsors() {
               }
             `}} />
 
-            <div
-              ref={logosRef}
-              className="grid grid-cols-2 sm:grid-cols-3 pancake-grid gap-x-8 gap-y-8 lg:max-w-none pt-12 lg:pt-12 pb-32 px-4 pr-10"
-            >
-              {SPONSORS.map((s) => (
-                <div key={s.name} className="flex-shrink-0 h-full">
-                  <a
-                    href={s.url || "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="sponsor-card flex h-full items-center justify-center rounded-xl border border-surface-foreground/10 p-4 backdrop-blur-sm hover:border-surface-foreground/25"
-                  >
-                    <img
-                      src={s.logo || ""}
-                      alt={s.name}
-                      className="max-h-10 max-w-full object-contain md:max-h-12"
-                      loading="lazy"
-                      draggable={false}
-                    />
-                  </a>
-                </div>
-              ))}
+            <div ref={logosTrackRef}>
+              <div
+                ref={logosRef}
+                className="pancake-grid grid grid-cols-2 gap-x-8 gap-y-8 px-4 pt-12 pr-10 pb-32 sm:grid-cols-3 lg:max-w-none lg:pt-12"
+              >
+                {SPONSORS.map((s) => (
+                  <div key={s.name} className="h-full flex-shrink-0">
+                    <a
+                      href={s.url || "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="sponsor-card flex h-full items-center justify-center rounded-xl border border-surface-foreground/10 p-4 backdrop-blur-sm hover:border-surface-foreground/25"
+                    >
+                      <img
+                        src={s.logo || ""}
+                        alt={s.name}
+                        className="max-h-10 max-w-full object-contain md:max-h-12"
+                        loading="lazy"
+                        draggable={false}
+                      />
+                    </a>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* 3D Reunion Tower — Right side */}
-          <div className="w-full lg:w-[45%] order-1 lg:order-2 relative" style={{ height: "400vh" }}>
+          <div className="relative order-1 h-[400vh] w-full lg:order-2 lg:w-[45%]">
             <div
               ref={towerWrapRef}
               className="sticky top-0"

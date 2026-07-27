@@ -170,8 +170,8 @@ export default function Hero() {
         {/* Pinned to the foot of the sticky viewport at every size: the layer is
             as tall as the art needs to span the full width, floored so it stays
             substantial on phones and capped so it can't swallow short landscape
-            viewports. At either limit the mask's `cover` sizing trims the sides
-            or the sky, never lifting the buildings off the layer's own floor.
+            viewports. The centered `contain` mask keeps the full skyline visible
+            and allows breathing room at either side.
 
             `bg-foreground` is the ink; the artwork is only the stencil (see
             HERO_SKYLINE_MASK), so the skyline follows the site theme by way of
@@ -192,8 +192,11 @@ export default function Hero() {
           ref={heroTextRef}
           className={`relative z-20 flex h-full flex-col items-center justify-center px-5 text-center md:px-8 ${HERO_LAYOUT.textLift}`}
         >
-          <h1 className="w-full min-w-0 max-w-[24ch] font-serif text-2xl font-normal leading-[1.15] sm:max-w-[30ch] sm:text-3xl md:max-w-[38ch] md:text-4xl lg:text-[2.75rem]">
-            {HERO_COPY.statement}
+          <p className="mb-2 font-serif text-base font-normal italic sm:text-lg md:mb-3 md:text-xl">
+            {HERO_COPY.eyebrow}
+          </p>
+          <h1 className="w-full min-w-0 max-w-[20ch] font-sans text-[2rem] font-bold leading-[1.1] sm:max-w-[26ch] sm:text-[2.5rem] md:max-w-[40ch] md:text-5xl lg:text-[3.5rem]">
+            {HERO_COPY.headline}
           </h1>
         </div>
       </div>

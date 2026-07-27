@@ -43,8 +43,12 @@ export const HERO_LAYOUT = {
 } as const;
 
 export const HERO_COPY = {
-  statement:
-    "We inspire students to innovate and learn new technologies through hackathons, 24-hour events with challenges, free food & merch, and fun games & activities.",
+  /**
+   * Kicker above the headline. Set in Petrona (the serif token), contrasting
+   * with the Satoshi headline so the two lines read as separate voices.
+   */
+  eyebrow: "North America’s Largest 24 hour Hackathon",
+  headline: "Building something worth showing up for.",
 } as const;
 
 export const HERO_WHITEOUT = {
@@ -66,11 +70,10 @@ export const HERO_WHITEOUT = {
 } as const;
 
 /**
- * The skyline plate is 2172x588, so 27.1vw is the height at which the art spans
- * the viewport exactly. The floor keeps it readable on narrow phones and the cap
- * keeps it off the hero copy on short landscape viewports; at either limit the
- * mask's `cover` sizing trims the sides or the sky rather than lifting the
- * buildings off the bottom edge.
+ * The skyline band keeps the artwork readable on narrow phones and clear of the
+ * hero copy on short landscape viewports. The mask itself uses `contain`, so
+ * the complete, taller skyline plate stays centered instead of being enlarged
+ * and cropped to span the viewport.
  */
 export const HERO_SKYLINE = {
   /**
@@ -95,19 +98,19 @@ export const HERO_SKYLINE = {
  * theme already flips from white to near-black, so the buildings recolor
  * themselves with no second file and no swap logic.
  *
- * `cover` / `bottom` mirror what `object-cover object-bottom` did for the image
- * pair. The `-webkit-` pairs are kept for older Safari, matching the masked
- * navbar seam.
+ * `contain` intentionally leaves breathing room to the left and right of the
+ * new, taller plate. The `-webkit-` pairs are kept for older Safari, matching
+ * the masked navbar seam.
  */
 const SKYLINE_ART = "url(/hero/skyline_black.png)";
 
 export const HERO_SKYLINE_MASK: CSSProperties = {
   maskImage: SKYLINE_ART,
   WebkitMaskImage: SKYLINE_ART,
-  maskSize: "cover",
-  WebkitMaskSize: "cover",
-  maskPosition: "bottom",
-  WebkitMaskPosition: "bottom",
+  maskSize: "contain",
+  WebkitMaskSize: "contain",
+  maskPosition: "bottom center",
+  WebkitMaskPosition: "bottom center",
   maskRepeat: "no-repeat",
   WebkitMaskRepeat: "no-repeat",
 };
@@ -144,10 +147,10 @@ const CLOUD_RIGHT = {
 } as const;
 
 /**
- * Positions traced from the reference Dallas plate: `fx`/`fy` are the element's
- * center as a fraction of the skyline band, so the sky keeps its arrangement
- * relative to the buildings at any viewport rather than drifting apart from
- * them. The left and right groups drift toward one another before reversing.
+ * `fx`/`fy` are the element's center as a fraction of the skyline band. The
+ * clouds alternate between an upper and lower row around the hero copy so their
+ * line art frames the headline instead of running through it. The left and
+ * right groups drift toward one another before reversing.
  */
 /**
  * Raises the whole flock off the rooflines, as a multiple of the band height so
@@ -172,57 +175,57 @@ export const HERO_SKY_ELEMENTS: HeroSkyElement[] = [
     id: "cloud-a",
     ...CLOUD_LEFT,
     fx: 0.09,
-    fy: 0.35,
+    fy: 0.49,
     width: 0.4,
     motion: "drift-right",
-    duration: 21,
+    duration: 17,
   },
   {
     id: "cloud-b",
     ...CLOUD_RIGHT,
     fx: 0.22,
-    fy: 0.25,
+    fy: -0.16,
     width: 0.34,
     motion: "drift-right",
-    duration: 25,
+    duration: 20,
     className: "hidden sm:block",
   },
   {
     id: "cloud-c",
     ...CLOUD_LEFT,
     fx: 0.42,
-    fy: 0.17,
+    fy: -0.2,
     width: 0.32,
     motion: "drift-right",
-    duration: 18,
+    duration: 15,
   },
   {
     id: "cloud-d",
     ...CLOUD_RIGHT,
     fx: 0.65,
-    fy: 0.21,
+    fy: 0.51,
     width: 0.3,
     motion: "drift-left",
-    duration: 23,
+    duration: 19,
     className: "hidden sm:block",
   },
   {
     id: "cloud-e",
     ...CLOUD_LEFT,
     fx: 0.755,
-    fy: 0.13,
+    fy: 0.47,
     width: 0.36,
     motion: "drift-left",
-    duration: 27,
+    duration: 22,
   },
   {
     id: "cloud-f",
     ...CLOUD_RIGHT,
     fx: 0.905,
-    fy: 0.3,
+    fy: -0.12,
     width: 0.38,
     motion: "drift-left",
-    duration: 19,
+    duration: 16,
     className: "hidden md:block",
   },
   {
