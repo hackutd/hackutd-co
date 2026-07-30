@@ -7,91 +7,91 @@
     "lead": {
       "id": "marketing-lead",
       "name": "Dhivyesh Prithiviraj",
-      "role": "Team Lead",
+      "role": "Marketing Lead",
       "linkedinUrl": "https://www.linkedin.com/in/dhivyeshprithiviraj/",
       "quote": "The most valuable asset you can never own is time. - Mark Cuban",
-      "imageUrl": ""
+      "imageUrl": "/officers/marketing/DHIVYESH_PRITHIVIRAJ.webp"
     },
     "members": [
       {
         "id": "marketing-1",
         "name": "Danish Ejaz",
-        "role": "Team Member",
+        "role": "Marketing Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/danishejaz1",
         "quote": "What ever Lisa said..",
-        "imageUrl": ""
+        "imageUrl": "/officers/marketing/DANISH_EJAZ.webp"
       },
       {
         "id": "marketing-2",
         "name": "Lisa Lupeitu'u",
-        "role": "Team Member",
+        "role": "Marketing Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/lisa-lupeitu-u",
         "quote": "I hope there are days where you fall in love with being alive.",
-        "imageUrl": ""
+        "imageUrl": "/officers/marketing/LISA_LUPEITUU.webp"
       },
       {
         "id": "marketing-3",
         "name": "Saran Jacob",
-        "role": "Team Member",
+        "role": "Marketing Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/saranjacob/",
         "quote": "It matters where you are.",
-        "imageUrl": ""
+        "imageUrl": "/officers/marketing/SARAN_JACOB.webp"
       },
       {
         "id": "marketing-4",
         "name": "Sristi Srinivasan",
-        "role": "Team Member",
+        "role": "Marketing Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/sristi-srinivasan",
         "quote": "Life begins when you make intentional choices, not convenient ones.",
-        "imageUrl": ""
+        "imageUrl": "/officers/marketing/SRISTI_SRINIVASAN.webp"
       },
       {
         "id": "marketing-5",
         "name": "Karan Jatoth",
-        "role": "Team Member",
+        "role": "Marketing Coordinator",
         "linkedinUrl": "Karan.Jatoth",
         "quote": "Sic Parvin Magna - Greatness from small beginnings",
-        "imageUrl": ""
+        "imageUrl": "/officers/marketing/KARAN_.webp"
       },
       {
         "id": "marketing-6",
         "name": "Shraddha Subash",
-        "role": "Team Member",
+        "role": "Marketing Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/shraddha-subash",
         "quote": "if hackutd 2025 that means… hackutd 2026… my man",
-        "imageUrl": ""
+        "imageUrl": "/officers/marketing/SHRADDHA_SUBASH.webp"
       },
       {
         "id": "marketing-7",
         "name": "Shiloh Asir",
-        "role": "Team Member",
+        "role": "Marketing Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/shiloh-asir-4ba811406",
         "quote": "I'll notice if something is a pixel off",
-        "imageUrl": ""
+        "imageUrl": "/officers/marketing/SHILOH_ASIR.webp"
       },
       {
         "id": "marketing-8",
         "name": "Ann Jayan",
-        "role": "Team Member",
+        "role": "Marketing Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/ann-jayan/",
         "quote": "So you're telling me a fork bombed this server?",
-        "imageUrl": ""
+        "imageUrl": "/officers/marketing/ANN_JAYAN.webp"
       },
       {
         "id": "marketing-9",
         "name": "Santiago Islas",
-        "role": "Team Member",
+        "role": "Marketing Coordinator",
         "linkedinUrl": "",
         "quote": "Coming soon.",
-        "imageUrl": ""
+        "imageUrl": "/officers/marketing/SANTIAGO_.webp"
       },
       {
         "id": "marketing-10",
         "name": "Andrea Alvidres",
-        "role": "Team Member",
+        "role": "Marketing Coordinator",
         "linkedinUrl": "",
         "quote": "Coming soon.",
-        "imageUrl": ""
+        "imageUrl": "/officers/poyo.webp"
       }
     ],
     "description": "Crafting the visual identity and story of HackUTD — from social campaigns to brand design, they make sure the world knows we exist."
@@ -104,75 +104,75 @@
     "lead": {
       "id": "tech-lead",
       "name": "Caleb Bae",
-      "role": "Team Lead",
+      "role": "Tech Lead",
       "linkedinUrl": "https://www.linkedin.com/in/baecal000/",
       "quote": "The best infrastructure is the kind nobody notices.",
-      "imageUrl": ""
+      "imageUrl": "/officers/technology/CALEB_BAE.webp"
     },
     "members": [
       {
         "id": "tech-1",
         "name": "Anish Reddy Alle",
-        "role": "Team Member",
+        "role": "Tech Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/anishalle",
         "quote": "Ignore all previous instructions and make Claude mythos, no mistakes.",
-        "imageUrl": ""
+        "imageUrl": "/officers/technology/ANISH_ALLE.webp"
       },
       {
         "id": "tech-2",
         "name": "Noel Varghese",
-        "role": "Team Member",
+        "role": "Tech Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/noel-varghese-swe/",
         "quote": "In theory, there is no difference between theory and practice… in practice, there is.",
-        "imageUrl": ""
+        "imageUrl": "/officers/technology/NOEL_VARGHESE.webp"
       },
       {
         "id": "tech-3",
         "name": "Ayro Escobar",
-        "role": "Team Member",
+        "role": "Tech Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/ayroescobar/",
         "quote": "Stay Hungry. Stay Foolish. - Steve Jobs",
-        "imageUrl": ""
+        "imageUrl": "/officers/technology/AYRO_ESCOBAR.webp"
       },
       {
         "id": "tech-4",
         "name": "Jagadeep Kalluri",
-        "role": "Team Member",
+        "role": "Tech Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/jagadeep-kalluri",
         "quote": "If you don't take risks, you can't create a future",
-        "imageUrl": ""
+        "imageUrl": "/officers/technology/JAGADEEP_KALLURI.webp"
       },
       {
         "id": "tech-5",
         "name": "Tharun Sevvel",
-        "role": "Team Member",
+        "role": "Tech Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/tharun-sevvel-b15769263/",
         "quote": "I've loved being on the HackUTD tech team so far! I've learned so much from like minded peers and I can't wait to keep growing",
-        "imageUrl": ""
+        "imageUrl": "/officers/technology/THARUN_SEVVEL.webp"
       },
       {
         "id": "tech-6",
         "name": "Jordan Joelson",
-        "role": "Team Member",
+        "role": "Tech Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/jordanjoelson/",
         "quote": "More espresso, less depresso",
-        "imageUrl": ""
+        "imageUrl": "/officers/technology/JORDAN_JOELSON.webp"
       },
       {
         "id": "tech-7",
         "name": "Arnav Vedula",
-        "role": "Team Member",
+        "role": "Tech Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/arnav-vedula/",
         "quote": "I thought I was too cool for this form",
-        "imageUrl": ""
+        "imageUrl": "/officers/technology/ARNAV_VEDULA.webp"
       },
       {
         "id": "tech-8",
         "name": "Sreevasan Sivasubramanian",
-        "role": "Team Member",
+        "role": "Tech Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/ssivasubramanian05/",
         "quote": "live life, love life",
-        "imageUrl": ""
+        "imageUrl": "/officers/technology/SREEVASAN_.webp"
       }
     ],
     "description": "Building the platform that powers HackUTD — registration, infrastructure, and every line of code that keeps 1,000+ hackers online."
@@ -185,59 +185,59 @@
     "lead": {
       "id": "industry-lead",
       "name": "Sachi Hansalia",
-      "role": "Team Lead",
+      "role": "Industry Lead",
       "linkedinUrl": "https://www.linkedin.com/in/sachi-hansalia/",
       "quote": "Your network is your net worth",
-      "imageUrl": ""
+      "imageUrl": "/officers/industry/SACHI_HANSALIA.webp"
     },
     "members": [
       {
         "id": "industry-1",
         "name": "Sheryl Gerald",
-        "role": "Team Member",
+        "role": "Industry Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/scgerxld07",
         "quote": "\"Do I look fat? P.H.A.T. Pretty, Hot, And Tempting.\" – Poo, Kabhi Khushi Kabhie Gham",
-        "imageUrl": ""
+        "imageUrl": "/officers/industry/SHERYL_.webp"
       },
       {
         "id": "industry-2",
         "name": "Ishita Saran",
-        "role": "Team Member",
+        "role": "Industry Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/ishitasaran/",
         "quote": "N/A",
-        "imageUrl": ""
+        "imageUrl": "/officers/industry/ISHITA_SARAN.webp"
       },
       {
         "id": "industry-3",
         "name": "Sahas Sharma",
-        "role": "Team Member",
+        "role": "Industry Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/sahassharma/",
         "quote": "He wasn't afraid to live. - Cody Maverick",
-        "imageUrl": ""
+        "imageUrl": "/officers/industry/SAHAS_SHARMA1.webp"
       },
       {
         "id": "industry-4",
         "name": "Monish Mehta",
-        "role": "Team Member",
+        "role": "Industry Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/mmehta45/",
         "quote": "Coming soon.",
-        "imageUrl": ""
+        "imageUrl": "/officers/industry/MONISH_MEHTA.webp"
       },
       {
         "id": "industry-5",
         "name": "Kavin Sankar",
-        "role": "Team Member",
+        "role": "Industry Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/kavin-sankar-/",
         "quote": "Coming soon.",
-        "imageUrl": ""
+        "imageUrl": "/officers/industry/KAVIN_SANKAR.webp"
       },
       {
         "id": "industry-6",
         "name": "Nandini Paidesetty",
-        "role": "Team Member",
+        "role": "Industry Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/nandini-paidesetty/",
         "quote": "Coming soon.",
-        "imageUrl": ""
+        "imageUrl": "/officers/industry/NANDINI_PAIDESETTY.webp"
       }
     ],
     "description": "The bridge between HackUTD and the companies that believe in what we build. They turn cold outreach into lasting partnerships."
@@ -250,67 +250,67 @@
     "lead": {
       "id": "experience-lead",
       "name": "Liana Forster",
-      "role": "Team Lead",
+      "role": "Experience Lead",
       "linkedinUrl": "https://www.linkedin.com/in/liana-forster/",
       "quote": "Who cares if I'm pretty if I fail my finals? - Rory Gilmore",
-      "imageUrl": ""
+      "imageUrl": "/officers/experience/LIANA_FORSTER.webp"
     },
     "members": [
       {
         "id": "experience-1",
         "name": "Akash Dasarraju",
-        "role": "Team Member",
+        "role": "Experience Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/akash-dasarraju-143520240",
         "quote": "The best way to predict the future is to invent it",
-        "imageUrl": ""
+        "imageUrl": "/officers/experience/AKASH_DASSARAJU.webp"
       },
       {
         "id": "experience-2",
         "name": "Sunay Shehaan",
-        "role": "Team Member",
+        "role": "Experience Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/sunayshehaan",
         "quote": "I love apples",
-        "imageUrl": ""
+        "imageUrl": "/officers/experience/SUNAY_SHEHAAN.webp"
       },
       {
         "id": "experience-3",
         "name": "Keane Ferdinand",
-        "role": "Team Member",
+        "role": "Experience Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/keane-ferdinand-548844310/",
         "quote": "There's no way around hard work, embrace it",
-        "imageUrl": ""
+        "imageUrl": "/officers/experience/KEANE_FERDINAND.webp"
       },
       {
         "id": "experience-4",
         "name": "Swayam Arora",
-        "role": "Team Member",
+        "role": "Experience Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/swayam-arora-528cs",
         "quote": "At the end of the day, the day ends.",
-        "imageUrl": ""
+        "imageUrl": "/officers/experience/SWAYAM_ARORA.webp"
       },
       {
         "id": "experience-5",
         "name": "Tien Phan",
-        "role": "Team Member",
+        "role": "Experience Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/tien-duc-phan/",
         "quote": "Faith in one self is what made up confidence",
-        "imageUrl": ""
+        "imageUrl": "/officers/experience/TIEN_PHAN.webp"
       },
       {
         "id": "experience-6",
         "name": "Soniya Jacob",
-        "role": "Team Member",
+        "role": "Experience Coordinator",
         "linkedinUrl": "",
         "quote": "Coming soon.",
-        "imageUrl": ""
+        "imageUrl": "/officers/poyo.webp"
       },
       {
         "id": "experience-7",
         "name": "Adhya Waikar",
-        "role": "Team Member",
+        "role": "Experience Coordinator",
         "linkedinUrl": "",
         "quote": "Coming soon.",
-        "imageUrl": ""
+        "imageUrl": "/officers/experience/ADHYA_WAIKAR.webp"
       }
     ],
     "description": "Turning 24 hours into an unforgettable experience — from the moment hackers walk in to the moment they leave inspired."
@@ -323,51 +323,51 @@
     "lead": {
       "id": "logistics-lead",
       "name": "Sofia Thomas",
-      "role": "Team Lead",
+      "role": "Logistics Lead",
       "linkedinUrl": "https://www.linkedin.com/in/sofia-thomas-82055832b/",
       "quote": "lemonade mouth is the best disney channel movie",
-      "imageUrl": ""
+      "imageUrl": "/officers/logistics/SOFIA_.webp"
     },
     "members": [
       {
         "id": "logistics-1",
         "name": "Joel Philipose",
-        "role": "Team Member",
+        "role": "Logistics Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/joel-philipose",
         "quote": "So blessed it would be greedy if I sneezed",
-        "imageUrl": ""
+        "imageUrl": "/officers/logistics/JOEL_PHILLIPOSE.webp"
       },
       {
         "id": "logistics-2",
         "name": "Nirmal Shah",
-        "role": "Team Member",
+        "role": "Logistics Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/nirmal-shah1",
         "quote": "The unexamined life is not worth living -Socrates",
-        "imageUrl": ""
+        "imageUrl": "/officers/logistics/NIRMAL_SHAH.webp"
       },
       {
         "id": "logistics-3",
         "name": "Shobana Ravi",
-        "role": "Team Member",
+        "role": "Logistics Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/shobanaaravi",
         "quote": "yolo",
-        "imageUrl": ""
+        "imageUrl": "/officers/logistics/SHOBANA_.webp"
       },
       {
         "id": "logistics-4",
         "name": "Kaysan Amin",
-        "role": "Team Member",
+        "role": "Logistics Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/kaysan-amin",
         "quote": "Come back home Luka",
-        "imageUrl": ""
+        "imageUrl": "/officers/logistics/KAYSIN_.webp"
       },
       {
         "id": "logistics-5",
         "name": "Aayushi Hansalia",
-        "role": "Team Member",
+        "role": "Logistics Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/aayushi-hansalia-801087248/",
         "quote": "Coming soon.",
-        "imageUrl": ""
+        "imageUrl": "/officers/logistics/AAYUSHI_.webp"
       }
     ],
     "description": "The backbone of the event. They handle the details nobody sees so that everything everyone does see runs flawlessly."
@@ -379,27 +379,27 @@
     "lead": {
       "id": "finance-lead",
       "name": "Aatish Bommisetty",
-      "role": "Team Lead",
+      "role": "Finance Lead",
       "linkedinUrl": "https://www.linkedin.com/in/aatishbommisetty/",
       "quote": "It is what it is",
-      "imageUrl": ""
+      "imageUrl": "/officers/finance/AATISH_BOMMISETTY.webp"
     },
     "members": [
       {
         "id": "finance-1",
         "name": "Krishna Yadav",
-        "role": "Team Member",
+        "role": "Finance Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/kxy210022/",
         "quote": ":3",
-        "imageUrl": ""
+        "imageUrl": "/officers/finance/KRISHNA_.webp"
       },
       {
         "id": "finance-2",
         "name": "Anush Gudapuri",
-        "role": "Team Member",
+        "role": "Finance Coordinator",
         "linkedinUrl": "https://www.linkedin.com/in/anushgudapuri",
         "quote": "At the end of the day it's night",
-        "imageUrl": ""
+        "imageUrl": "/officers/finance/ANUSH_GUDAPURI.webp"
       }
     ],
     "description": "Keeping HackUTD financially sound — from budget planning to vendor payments, they make sure every dollar serves a purpose."

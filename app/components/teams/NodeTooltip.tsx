@@ -6,6 +6,7 @@
 
 import Image from "next/image";
 import { useLayoutEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import type { OfficerMember } from "./constellationLayout";
 
 const VIEWPORT_CLAMP_MARGIN = 16;
@@ -25,6 +26,7 @@ export function NodeTooltip({
   clearTooltipClose,
   setActiveTeamId,
   scheduleTooltipClose,
+  centered = false,
 }: {
   person: OfficerMember;
   placement: string;
@@ -32,10 +34,12 @@ export function NodeTooltip({
   clearTooltipClose: () => void;
   setActiveTeamId: (teamId: string | null) => void;
   scheduleTooltipClose: () => void;
+  centered?: boolean;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
+    if (centered) return;
     const card = cardRef.current;
     if (!card) return;
 
@@ -56,31 +60,45 @@ export function NodeTooltip({
     }
 
     card.style.transform = deltaX !== 0 || deltaY !== 0 ? `translate(${deltaX}px, ${deltaY}px)` : "";
-  }, []);
+  }, [centered]);
 
-  return (
+  const card = (
     <div
       ref={cardRef}
-      className={`absolute z-40 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border border-foreground/12 bg-background/95 px-5 py-4 text-left shadow-[0_24px_64px_rgba(0,0,0,0.6)] backdrop-blur-md ${placement}`}
-      onMouseEnter={() => {
-        clearTooltipClose();
-        setActiveTeamId(teamId);
-      }}
-      onMouseLeave={scheduleTooltipClose}
-      onFocusCapture={() => {
-        clearTooltipClose();
-        setActiveTeamId(teamId);
-      }}
-      onBlurCapture={(event) => {
-        const relatedTarget = event.relatedTarget;
-        if (
-          relatedTarget instanceof Node &&
-          event.currentTarget.contains(relatedTarget)
-        ) {
-          return;
-        }
-        scheduleTooltipClose();
-      }}
+      className={`z-40 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-foreground/12 bg-background/95 px-5 py-4 text-left shadow-[0_24px_64px_rgba(0,0,0,0.6)] backdrop-blur-md ${
+        centered ? "relative" : `absolute ${placement}`
+      }`}
+      onMouseEnter={
+        centered
+          ? undefined
+          : () => {
+              clearTooltipClose();
+              setActiveTeamId(teamId);
+            }
+      }
+      onMouseLeave={centered ? undefined : scheduleTooltipClose}
+      onFocusCapture={
+        centered
+          ? undefined
+          : () => {
+              clearTooltipClose();
+              setActiveTeamId(teamId);
+            }
+      }
+      onBlurCapture={
+        centered
+          ? undefined
+          : (event) => {
+              const relatedTarget = event.relatedTarget;
+              if (
+                relatedTarget instanceof Node &&
+                event.currentTarget.contains(relatedTarget)
+              ) {
+                return;
+              }
+              scheduleTooltipClose();
+            }
+      }
     >
       <button
         type="button"
@@ -98,12 +116,12 @@ export function NodeTooltip({
           <Image
             src={person.imageUrl}
             alt={person.name}
-            width={48}
-            height={48}
-            className="h-12 w-12 rounded-full object-cover shrink-0 border border-foreground/10"
+            width={80}
+            height={80}
+            className="h-20 w-20 rounded-full object-cover shrink-0 border border-foreground/10"
           />
         ) : (
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-foreground/10 bg-foreground/6 text-sm font-medium text-foreground/40">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border border-foreground/10 bg-foreground/6 text-sm font-medium text-foreground/40">
             {getInitials(person.name)}
           </div>
         )}
@@ -135,5 +153,21 @@ export function NodeTooltip({
         </a>
       </div>
     </div>
+  );
+
+  if (!centered) return card;
+
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-40 flex items-center justify-center bg-background/60 backdrop-blur-sm"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) scheduleTooltipClose();
+      }}
+    >
+      {card}
+    </div>,
+    document.body,
   );
 }
