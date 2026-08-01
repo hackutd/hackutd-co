@@ -5,6 +5,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
+import Image from "next/image";
 import type { ResolvedConstellationLayout } from "./constellationLayout";
 import type { ConstellationBox } from "./sceneConfig";
 import { NodeTooltip, getInitials } from "./NodeTooltip";
@@ -47,6 +48,7 @@ export function TeamConstellation({
   scheduleTooltipClose,
   interactive,
   showCaption = true,
+  centerTooltip = false,
 }: {
   layout: ResolvedConstellationLayout;
   box: ConstellationBox;
@@ -58,6 +60,7 @@ export function TeamConstellation({
   scheduleTooltipClose: () => void;
   interactive: boolean;
   showCaption?: boolean;
+  centerTooltip?: boolean;
 }) {
   const teamOpacity = getTeamOpacity(activeTeamId, layout.team.id);
   const memberCountLabel = getMemberCountLabel(layout.nodes.length);
@@ -104,14 +107,14 @@ export function TeamConstellation({
       className="relative flex shrink-0 flex-col items-center transition-opacity duration-300"
       style={{ opacity: teamOpacity, width: `${box.width}px` }}
       onMouseEnter={
-        interactive
+        interactive && !centerTooltip
           ? () => {
               clearTooltipClose();
               setActiveTeamId(layout.team.id);
             }
           : undefined
       }
-      onMouseLeave={interactive ? scheduleTooltipClose : undefined}
+      onMouseLeave={interactive && !centerTooltip ? scheduleTooltipClose : undefined}
     >
       <div
         className="relative"
@@ -176,13 +179,14 @@ export function TeamConstellation({
                   clearTooltipClose={clearTooltipClose}
                   setActiveTeamId={setActiveTeamId}
                   scheduleTooltipClose={scheduleTooltipClose}
+                  centered={centerTooltip}
                 />
               ) : null}
 
               <button
                 type="button"
                 aria-label={`${node.person.name}, ${node.person.role}`}
-                className={`flex items-center justify-center rounded-full border transition-[transform,box-shadow,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
+                className={`relative flex items-center justify-center overflow-hidden rounded-full border transition-[transform,box-shadow,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
                   node.isLead
                     ? "constellation-lead border-[3px] border-pink bg-(--color-card) text-foreground/56 hover:scale-[1.04]"
                     : "border-[3px] border-foreground/12 bg-(--color-card) text-foreground/32 hover:scale-[1.07]"
@@ -194,24 +198,34 @@ export function TeamConstellation({
                     : undefined
                 }
                 onMouseEnter={
-                  interactive
+                  interactive && !centerTooltip
                     ? () => openNode(layout.team.id, node.person.id)
                     : undefined
                 }
-                onMouseLeave={interactive ? scheduleTooltipClose : undefined}
+                onMouseLeave={interactive && !centerTooltip ? scheduleTooltipClose : undefined}
                 onFocus={
                   interactive
                     ? () => openNode(layout.team.id, node.person.id)
                     : undefined
                 }
-                onBlur={interactive ? scheduleTooltipClose : undefined}
+                onBlur={interactive && !centerTooltip ? scheduleTooltipClose : undefined}
               >
-                <span
-                  className="select-none font-medium tracking-[-0.03em]"
-                  style={nodeLabelStyle}
-                >
-                  {getInitials(node.person.name)}
-                </span>
+                {node.person.imageUrl ? (
+                  <Image
+                    src={node.person.imageUrl}
+                    alt={node.person.name}
+                    fill
+                    sizes={`${node.isLead ? box.leadNodeSize : box.nodeSize}px`}
+                    className="rounded-full object-cover"
+                  />
+                ) : (
+                  <span
+                    className="select-none font-medium tracking-[-0.03em]"
+                    style={nodeLabelStyle}
+                  >
+                    {getInitials(node.person.name)}
+                  </span>
+                )}
               </button>
             </div>
           );

@@ -8,7 +8,6 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useIsAndroid } from "@/app/hooks/useIsAndroid";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
@@ -443,6 +442,7 @@ export default function Teams() {
                   scheduleTooltipClose={scheduleTooltipClose}
                   interactive
                   showCaption
+                  centerTooltip
                 />
               ))}
             </div>
@@ -485,6 +485,7 @@ export default function Teams() {
                     {ORDERED_OFFICER_TEAMS[displayedTeamIndex]!.description}
                   </p>
                 ) : null}
+                {/* Group photos aren't finalized yet — re-enable once ready.
                 <div className="mt-3">
                   {ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.groupPhotoUrl ? (
                     <Image
@@ -507,6 +508,7 @@ export default function Teams() {
                     </div>
                   )}
                 </div>
+                */}
               </div>
             </div>
 
@@ -530,6 +532,7 @@ export default function Teams() {
                     scheduleTooltipClose={scheduleTooltipClose}
                     interactive
                     showCaption
+                    centerTooltip
                   />
                 ))}
               </div>
@@ -658,6 +661,7 @@ export default function Teams() {
               {ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.description ?? ""}
             </p>
 
+            {/* Group photos aren't finalized yet — re-enable once ready.
             <div
               className="mt-8 transition-opacity duration-200"
               style={{ opacity: descVisible ? 1 : 0 }}
@@ -683,6 +687,7 @@ export default function Teams() {
                 </div>
               )}
             </div>
+            */}
           </div>
 
           <div
