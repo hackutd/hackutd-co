@@ -19,9 +19,13 @@ import {
   HERO_SKYLINE_MASK,
   HERO_STARS,
   HERO_WHITEOUT,
-  MOBILE_SCRUB,
 } from "./sceneConfig";
-import CometTrailBackground from "./CometTrailBackground";
+import dynamic from "next/dynamic";
+
+const CometTrailBackground = dynamic(
+  () => import("./CometTrailBackground"),
+  { ssr: false },
+);
 
 configureScrollTrigger();
 
@@ -52,6 +56,12 @@ export default function Hero() {
 
       if (prefersReducedMotion) {
         if (cometBackgroundLayer) {
+          if (isMobile) {
+            gsap.set(cometBackgroundLayer, {
+              background:
+                "linear-gradient(150deg, #4a0eff 0%, #6C17FE 20%, #9B30FF 40%, #F31667 65%, #ff6b4a 85%, #FFA21F 100%)",
+            });
+          }
           gsap.set(cometBackgroundLayer, { autoAlpha: 1 });
         }
         if (heroText) {
@@ -60,13 +70,30 @@ export default function Hero() {
         return;
       }
 
-      const scrub = isMobile ? MOBILE_SCRUB : HERO_SCENE_SCROLL.scrub;
+      // On real phones, momentum scrolling traverses the full hero in under a
+      // second. A numeric scrub adds lag, and because the reveal and whiteout
+      // are separate tweens their catch-up windows don't overlap — creating a
+      // visible gradient flash. `true` = zero lag, exact scroll tracking.
+      const scrub = isMobile ? true : HERO_SCENE_SCROLL.scrub;
 
       if (heroText) {
         gsap.set(heroText, { autoAlpha: 1 });
       }
 
       if (cometBackgroundLayer) {
+        // On mobile, use a CSS gradient instead of the WebGL canvas. Mobile
+        // GPUs promote WebGL canvases inside SVG foreignObject to independent
+        // compositing layers that ignore parent opacity/visibility, causing
+        // the gradient to paint through even when autoAlpha is 0. Setting
+        // the background here (not in JSX) guarantees it appears atomically
+        // with autoAlpha: 0 — the gradient is never in the DOM before GSAP
+        // hides it.
+        if (isMobile) {
+          gsap.set(cometBackgroundLayer, {
+            background:
+              "linear-gradient(150deg, #4a0eff 0%, #6C17FE 20%, #9B30FF 40%, #F31667 65%, #ff6b4a 85%, #FFA21F 100%)",
+          });
+        }
         gsap.set(cometBackgroundLayer, { autoAlpha: 0 });
         gsap.to(cometBackgroundLayer, {
           autoAlpha: 1,
@@ -159,8 +186,9 @@ export default function Hero() {
           ref={cometBackgroundLayerRef}
           aria-hidden="true"
           className="absolute inset-0 z-2"
+          style={{ opacity: 0, visibility: "hidden" }}
         >
-          <CometTrailBackground />
+          {!isMobile && <CometTrailBackground />}
         </div>
 
         {/* Sky before buildings: same z, so DOM order alone puts the flock
