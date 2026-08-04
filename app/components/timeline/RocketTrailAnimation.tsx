@@ -11,7 +11,6 @@ import { useNearViewport } from "@/app/hooks/useNearViewport";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import {
-  MOBILE_TIMELINE_SCRUB,
   MOBILE_TRAIL_WAVE,
   ROCKET_FILL_PATH,
   ROCKET_STROKE_PATH,
@@ -175,7 +174,11 @@ export default function RocketTrailAnimation() {
       };
 
       // --- Scroll-driven rocket slide ---
-      const scrub = isMobile ? MOBILE_TIMELINE_SCRUB : TIMELINE_SCROLL.scrub;
+      // On real phones, momentum scrolling traverses the section in under a
+      // second. A numeric scrub adds lag that desynchronises the rocket slide
+      // from the exit fade, causing a visible gradient flash. `true` = zero
+      // lag, exact scroll tracking.
+      const scrub = isMobile ? true : TIMELINE_SCROLL.scrub;
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger,
@@ -262,6 +265,12 @@ export default function RocketTrailAnimation() {
             </filter>
           </defs>
 
+          {/* On mobile, use a CSS gradient instead of the WebGL canvas.
+              Mobile GPUs promote WebGL canvases inside SVG foreignObject to
+              independent compositing layers that ignore the SVG mask, causing
+              the gradient to paint as a full unclipped rectangle. A CSS
+              gradient background stays in the normal compositing path and
+              respects the mask correctly. */}
           <foreignObject
             x="0"
             y="-180"
@@ -271,9 +280,20 @@ export default function RocketTrailAnimation() {
           >
             <div
               className="h-full w-full"
-              style={{ height: "100%", width: "100%" }}
+              style={{
+                height: "100%",
+                width: "100%",
+                ...(isMobile
+                  ? {
+                      background:
+                        "linear-gradient(150deg, #4a0eff 0%, #6C17FE 20%, #9B30FF 40%, #F31667 65%, #ff6b4a 85%, #FFA21F 100%)",
+                    }
+                  : {}),
+              }}
             >
-              {shaderActive && <BrandShaderBackground lazyLoad={false} />}
+              {!isMobile && shaderActive && (
+                <BrandShaderBackground lazyLoad={false} />
+              )}
             </div>
           </foreignObject>
 
