@@ -46,16 +46,68 @@ const PINATA = `${SVG_LOC}/pinata.png`;
 const tmobile = `${SVG_LOC}/tmobile.svg`;
 
 const SPONSORS_MAP = {
-  // MARK: - Added for HackUTD IX Sponsors
-  PNC: {
-    name: "PNC Bank",
-    img: PNC,
-    link: "https://www.pnc.com/",
+  // Ordered by brand recognition — headline sponsors first, community/partner logos last.
+  GOOGLE: {
+    name: "Google",
+    img: google,
+    link: "https://about.google/",
   },
-  PINATA: {
-    name: "Pinata",
-    img: PINATA,
-    link: "https://pinata.cloud/",
+  NVIDIA: {
+    name: "NVIDIA",
+    img: nvidia,
+    link: "https://www.nvidia.com/",
+  },
+  FACEBOOK: {
+    name: "Facebook",
+    img: facebook,
+    link: "https://www.meta.com/",
+  },
+  T_MOBILE: {
+    name: "T-Mobile",
+    img: tmobile,
+    link: "https://www.t-mobile.com/",
+  },
+  TOYOTA: {
+    name: "Toyota",
+    img: toyota,
+    link: "https://www.toyota.com/",
+  },
+  JPMORGAN_CHASE: {
+    name: "JP Morgan Chase & Co.",
+    img: jpmorgan,
+    link: "https://www.jpmorganchase.com/",
+    needs_white_bg: true,
+  },
+  GOLDMAN_SACHS: {
+    name: "Goldman Sachs",
+    img: goldman_sachs,
+    link: "http://www.goldmansachs.com/",
+  },
+  CAPITAL_ONE: {
+    name: "Capital One",
+    img: capital_one,
+    needs_white_bg: true,
+    link: "http://campus.capitalone.com/",
+  },
+  TI: {
+    name: "Texas Instruments",
+    img: ti,
+    link: "https://www.ti.com/",
+  },
+  STATEFARM: {
+    name: "StateFarm",
+    img: statefarm,
+    link: "https://www.statefarm.com/",
+  },
+  GEICO: {
+    name: "Geico",
+    img: Geico,
+    link: "https://geico.wd1.myworkdayjobs.com/External",
+  },
+  FIDELITY: {
+    name: "Fidelity",
+    img: Fidelity,
+    link: "https://leap.fidelitycareers.com",
   },
   SNAP_AR: {
     name: "Snap AR",
@@ -67,159 +119,10 @@ const SPONSORS_MAP = {
     img: SNAP_GHOST,
     link: "https://ar.snap.com/?lang=en-US",
   },
-  BENQ: {
-    name: "BenQ",
-    img: benq,
-    link: "https://www.benq.com/en-us/index.html",
-  },
-  EOG: {
-    name: "EOG Resources",
-    img: eog,
-    link: "https://www.eogresources.com/",
-  },
-  TI: {
-    name: "Texas Instruments",
-    img: ti,
-    link: "https://www.ti.com/",
-  },
-  STUDENT_GOV: {
-    name: "UTD Student Government",
-    img: sg,
-    link: "https://sg.utdallas.edu/",
-  },
-  CBRE: {
-    name: "CBRE",
-    img: cbre,
-    link: "https://www.cbre.com/",
-  },
-  RING_CENTRAL: {
-    name: "Ring Central",
-    img: rc,
-    link: "https://www.ringcentral.com/",
-  },
-  L3_HARRIS: {
-    name: "L3 Harris",
-    img: l3,
-    link: "https://www.l3harris.com/",
-  },
-  AXXESS: {
-    name: "Axxess",
-    img: axxess,
-    link: "https://www.axxess.com/",
-  },
-  GOOGLE: {
-    name: "Google",
-    img: google,
-    link: "https://about.google/",
-  },
-  STATEFARM: {
-    name: "StateFarm",
-    img: statefarm,
-    link: "https://www.statefarm.com/",
-  },
-  MLH: {
-    name: "MLH",
-    img: mlh,
-    link: "https://mlh.io/",
-    needs_white_bg: true,
-  },
-  CAPITAL_ONE: {
-    name: "Capital One",
-    img: capital_one,
-    needs_white_bg: true,
-    link: "http://campus.capitalone.com/",
-  },
-  GOLDMAN_SACHS: {
-    name: "Goldman Sachs",
-    img: goldman_sachs,
-    link: "http://www.goldmansachs.com/",
-  },
-  FACEBOOK: {
-    name: "Facebook",
-    img: facebook,
-    link: "https://www.meta.com/",
-  },
-  UTD_DPT_CS: {
-    name: "UTD Department of Computer Science",
-    img: utd_department_cs,
-    link: "https://cs.utdallas.edu/",
-  },
-  JPMORGAN_CHASE: {
-    name: "JP Morgan Chase & Co.",
-    img: jpmorgan,
-    link: "https://www.jpmorganchase.com/",
-    needs_white_bg: true,
-  },
-  STICKER_MULE: {
-    name: "Sticker Mule",
-    img: sticker_mule,
-    link: "https://mule.to/p33e", // note: link is custom for sponsorship purposes
-    needs_white_bg: true,
-  },
-  TOYOTA: {
-    name: "Toyota",
-    img: toyota,
-    link: "https://www.toyota.com/",
-  },
-  STANDOUT_STICKERS: {
-    name: "Standout Stickers",
-    img: standout_stickers,
-    link: "http://hackp.ac/mlh-StandOutStickers-hackathons",
-  },
-  VEOLIA: {
-    name: "Veolia",
-    img: veolia,
-    link: "https://www.veolianorthamerica.com/",
-  },
-  CORE_LOGIC: {
-    name: "Core Logic",
-    img: CoreLogic,
-    link: "https://www.corelogic.com/culture/",
-  },
-  FANNIE_MAE: {
-    name: "Fannie Mae",
-    img: FannieMae,
-    link: "https://www.fanniemae.com/careers",
-  },
-  FIDELITY: {
-    name: "Fidelity",
-    img: Fidelity,
-    link: "https://leap.fidelitycareers.com",
-  },
-  FRONTIER: {
-    name: "Frontier",
-    img: Frontier,
-    link: "https://frontier-careers.com/",
-  },
-  GEICO: {
-    name: "Geico",
-    img: Geico,
-    link: "https://geico.wd1.myworkdayjobs.com/External",
-  },
-  INCOGNI: {
-    name: "Incogni",
-    img: Incogni,
-    link: "https://incogni.com/",
-  },
-  MME: {
-    name: "Modern Market Eatery",
-    img: MME,
-    link: "https://modernmarket.com/",
-  },
-  NORDPASS: {
-    name: "Nord Pass",
-    link: "https://nordpass.com/",
-    img: NordPass,
-  },
-  NORDVPN: {
-    name: "Nord VPN",
-    link: "https://nordvpn.com/",
-    img: NordVPN,
-  },
-  PRHI: {
-    name: "PRHI",
-    img: PRHI,
-    link: "http://patientsafetytech.com/",
+  PNC: {
+    name: "PNC Bank",
+    img: PNC,
+    link: "https://www.pnc.com/",
   },
   INFOSYS: {
     name: "Infosys",
@@ -236,20 +139,117 @@ const SPONSORS_MAP = {
     img: scale,
     link: "https://scale.com/",
   },
-  NVIDIA: {
-    name: "NVIDIA",
-    img: nvidia,
-    link: "https://www.nvidia.com/",
+  L3_HARRIS: {
+    name: "L3 Harris",
+    img: l3,
+    link: "https://www.l3harris.com/",
+  },
+  CBRE: {
+    name: "CBRE",
+    img: cbre,
+    link: "https://www.cbre.com/",
+  },
+  FANNIE_MAE: {
+    name: "Fannie Mae",
+    img: FannieMae,
+    link: "https://www.fanniemae.com/careers",
+  },
+  EOG: {
+    name: "EOG Resources",
+    img: eog,
+    link: "https://www.eogresources.com/",
+  },
+  VEOLIA: {
+    name: "Veolia",
+    img: veolia,
+    link: "https://www.veolianorthamerica.com/",
+  },
+  FRONTIER: {
+    name: "Frontier",
+    img: Frontier,
+    link: "https://frontier-careers.com/",
+  },
+  RING_CENTRAL: {
+    name: "Ring Central",
+    img: rc,
+    link: "https://www.ringcentral.com/",
+  },
+  NORDVPN: {
+    name: "Nord VPN",
+    link: "https://nordvpn.com/",
+    img: NordVPN,
+  },
+  NORDPASS: {
+    name: "Nord Pass",
+    link: "https://nordpass.com/",
+    img: NordPass,
+  },
+  BENQ: {
+    name: "BenQ",
+    img: benq,
+    link: "https://www.benq.com/en-us/index.html",
+  },
+  CORE_LOGIC: {
+    name: "Core Logic",
+    img: CoreLogic,
+    link: "https://www.corelogic.com/culture/",
+  },
+  AXXESS: {
+    name: "Axxess",
+    img: axxess,
+    link: "https://www.axxess.com/",
+  },
+  INCOGNI: {
+    name: "Incogni",
+    img: Incogni,
+    link: "https://incogni.com/",
+  },
+  PINATA: {
+    name: "Pinata",
+    img: PINATA,
+    link: "https://pinata.cloud/",
+  },
+  MLH: {
+    name: "MLH",
+    img: mlh,
+    link: "https://mlh.io/",
+    needs_white_bg: true,
+  },
+  STICKER_MULE: {
+    name: "Sticker Mule",
+    img: sticker_mule,
+    link: "https://mule.to/p33e", // note: link is custom for sponsorship purposes
+    needs_white_bg: true,
+  },
+  STANDOUT_STICKERS: {
+    name: "Standout Stickers",
+    img: standout_stickers,
+    link: "http://hackp.ac/mlh-StandOutStickers-hackathons",
+  },
+  UTD_DPT_CS: {
+    name: "UTD Department of Computer Science",
+    img: utd_department_cs,
+    link: "https://cs.utdallas.edu/",
+  },
+  STUDENT_GOV: {
+    name: "UTD Student Government",
+    img: sg,
+    link: "https://sg.utdallas.edu/",
   },
   NMC2: {
     name: "NMC2",
     img: nmc2,
     link: "https://www.nmc2.com/",
   },
-  T_MOBILE: {
-    name: "T-Mobile",
-    img: tmobile,
-    link: "https://www.t-mobile.com/",
+  MME: {
+    name: "Modern Market Eatery",
+    img: MME,
+    link: "https://modernmarket.com/",
+  },
+  PRHI: {
+    name: "PRHI",
+    img: PRHI,
+    link: "http://patientsafetytech.com/",
   },
 };
 

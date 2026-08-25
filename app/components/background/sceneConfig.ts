@@ -8,8 +8,8 @@
  * background always matches the scroll position, no matter how fast the
  * user scrolls in either direction.
  *
- * The navbar light/dark theme is derived from the same value, so the
- * background and navbar can never disagree.
+ * The navbar theme is derived from the same values, so the background and
+ * navbar can never disagree.
  */
 
 export const HERO_SCENE_DATA_ATTR = "data-bg-hero-scene";
@@ -79,10 +79,18 @@ export const PAGE_BG_PHASES: readonly PageBgPhase[] = [
  *
  * The ease is what keeps it off the timeline: `power3.in` is still under 4% a
  * third of the way in, so nothing washes over the rocket while it is finishing
- * its sweep (TIMELINE_SCROLL ends 30vh before the section does), and the whole
- * visible crossfade lands under the parked fuel plume that follows — which is
- * itself dissolving over the same stretch (TIMELINE_EXIT_FADE), so the plume
- * hands straight over to the sponsor wall's white with no edge in between.
+ * its sweep, and the visible part of the crossfade runs underneath the plume,
+ * landing a beat *before* TIMELINE_EXIT_FADE finishes so the plume always
+ * dissolves onto a page that is already fully white rather than revealing one
+ * still on its way there.
+ *
+ * The anchors read oddly for a phase that has to finish before its own section
+ * arrives, and that is the point: the wall is pulled 50vh up into the timeline's
+ * tail (see the negative margin in Sponsors.tsx), so `top bottom` is the frame
+ * its transparent leading band enters on, not the frame its white does. The
+ * offsets are chosen to hold the crossfade at the same absolute scroll position
+ * it has always run at — moving the wall up must not drag the background with
+ * it, or the page whitens while the rocket is still sweeping.
  *
  * It runs in both themes, but only reads as a change in one. The light theme
  * crosses the whole way from near-black; the dark theme has already lightened
@@ -94,8 +102,8 @@ export const SPONSORS_PANEL_PHASE = {
   attr: SPONSORS_SECTION_DATA_ATTR,
   from: 0,
   to: 1,
-  start: "top 140%",
-  end: "top bottom",
+  start: "top bottom",
+  end: "top 60%",
   ease: "power3.in",
 } as const satisfies PageBgPhase;
 
@@ -122,3 +130,18 @@ export const PAGE_BG_SNAP_DELTA = 0.35;
 
 /** Light-layer opacity at which the navbar switches to its light theme */
 export const NAVBAR_LIGHT_THRESHOLD = 0.5;
+
+/**
+ * Panel-layer opacity at which the navbar switches to its panel theme —
+ * the sponsor wall's pinned white, which it holds for the rest of the page.
+ *
+ * Read from the panel layer for the same reason the light theme is read from
+ * the light layer: it is the layer the bar is sitting on, so the two can't
+ * disagree. It outranks the light threshold — this layer is stacked above the
+ * other, and once it is more than half opaque it is what the bar is over.
+ *
+ * That matters in the light theme, where the layer beneath is near-black:
+ * without this the bar would keep wearing the theme's dark surface all the way
+ * down a wall the theme doesn't reach.
+ */
+export const NAVBAR_PANEL_THRESHOLD = 0.5;

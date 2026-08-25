@@ -13,6 +13,7 @@ import {
 } from "../navbar/navbarThemeOverride";
 import {
   NAVBAR_LIGHT_THRESHOLD,
+  NAVBAR_PANEL_THRESHOLD,
   PAGE_BG_PANEL_PHASES,
   PAGE_BG_PHASES,
   PAGE_BG_SMOOTHING,
@@ -31,7 +32,7 @@ type LivePhase = {
 };
 
 /**
- * Owns the page background and the navbar light/dark theme.
+ * Owns the page background and the navbar theme.
  *
  * Each layer's opacity is a pure function of scroll position: each phase gets
  * a plain ScrollTrigger (no tween) and on every update the last phase in page
@@ -45,7 +46,11 @@ type LivePhase = {
  * it the panel layer carries it the rest of the way to the sponsor wall's
  * fixed white as that section approaches, landing on exactly the color the
  * wall paints itself. They are kept separate so the wall's arrival can't
- * disturb the light layer the navbar theme is read from.
+ * disturb the light layer beneath it.
+ *
+ * The navbar theme is read from both, so it can never disagree with whatever
+ * the bar is actually sitting on: the panel layer takes it over once that
+ * layer has covered the one below.
  */
 export default function PageBackground() {
   const lightLayerRef = useRef<HTMLDivElement>(null);
@@ -156,11 +161,16 @@ export default function PageBackground() {
 
       function update() {
         const value = resolve(phases);
+        const panelValue = resolve(panelPhases);
         writeLight(value);
-        writePanel(resolve(panelPhases));
+        writePanel(panelValue);
 
         const nextTheme: NavbarTheme =
-          value >= NAVBAR_LIGHT_THRESHOLD ? "light" : "dark";
+          panelValue >= NAVBAR_PANEL_THRESHOLD
+            ? "panel"
+            : value >= NAVBAR_LIGHT_THRESHOLD
+              ? "light"
+              : "dark";
         if (nextTheme !== navbarTheme) {
           navbarTheme = nextTheme;
           dispatchNavbarThemeOverride(nextTheme);

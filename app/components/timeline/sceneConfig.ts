@@ -61,37 +61,51 @@ export const YEAR_MARKERS: YearMarker[] = [
 
 export const TIMELINE_SCROLL = {
   start: "top top",
-  // Parks the sweep 30vh of scroll before the section ends. By then Poyo and
-  // every marker have cleared the left edge and the plume has grown past all
-  // four edges, so the scene comes to rest on a full-bleed wash of gradient
-  // rather than on an empty stage — that wash is what hands over to Sponsors.
-  end: "bottom 130%",
+  // Parks the sweep on the exact frame the sticky stage stops being pinned. By
+  // then Poyo and every marker have cleared the left edge and the plume has
+  // grown past all four edges, so the scene comes to rest on a full-bleed wash
+  // of gradient rather than on an empty stage — and the very next frame of
+  // scroll starts carrying that wash off the top with Sponsors right behind it.
+  end: "bottom bottom",
   scrub: 0.9,
 } as const;
 
 export const TIMELINE_LAYOUT = {
   // Give the sweep a longer runway so Poyo takes roughly one and a half
   // viewport-heights of scrolling to cross the screen on common viewports.
-  minHeight: "min-h-[430vh]",
+  //
+  // The pin range is `minHeight - 100vh`, and TIMELINE_SCROLL now spends all of
+  // it, so 400vh buys the sweep the same 300vh of scroll the old 430vh did with
+  // its 30vh park — identical pacing, 30vh less page above Sponsors.
+  minHeight: "min-h-[400vh]",
   stickyViewportHeight: "h-[100svh]",
 } as const;
 
 export const MOBILE_TIMELINE_SCRUB = 0.9;
 
 /**
- * The handoff into Sponsors: the parked full-bleed plume dissolves into the
- * page background across the section's last 30vh, while PAGE_BG's sponsor
- * phase carries that background to the sponsor wall's own white underneath.
- * Nothing has an edge in frame during the crossfade, so the sections meet as
- * one colour becoming another rather than as a boundary sliding past.
+ * The handoff into Sponsors: the full-bleed plume dissolves uniformly, in
+ * place, into a page background that PAGE_BG's sponsor phase is carrying to the
+ * sponsor wall's own white over the same stretch (SPONSORS_PANEL_PHASE). Both
+ * land together, so the whole frame simply becomes white — no edge crosses it,
+ * and nothing is clipped or wiped.
  *
- * `start` is deliberately the same anchor as TIMELINE_SCROLL.end — the fade
- * takes over on the exact scroll frame the sweep stops, so the gradient never
- * sits still and unfaded.
+ * The window is set by where the wall is, not by where the sweep stops. A
+ * `top-0` sticky of one viewport unpins a full viewport before its section
+ * ends, and the wall's top edge is welded to that section's bottom edge — so
+ * the wall reaches the foot of the frame at exactly `bottom bottom` and rises
+ * from there. Ending the dissolve at `bottom 105%` puts the plume at zero a
+ * beat *before* that edge arrives, which is what keeps the wall from cutting
+ * across a still-lit plume: it rises into a frame that is already white, over a
+ * background that is already the same white, so its own edge is invisible.
+ *
+ * The 50vh window is the dissolve itself. It starts while the tail is still
+ * gliding, so the gradient never sits still and unfaded, and it is slow enough
+ * to read as the scene fading out rather than being switched off.
  */
 export const TIMELINE_EXIT_FADE = {
-  start: "bottom 130%",
-  end: "bottom bottom",
+  start: "bottom 155%",
+  end: "bottom 105%",
   ease: "power1.inOut",
   scrub: 0.3,
 } as const;

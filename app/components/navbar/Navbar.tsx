@@ -1,9 +1,14 @@
 "use client";
 
-import { useState, useEffect, useSyncExternalStore } from "react";
+import {
+  useState,
+  useEffect,
+  useSyncExternalStore,
+  type CSSProperties,
+} from "react";
 import Image from "next/image";
 import Link from "next/link";
-import AccentButton from "../ui/AccentButton";
+import FlowButton from "../ui/FlowButton";
 import useNavbarTheme from "./useNavbarTheme";
 import ThemeToggle from "./ThemeToggle";
 import { NAVBAR_COLOR_TRANSITION } from "./sceneConfig";
@@ -15,6 +20,23 @@ import {
   subscribeSiteTheme,
   type SiteTheme,
 } from "../theme/siteTheme";
+
+/**
+ * The sponsor wall's palette, for the bar to wear while it is over the wall.
+ *
+ * Declared inline on the <nav> rather than as a rule in globals.css: this is
+ * one element's palette, switched by component state, and setting it here puts
+ * it beyond any question of which selector wins on a bar that is simultaneously
+ * wearing `data-theme`. Every color under the bar's light phase comes from
+ * these two tokens, so the pair flips the whole thing at once.
+ *
+ * The ink matches the value the wall pins for itself (see the sponsor block in
+ * globals.css) — near-black, the palette the sponsor artwork was drawn for.
+ */
+const PANEL_PALETTE = {
+  "--theme-surface": "var(--sponsor-panel)",
+  "--theme-surface-foreground": "#1a1a1a",
+} as CSSProperties;
 
 const NAV_LINKS = [
   { href: "#about", label: "ABOUT" },
@@ -41,11 +63,19 @@ export default function Navbar() {
     getServerSiteTheme,
   );
   const theme = useNavbarTheme();
-  const isLightTheme = theme === "light";
+  // The panel phase is the light phase with its color pinned: both draw the
+  // bar from the surface tokens, and PANEL_PALETTE is what pins those tokens
+  // to the wall's white. The bar is fixed above the page, so it never sits
+  // inside the wall's subtree and can't inherit the pin the way the wall's own
+  // children do.
+  const isPanelTheme = theme === "panel";
+  const isLightTheme = theme !== "dark";
   // The white/black logo assets track the actual underlying color: the
   // "light" navbar phase sits on the surface color, which is dark when the
-  // user picks the light site theme.
-  const showBlackLogo = isLightTheme !== (targetTheme === "light");
+  // user picks the light site theme. Over the pinned panel the color behind
+  // the bar is white in both themes, so the black logo is the only right one.
+  const showBlackLogo =
+    isPanelTheme || isLightTheme !== (targetTheme === "light");
 
   // Cross-fading mid-swap would put the bar through a washed-out blend right
   // as the curtain arrives behind it, so the swap snaps. Scrolling between
@@ -73,6 +103,7 @@ export default function Navbar() {
   return (
     <nav
       data-theme={targetTheme}
+      style={isPanelTheme ? PANEL_PALETTE : undefined}
       className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 md:px-8 md:py-4"
     >
       <div
@@ -130,7 +161,7 @@ export default function Navbar() {
           isLightNavbar={isLightTheme}
           colorTransition={colorTransition}
         />
-        <AccentButton size="lg">2026 Soon</AccentButton>
+        <FlowButton text="2026 Soon" href="https://zeroday.hackutd.co" newTab />
       </div>
 
       {/* Mobile controls */}
@@ -185,12 +216,12 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
-          <AccentButton
-            size="lg"
-            className="focus-visible:ring-offset-background"
-          >
-            2026 Soon
-          </AccentButton>
+          <FlowButton
+            text="2026 Soon"
+            href="https://zeroday.hackutd.co"
+            newTab
+            onClick={() => setIsOpen(false)}
+          />
         </div>
       )}
     </nav>

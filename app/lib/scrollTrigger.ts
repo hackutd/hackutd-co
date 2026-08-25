@@ -1,6 +1,7 @@
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { CustomEase } from "gsap/CustomEase";
+import { createScrollAnchor } from "./scrollAnchor";
 
 let isConfigured = false;
 
@@ -34,9 +35,36 @@ const MOBILE_RESIZE_TOLERANCE = 0.25;
  * does not — it routes back through the resize path and gets deferred again.
  */
 function refreshOnResize() {
+  const anchor = createScrollAnchor();
+
   let pending = 0;
+  let captureFrame = 0;
   let baseWidth = window.innerWidth;
   let baseHeight = window.innerHeight;
+  // Set the moment a resize arrives and held until the reader has been put
+  // back. Shrinking the document makes the browser clamp the scroll position,
+  // which fires a scroll event — tracking that would overwrite the anchor with
+  // a reading taken from the new geometry, which is exactly what it exists to
+  // survive.
+  let isResizing = false;
+
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (isResizing || captureFrame) {
+        return;
+      }
+
+      captureFrame = window.requestAnimationFrame(() => {
+        captureFrame = 0;
+
+        if (!isResizing) {
+          anchor.capture();
+        }
+      });
+    },
+    { passive: true },
+  );
 
   window.addEventListener("resize", () => {
     // Honour ignoreMobileResize: on touch-only devices the address bar sliding
@@ -50,11 +78,26 @@ function refreshOnResize() {
       return;
     }
 
+    isResizing = true;
     window.clearTimeout(pending);
+
     pending = window.setTimeout(() => {
       baseWidth = window.innerWidth;
       baseHeight = window.innerHeight;
+
+      // Order matters: re-measure against the new layout, put the reader back
+      // where they were in it, then push that position through every trigger.
+      // The last step is not optional — ScrollTrigger's update pass runs off
+      // scroll events rather than the ticker, so without it the triggers would
+      // stay on the pre-restore position until the reader scrolled.
       ScrollTrigger.refresh();
+      anchor.restore();
+      ScrollTrigger.update();
+
+      // Let the scroll events from restore() land before tracking resumes.
+      window.requestAnimationFrame(() => {
+        isResizing = false;
+      });
     }, RESIZE_REFRESH_DELAY);
   });
 }

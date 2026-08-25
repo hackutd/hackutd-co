@@ -8,6 +8,12 @@ import {
   type NavbarThemeOverride,
 } from "./navbarThemeOverride";
 
+/**
+ * Marks a section whose background is pinned to one color in both themes —
+ * the sponsor wall (see the sponsor block in globals.css).
+ */
+const SPONSOR_PANEL_ATTR = "data-sponsor-panel";
+
 function subscribeToOverride(callback: () => void) {
   window.addEventListener(NAVBAR_THEME_OVERRIDE_EVENT, callback);
 
@@ -50,7 +56,18 @@ export default function useNavbarTheme(): NavbarTheme {
           activeLightSections.delete(entry.target);
         });
 
-        setSectionTheme(activeLightSections.size > 0 ? "light" : "dark");
+        if (activeLightSections.size === 0) {
+          setSectionTheme("dark");
+          return;
+        }
+
+        // A section that pins its own color outranks a plain light one: its
+        // panel stays put through a theme swap, so the bar over it has to too.
+        const isOverPinnedPanel = [...activeLightSections].some((section) =>
+          section.hasAttribute(SPONSOR_PANEL_ATTR),
+        );
+
+        setSectionTheme(isOverPinnedPanel ? "panel" : "light");
       },
       {
         root: null,
