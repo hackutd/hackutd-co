@@ -15,7 +15,7 @@ export const projects: Project[] = [
     name: "HackUTD 2026",
     label: "Fall 2026",
     description: "The largest hackathon at UT Dallas returns with new challenge tracks.",
-    link: "https://github.com/hackutd/harp",
+    link: "https://zeroday.hackutd.co/",
     image: "/projects/zero_day.png",
     imageWidth: 781,
     imageHeight: 307,

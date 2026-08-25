@@ -192,3 +192,18 @@ export const DIRECTORS_CARD = {
   /** Top padding clears the overlapped photo plus breathing room before the label */
   padding: "pt-[47%] px-8 pb-16 sm:px-12 md:pb-20",
 } as const;
+
+/**
+ * Inverted cursor over the statement — a white disc that difference-blends
+ * with the page under it, so the words it crosses punch through inverted while
+ * the reader drags it across the copy.
+ *
+ * Diameter is the whole dial, and it decides what the effect reads as: under
+ * about one line of leading it is just a fat pointer, and only once it clears
+ * a line does it read as a lens with words inside it. 120px is a shade under
+ * two lines at the 3.75rem desktop scale — large enough to always hold a word
+ * or two, small enough that the statement is never mostly inverted.
+ */
+export const MISSION_STATEMENT_CURSOR = {
+  size: 120,
+} as const;

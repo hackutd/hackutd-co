@@ -7,6 +7,7 @@ import { useGSAP } from "@gsap/react";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
+import InvertedCursor from "../ui/InvertedCursor";
 import {
   MISSION_BLUR_COST,
   MISSION_KEY_WORD_CLASS,
@@ -14,6 +15,7 @@ import {
   MISSION_MOBILE_SCRUB,
   MISSION_SCRUB,
   MISSION_STATEMENT_BLUR,
+  MISSION_STATEMENT_CURSOR,
   MISSION_STATEMENT_INK,
   MISSION_STATEMENT_LINE_GAP,
 } from "./sceneConfig";
@@ -105,6 +107,11 @@ type BlurStatementProps = {
   className?: string;
   /** Rendered inside the paragraph ahead of the words — e.g. a scroll anchor */
   children?: ReactNode;
+  /**
+   * Replaces the native cursor with a difference-blended disc while the pointer
+   * is over the statement, so the words under it read inverted.
+   */
+  invertedCursor?: boolean;
 };
 
 /**
@@ -120,6 +127,7 @@ export default function BlurStatement({
   text,
   className,
   children,
+  invertedCursor = false,
 }: BlurStatementProps) {
   const paragraphRef = useRef<HTMLParagraphElement>(null);
   const isMobile = useIsMobile();
@@ -234,41 +242,49 @@ export default function BlurStatement({
   );
 
   return (
-    <p ref={paragraphRef} className={className}>
-      {children}
-      {lines.map((line, lineIndex) => (
-        // A block per hard break rather than a <br>, so the gap between them is
-        // a margin we control instead of a bare line.
-        <span
-          key={line[0].id}
-          className={
-            lineIndex > 0 ? `block ${MISSION_STATEMENT_LINE_GAP}` : "block"
-          }
-        >
-          {line.map(({ parts, id, ink }, positionInLine) => (
-            // Plain space between spans, never inside them, so the statement
-            // still wraps on word boundaries like ordinary text.
-            <Fragment key={id}>
-              {positionInLine > 0 ? " " : null}
-              <span
-                className="inline-block"
-                style={{ color: ink }}
-                {...{ [WORD_ATTR]: "" }}
-              >
-                {parts.map((part, partIndex) =>
-                  part.keyWord ? (
-                    <span key={partIndex} className={MISSION_KEY_WORD_CLASS}>
-                      {part.text}
-                    </span>
-                  ) : (
-                    <Fragment key={partIndex}>{part.text}</Fragment>
-                  ),
-                )}
-              </span>
-            </Fragment>
-          ))}
-        </span>
-      ))}
-    </p>
+    <>
+      <p ref={paragraphRef} className={className}>
+        {children}
+        {lines.map((line, lineIndex) => (
+          // A block per hard break rather than a <br>, so the gap between them is
+          // a margin we control instead of a bare line.
+          <span
+            key={line[0].id}
+            className={
+              lineIndex > 0 ? `block ${MISSION_STATEMENT_LINE_GAP}` : "block"
+            }
+          >
+            {line.map(({ parts, id, ink }, positionInLine) => (
+              // Plain space between spans, never inside them, so the statement
+              // still wraps on word boundaries like ordinary text.
+              <Fragment key={id}>
+                {positionInLine > 0 ? " " : null}
+                <span
+                  className="inline-block"
+                  style={{ color: ink }}
+                  {...{ [WORD_ATTR]: "" }}
+                >
+                  {parts.map((part, partIndex) =>
+                    part.keyWord ? (
+                      <span key={partIndex} className={MISSION_KEY_WORD_CLASS}>
+                        {part.text}
+                      </span>
+                    ) : (
+                      <Fragment key={partIndex}>{part.text}</Fragment>
+                    ),
+                  )}
+                </span>
+              </Fragment>
+            ))}
+          </span>
+        ))}
+      </p>
+      {invertedCursor ? (
+        <InvertedCursor
+          targetRef={paragraphRef}
+          size={MISSION_STATEMENT_CURSOR.size}
+        />
+      ) : null}
+    </>
   );
 }

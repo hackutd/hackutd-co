@@ -166,6 +166,7 @@ export default function Mission() {
             <BlurStatement
               text={missionContent.statement}
               className={MISSION_STATEMENT_CLASS_NAME}
+              invertedCursor
             >
               {MISSION_ANCHOR}
             </BlurStatement>
@@ -200,6 +201,7 @@ export default function Mission() {
           <BlurStatement
             text={missionContent.statement}
             className={MISSION_STATEMENT_CLASS_NAME}
+            invertedCursor
           >
             {MISSION_ANCHOR}
           </BlurStatement>
