@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { SPONSORS } from "../../data/sponsors";
+import { SPONSORS_SECTION_DATA_ATTR } from "../background/sceneConfig";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 
@@ -222,6 +223,7 @@ export default function Sponsors() {
           id="sponsors"
           className="relative bg-surface px-8 text-surface-foreground"
           data-navbar-theme="light"
+          data-sponsor-panel
         >
           <div className="flex items-end justify-between">
             <h2 className="text-4xl font-bold md:text-5xl">Our Sponsors</h2>
@@ -262,6 +264,8 @@ export default function Sponsors() {
         id="sponsors"
         className="relative z-20 bg-surface px-8 py-32 text-surface-foreground"
         data-navbar-theme="light"
+        data-sponsor-panel
+        {...{ [SPONSORS_SECTION_DATA_ATTR]: "" }}
       >
         {/* Header */}
         <div className="flex items-end justify-between">

@@ -2,18 +2,44 @@
 export const TRAIL_PATH =
   "M1135.5 325.857C1299 362.357 1243 412.857 1369.5 396.857V3.85654C1272.5 3.85654 1294.84 52.5014 1098 35.8565C962 24.3565 873 -54.6435 659.5 74.8565L658.761 75.3051C597.987 112.17 557.968 136.446 381 88.3565C289 63.3565 251 159.856 202.5 152.856L202 213.857C278 221.857 252 309.857 342 302.857C432 295.857 520.5 436.357 700.5 384.357C846.048 342.309 872.12 267.059 1135.5 325.857Z";
 
-// Rocket paths from RocketWithTrail.svg (vertically centered in the 402-unit viewBox)
-export const ROCKET_FILL_PATH =
-  "M229.533 262.035L201.038 227.68L201.706 182.838L201.706 142.424L244.458 103.885L169.617 107.257L139.427 137.966C99.9283 136.753 71.8132 134.856 55.3588 144.356C27.2133 160.607 8.54468 174.272 1.50001 180.071C46.0035 216.153 80.2702 223.505 98.0776 225.348C105.802 226.147 121.715 226.59 139.378 226.883C147.626 238.768 160.107 251.119 165.317 255.809L229.533 262.035Z";
+/** The trail SVG's user space. Every trail dimension below is in these units. */
+export const TRAIL_VIEWBOX = { width: 1371, height: 402 } as const;
 
-export const ROCKET_STROKE_PATH =
-  "M201.038 227.68L229.533 262.035L165.317 255.809C160.107 251.119 147.626 238.768 139.378 226.883M201.038 227.68L201.706 182.838L201.706 142.424M201.038 227.68C186.035 227.38 161.352 227.248 139.378 226.883M139.378 226.883C121.715 226.59 105.802 226.147 98.0776 225.348C80.2702 223.505 46.0035 216.153 1.50001 180.071C8.54468 174.272 27.2133 160.607 55.3588 144.356C71.8132 134.856 99.9283 136.753 139.427 137.966M201.706 142.424L244.458 103.885L169.617 107.257L139.427 137.966M201.706 142.424L139.427 137.966";
+/** Poyo artwork positioned in the original rocket's SVG-coordinate footprint. */
+export const ROCKET_ART = {
+  src: "/poyo_rocket.webp",
+  x: 0,
+  // Align Poyo's upper exhaust opening with the trail's narrow origin at y≈179.
+  y: 40,
+  width: 246,
+  height: 207,
+} as const;
+
+/**
+ * One uninterrupted sweep: Poyo enters from the right, carries the fuel trail
+ * and every year marker across the viewport, and clears the left edge entirely
+ * before Sponsors arrives. The whole assembly moves as a single unit, so the
+ * markers stay welded to the trail for the full journey.
+ */
+export const ROCKET_SWEEP = {
+  /** Extra px beyond each edge so nothing is caught mid-frame at either end. */
+  overshoot: 32,
+  /**
+   * How far past its own left edge the assembly keeps travelling, as a multiple
+   * of the SVG's layout width. A little over 1 clears Poyo and every marker;
+   * 1.55 also carries the delayed flare fully across the viewport for the
+   * Sponsors handoff without spending almost two extra widths offscreen.
+   */
+  plumeExit: 1.55,
+} as const;
 
 export type YearMarker = {
   year: string;
   name: string;
   // Coordinates in RocketWithTrail.svg space (0 0 1371 402)
-  // Trail occupies x≈202–1370, center-of-trail y varies
+  // The plume runs far past the viewBox: markers can sit anywhere from x≈450
+  // out to x≈2500 and still clear the left edge before the sweep parks. Roughly
+  // 165 units apart reads as one screen's worth every ~8 markers.
   x: number;
   y: number;
   /** Render image URL shown at the marker point */
@@ -35,55 +61,102 @@ export const YEAR_MARKERS: YearMarker[] = [
 
 export const TIMELINE_SCROLL = {
   start: "top top",
-  end: "bottom bottom",
-  scrub: 0.3,
+  // Parks the sweep 30vh of scroll before the section ends. By then Poyo and
+  // every marker have cleared the left edge and the plume has grown past all
+  // four edges, so the scene comes to rest on a full-bleed wash of gradient
+  // rather than on an empty stage — that wash is what hands over to Sponsors.
+  end: "bottom 130%",
+  scrub: 0.9,
 } as const;
 
-// Cubic Bezier for the rocket slide: fast entry from the right, smooth deceleration
-// Equivalent to CSS cubic-bezier(0.22, 1, 0.36, 1)
-export const ROCKET_SLIDE_EASE = "M0,0 C0.22,1,0.36,1,1,1";
-
 export const TIMELINE_LAYOUT = {
-  minHeight: "min-h-[300vh]",
+  // Give the sweep a longer runway so Poyo takes roughly one and a half
+  // viewport-heights of scrolling to cross the screen on common viewports.
+  minHeight: "min-h-[430vh]",
   stickyViewportHeight: "h-[100svh]",
 } as const;
 
-export const MOBILE_TIMELINE_SCRUB = 0.6;
+export const MOBILE_TIMELINE_SCRUB = 0.9;
 
-// Fade the sticky rocket scene before the opaque Sponsors section arrives.
+/**
+ * The handoff into Sponsors: the parked full-bleed plume dissolves into the
+ * page background across the section's last 30vh, while PAGE_BG's sponsor
+ * phase carries that background to the sponsor wall's own white underneath.
+ * Nothing has an edge in frame during the crossfade, so the sections meet as
+ * one colour becoming another rather than as a boundary sliding past.
+ *
+ * `start` is deliberately the same anchor as TIMELINE_SCROLL.end — the fade
+ * takes over on the exact scroll frame the sweep stops, so the gradient never
+ * sits still and unfaded.
+ */
 export const TIMELINE_EXIT_FADE = {
-  start: "72% bottom",
-  end: "90% bottom",
-  ease: "power1.in",
+  start: "bottom 130%",
+  end: "bottom bottom",
+  ease: "power1.inOut",
   scrub: 0.3,
 } as const;
 
+/**
+ * The fuel plume, described in absolute SVG units rather than a normalised
+ * 0→1 position along the trail, so lengthening the tail can never reshape the
+ * jet at the nozzle.
+ *
+ * Profile, left to right: pinched at Poyo's exhaust → continuously grows through
+ * every year marker → reaches full bleed near the end. The whole length is
+ * densely sampled so the travelling wave continues through the far plume too.
+ */
 export const TRAIL_WAVE = {
-  numPoints: 80,
+  /** Wave points spread evenly across the plume's complete visible length. */
+  numPoints: 200,
   startX: 202,
-  endX: 1370,
   centerY: 179,
-  halfWidthMin: 12,     // very narrow at rocket nozzle (t=0)
-  halfWidthPeak: 115,   // cone width once fully open
-  halfWidthEnd: 140,    // baseline width after the spike settles
-  peakT: 0.15,          // cone opens up in first 15% of trail, then holds
-  maxAmplitude: 40,     // wave amplitude scales with width (0 at rocket, peaks then settles)
-  staggerEach: 0.12,    // large stagger → ~2–3 visible sine crests across trail
-  duration: 1.8,
-  hwTailBurst: 240,     // dramatic flare width at the very far end of the trail
-  tailSharpness: 6,     // how concentrated the burst is near t=1 (higher = sharper)
+  halfWidthMin: 50,     // wider opening at the rocket nozzle
+  /** Exponent above 1 keeps early growth controlled without creating a plateau. */
+  growthPower: 1.15,
+  /** The continuously growing profile reaches full viewport coverage here. */
+  fullWidthX: 2300,
+  /**
+   * Far end of the plume. It remains densely sampled after reaching full width
+   * so the travelling wave never turns into a straight polygon edge.
+   */
+  endX: 4200,
+  maxAmplitude: 40,
+  amplitudeRampLength: 360, // keeps the wave pinned cleanly to the nozzle
+  wavelength: 480,          // just under three complete waves per viewport
+  duration: 2.4,            // seconds for one crest to travel one wavelength
 } as const;
 
 export const MOBILE_TRAIL_WAVE = {
   ...TRAIL_WAVE,
-  halfWidthPeak: 145,
-  halfWidthEnd: 155,
-  hwTailBurst: 270,
   maxAmplitude: 50,
 } as const;
 
-export const TIMELINE_WAVE_SPEED = {
-  active: 1,
-  settled: 0.28,
-  transitionDuration: 1.4,
+/**
+ * How wide "full-bleed" is. Measured at runtime rather than pinned to a
+ * constant because the SVG is width-driven (`w-screen`, `height: auto`): one
+ * SVG unit is worth ~1px on a laptop and ~0.28px on a phone, so no single
+ * number could clear the top and bottom of both.
+ */
+export const TRAIL_FLARE = {
+  /**
+   * Plume half-height at full flare, as a multiple of the distance from the
+   * trail's centreline to the furthest viewport edge. A small amount above 1
+   * keeps the wavy edges outside the frame without substantially oversizing the
+   * fuel band.
+   */
+  coverage: 1.05,
+  /** Extra units of mask and gradient beyond the widest the plume ever gets. */
+  margin: 32,
+} as const;
+
+/**
+ * Size of the gradient canvas behind the plume, in SVG units, before it is
+ * stretched to cover the whole plume. Fixed so the WebGL surface costs the same
+ * no matter how far the plume grows, and kept at the plume's original ~16:9 so
+ * the gradient keeps the framing it has always had — the stretch then reads as
+ * motion smear rather than as a different gradient.
+ */
+export const TRAIL_GRADIENT = {
+  render: { width: 1600, height: 900 },
+  mobileRender: { width: 1100, height: 620 },
 } as const;

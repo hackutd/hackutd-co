@@ -17,6 +17,7 @@ import {
   HERO_SCENE_SCROLL,
   HERO_SKYLINE,
   HERO_SKYLINE_MASK,
+  HERO_SKYLINE_STROKE_FILTER,
   HERO_STARS,
   HERO_WHITEOUT,
   MOBILE_SCRUB,
@@ -62,59 +63,106 @@ export default function Hero() {
 
       const scrub = isMobile ? MOBILE_SCRUB : HERO_SCENE_SCROLL.scrub;
 
+      // Layers that are simply on screen from the top of the page. The shader
+      // gradient is deliberately not among them: it starts hidden and reveals on
+      // its own range below, then leaves with everything else in the whiteout.
+      const restingLayers = [
+        skyLayer,
+        skylineLayer,
+        starsLayer,
+        cometLayer,
+      ].filter((el): el is HTMLDivElement => el !== null);
+
+      // Every state below is declared rather than inferred.
+      //
+      // A plain `gsap.to()` reads its start value off the live element the first
+      // time it renders. This scene is rebuilt whenever `isMobile` flips, and a
+      // rebuild that lands while the whiteout is part-way through would have a
+      // `to()` record "hidden" as these layers' resting state — after which they
+      // animate hidden to hidden and never come back. The gradient used to be the
+      // only layer that recovered, purely because it alone had a `set()` baseline
+      // ahead of its tween. So: state the baseline up front, and give every tween
+      // a literal `from`.
+      //
+      // `immediateRender: false` keeps those literal starts from being written at
+      // build time, where the whiteout's `autoAlpha: 1` would otherwise overwrite
+      // the gradient's hidden baseline before its reveal ever ran.
+      gsap.set(restingLayers, { autoAlpha: 1 });
+
       if (heroText) {
         gsap.set(heroText, { autoAlpha: 1 });
       }
 
       if (cometBackgroundLayer) {
         gsap.set(cometBackgroundLayer, { autoAlpha: 0 });
-        gsap.to(cometBackgroundLayer, {
-          autoAlpha: 1,
-          ease: HERO_COMET_SHADER.reveal.ease,
-          scrollTrigger: {
-            trigger: section,
-            start: HERO_COMET_SHADER.reveal.start,
-            end: HERO_COMET_SHADER.reveal.end,
-            scrub,
+        gsap.fromTo(
+          cometBackgroundLayer,
+          { autoAlpha: 0 },
+          {
+            autoAlpha: 1,
+            ease: HERO_COMET_SHADER.reveal.ease,
+            immediateRender: false,
+            scrollTrigger: {
+              trigger: section,
+              start: HERO_COMET_SHADER.reveal.start,
+              end: HERO_COMET_SHADER.reveal.end,
+              scrub,
+            },
           },
-        });
+        );
       }
 
-      const sceneFadeTargets = [
-        skyLayer,
-        skylineLayer,
-        starsLayer,
-        cometBackgroundLayer,
-        cometLayer,
-      ].filter((el): el is HTMLDivElement => el !== null);
+      const sceneFadeTargets = cometBackgroundLayer
+        ? [...restingLayers, cometBackgroundLayer]
+        : restingLayers;
 
       if (sceneFadeTargets.length > 0) {
-        gsap.to(sceneFadeTargets, {
-          autoAlpha: 0,
-          ease: HERO_WHITEOUT.scene.ease,
-          scrollTrigger: {
-            trigger: section,
-            start: HERO_WHITEOUT.scene.start,
-            end: HERO_WHITEOUT.scene.end,
-            scrub,
+        gsap.fromTo(
+          sceneFadeTargets,
+          { autoAlpha: 1 },
+          {
+            autoAlpha: 0,
+            ease: HERO_WHITEOUT.scene.ease,
+            immediateRender: false,
+            scrollTrigger: {
+              trigger: section,
+              start: HERO_WHITEOUT.scene.start,
+              end: HERO_WHITEOUT.scene.end,
+              scrub,
+            },
           },
-        });
+        );
       }
 
       if (heroText) {
-        gsap.to(heroText, {
-          autoAlpha: 0,
-          ease: HERO_WHITEOUT.text.ease,
-          scrollTrigger: {
-            trigger: section,
-            start: HERO_WHITEOUT.text.start,
-            end: HERO_WHITEOUT.text.end,
-            scrub,
+        gsap.fromTo(
+          heroText,
+          { autoAlpha: 1 },
+          {
+            autoAlpha: 0,
+            ease: HERO_WHITEOUT.text.ease,
+            immediateRender: false,
+            scrollTrigger: {
+              trigger: section,
+              start: HERO_WHITEOUT.text.start,
+              end: HERO_WHITEOUT.text.end,
+              scrub,
+            },
           },
-        });
+        );
       }
     },
-    { scope: sectionRef, dependencies: [isMobile, prefersReducedMotion] },
+    {
+      scope: sectionRef,
+      dependencies: [isMobile, prefersReducedMotion],
+      // A resize that flips `isMobile` has to replace this scene, not stack a
+      // second generation of scrubbed tweens on top of the first. Both would go
+      // on writing `autoAlpha` to the same layers, and the newer one records its
+      // start values from whatever the older one happened to be showing — so a
+      // flip caught mid-fade leaves the sky, skyline and comet animating from
+      // hidden to hidden, and they never come back.
+      revertOnUpdate: true,
+    },
   );
 
   return (
@@ -129,6 +177,25 @@ export default function Hero() {
         }
         className={`sticky top-0 overflow-hidden isolate ${HERO_LAYOUT.stickyViewportHeight}`}
       >
+        <svg aria-hidden="true" className="absolute h-0 w-0">
+          <defs>
+            <filter
+              id={HERO_SKYLINE_STROKE_FILTER.id}
+              x="-5%"
+              y="-5%"
+              width="110%"
+              height="110%"
+              colorInterpolationFilters="sRGB"
+            >
+              <feMorphology
+                in="SourceGraphic"
+                operator="erode"
+                radius={HERO_SKYLINE_STROKE_FILTER.radius}
+              />
+            </filter>
+          </defs>
+        </svg>
+
         <div
           ref={starsLayerRef}
           aria-hidden="true"
@@ -170,8 +237,7 @@ export default function Hero() {
         {/* Pinned to the foot of the sticky viewport at every size: the layer is
             as tall as the art needs to span the full width, floored so it stays
             substantial on phones and capped so it can't swallow short landscape
-            viewports. The centered `contain` mask keeps the full skyline visible
-            and allows breathing room at either side.
+            viewports. The mask fills the band so the skyline reaches both edges.
 
             `bg-foreground` is the ink; the artwork is only the stencil (see
             HERO_SKYLINE_MASK), so the skyline follows the site theme by way of

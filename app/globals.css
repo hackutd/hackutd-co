@@ -43,6 +43,12 @@
   /* Inversion amount for logo art drawn as a flat black glyph, so it reads as
      foreground against whichever palette its subtree is on. */
   --logo-invert: 1;
+  /* The sponsor wall's panel color, and the color the page background crosses
+     to as that wall approaches — the two have to be the same value or the join
+     between them shows as a step. Declared once, on :root, rather than per
+     theme: the wall is pinned to this color in both (see the sponsor block at
+     the foot of this file), and the light theme inherits it untouched. */
+  --sponsor-panel: #ffffff;
 }
 
 [data-theme="light"] {
@@ -162,4 +168,22 @@ body {
   }
 }
 
-/* ── Sponsor cards ── */
+/* ── Sponsor cards ──────────────────────────────────────────────────────────
+   The sponsor wall is the one section that does not follow the site theme.
+   Sponsor art arrives fixed — brand guidelines rule out recolouring it — and
+   nearly all of it is drawn for a white page, so the panel underneath has to
+   stay white whichever theme the rest of the site is wearing.
+
+   Redeclaring the theme tokens on the section, rather than hardcoding colours
+   on each child, means `bg-surface`, `text-surface-foreground` and the borders
+   and text derived from them keep working exactly as written — they just
+   resolve against a panel that never flips. The ink values match the palette
+   the artwork was drawn for: near-black on white, one muted step down for the
+   secondary line. */
+
+[data-sponsor-panel] {
+  --theme-surface: var(--sponsor-panel);
+  --theme-surface-foreground: #1a1a1a;
+  --theme-foreground: #1a1a1a;
+  --theme-muted: #5f5f5f;
+}

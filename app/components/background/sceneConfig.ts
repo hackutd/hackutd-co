@@ -15,6 +15,7 @@
 export const HERO_SCENE_DATA_ATTR = "data-bg-hero-scene";
 export const MISSION_STATEMENT_DATA_ATTR = "data-bg-mission-statement";
 export const TIMELINE_SECTION_DATA_ATTR = "data-bg-timeline-section";
+export const SPONSORS_SECTION_DATA_ATTR = "data-bg-sponsors-section";
 
 export type PageBgPhase = {
   /** Data attribute identifying the section that drives this phase */
@@ -63,6 +64,47 @@ export const PAGE_BG_PHASES: readonly PageBgPhase[] = [
     ease: "power1.in",
   },
   TIMELINE_LIGHTEN_PHASE,
+] as const;
+
+/**
+ * Surface → the sponsor wall's own panel color, landing exactly as the wall's
+ * top edge reaches the foot of the viewport.
+ *
+ * The wall is the one section pinned to a single color in both themes (see the
+ * sponsor block in globals.css), so in the light theme it would otherwise meet
+ * a near-black background at a hard edge. Crossfading the page to the panel
+ * color first means both are the same white by the time that edge arrives and
+ * the join never resolves as a line — the same handoff the hero makes to the
+ * mission statement, one section's background becoming the next's.
+ *
+ * The ease is what keeps it off the timeline: `power3.in` is still under 4% a
+ * third of the way in, so nothing washes over the rocket while it is finishing
+ * its sweep (TIMELINE_SCROLL ends 30vh before the section does), and the whole
+ * visible crossfade lands under the parked fuel plume that follows — which is
+ * itself dissolving over the same stretch (TIMELINE_EXIT_FADE), so the plume
+ * hands straight over to the sponsor wall's white with no edge in between.
+ *
+ * It runs in both themes, but only reads as a change in one. The light theme
+ * crosses the whole way from near-black; the dark theme has already lightened
+ * to #f2f2f2 by this point, so it travels the last few values to #ffffff —
+ * imperceptible as motion, and the only thing that stops the wall's white from
+ * meeting a not-quite-white page at a visible step.
+ */
+export const SPONSORS_PANEL_PHASE = {
+  attr: SPONSORS_SECTION_DATA_ATTR,
+  from: 0,
+  to: 1,
+  start: "top 140%",
+  end: "top bottom",
+  ease: "power3.in",
+} as const satisfies PageBgPhase;
+
+/**
+ * Phases for the panel layer, evaluated exactly like PAGE_BG_PHASES but
+ * written to the layer stacked above it.
+ */
+export const PAGE_BG_PANEL_PHASES: readonly PageBgPhase[] = [
+  SPONSORS_PANEL_PHASE,
 ] as const;
 
 /** Seconds for the light layer to catch up to the computed value (scrub feel) */

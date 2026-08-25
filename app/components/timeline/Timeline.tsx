@@ -24,7 +24,8 @@ export default function Timeline() {
         return;
       }
 
-      // Fade the sticky scene out before Sponsors covers the viewport.
+      // Dissolve the parked, screen-filling fuel plume into the page
+      // background — the crossfade that carries the scene into Sponsors.
       gsap.to(sticky, {
         autoAlpha: 0,
         ease: TIMELINE_EXIT_FADE.ease,

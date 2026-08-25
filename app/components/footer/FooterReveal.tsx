@@ -3,13 +3,17 @@
 import { useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { MorphSVGPlugin } from "gsap/MorphSVGPlugin";
 import { useGSAP } from "@gsap/react";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import { useNearViewport } from "@/app/hooks/useNearViewport";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import Footer from "./Footer";
+import OrbitalWave from "./OrbitalWave";
+import { FOOTER_ORBITAL_WAVE } from "./sceneConfig";
 
 configureScrollTrigger();
+gsap.registerPlugin(MorphSVGPlugin);
 
 function setFooterInteractivity(footer: HTMLElement, isInteractive: boolean) {
   footer.inert = !isInteractive;
@@ -24,6 +28,7 @@ function setFooterInteractivity(footer: HTMLElement, isInteractive: boolean) {
 export default function FooterReveal() {
   const revealRef = useRef<HTMLDivElement>(null);
   const footerRef = useRef<HTMLElement>(null);
+  const waveRef = useRef<SVGSVGElement>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
   // Mount the shader ahead of the curtain so its first frame is already painted
   // when the footer becomes visible — mounting on the reveal itself leaves the
@@ -35,8 +40,10 @@ export default function FooterReveal() {
     () => {
       const reveal = revealRef.current;
       const footer = footerRef.current;
+      const wave = waveRef.current;
+      const wavePath = wave?.querySelector<SVGPathElement>("path");
 
-      if (!reveal || !footer || prefersReducedMotion) {
+      if (!reveal || !footer || !wave || !wavePath || prefersReducedMotion) {
         return;
       }
 
@@ -48,6 +55,18 @@ export default function FooterReveal() {
 
       gsap.set(footer, { autoAlpha: 0 });
 
+      const waveMotion = gsap.to(wavePath, {
+        morphSVG: {
+          shape: FOOTER_ORBITAL_WAVE.morphPath,
+          type: "linear",
+        },
+        duration: FOOTER_ORBITAL_WAVE.morphDuration,
+        ease: FOOTER_ORBITAL_WAVE.morphEase,
+        repeat: -1,
+        yoyo: true,
+        paused: true,
+      });
+
       let isFooterVisible = false;
       let isFooterInteractive = false;
 
@@ -55,6 +74,12 @@ export default function FooterReveal() {
         if (isFooterVisible !== isVisible) {
           isFooterVisible = isVisible;
           gsap.set(footer, { autoAlpha: isVisible ? 1 : 0 });
+
+          if (isVisible) {
+            waveMotion.play();
+          } else {
+            waveMotion.pause();
+          }
         }
 
         if (isFooterInteractive !== isInteractive) {
@@ -66,10 +91,27 @@ export default function FooterReveal() {
       setFooterInteractivity(footer, false);
       updateFooterState(false, false);
 
+      gsap.fromTo(
+        wave,
+        { xPercent: FOOTER_ORBITAL_WAVE.driftXPercent.from },
+        {
+          xPercent: FOOTER_ORBITAL_WAVE.driftXPercent.to,
+          ease: "none",
+          force3D: true,
+          scrollTrigger: {
+            trigger: reveal,
+            start: FOOTER_ORBITAL_WAVE.start,
+            end: FOOTER_ORBITAL_WAVE.end,
+            scrub: FOOTER_ORBITAL_WAVE.scrub,
+            invalidateOnRefresh: true,
+          },
+        },
+      );
+
       const trigger = ScrollTrigger.create({
         trigger: reveal,
-        start: "top bottom",
-        end: "bottom bottom",
+        start: FOOTER_ORBITAL_WAVE.start,
+        end: FOOTER_ORBITAL_WAVE.end,
         invalidateOnRefresh: true,
         onUpdate: (self) => {
           updateFooterState(
@@ -113,12 +155,26 @@ export default function FooterReveal() {
   );
 
   if (prefersReducedMotion) {
-    return <Footer className="relative z-10" />;
+    return (
+      <div className="relative w-full max-w-full overflow-x-clip">
+        <Footer className="relative z-10" />
+        <OrbitalWave className="pointer-events-none absolute -left-[10%] top-0 z-20 h-14 w-[120%] md:h-16" />
+      </div>
+    );
   }
 
   return (
     <>
-      <div ref={revealRef} aria-hidden="true" className="pointer-events-none" />
+      <div
+        ref={revealRef}
+        aria-hidden="true"
+        className="pointer-events-none relative z-20 w-full max-w-full overflow-x-clip"
+      >
+        <OrbitalWave
+          ref={waveRef}
+          className="absolute -left-[10%] top-0 h-14 w-[120%] will-change-transform md:h-16"
+        />
+      </div>
       <Footer
         ref={footerRef}
         aria-hidden="true"

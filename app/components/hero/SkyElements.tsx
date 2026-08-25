@@ -63,8 +63,12 @@ export default function SkyElements({ ref }: SkyElementsProps) {
           const plane = layer.querySelector<HTMLElement>("[data-sky='cross']");
           if (plane) {
             const planeRect = plane.getBoundingClientRect();
-            const fromX = -planeRect.right;
-            const toX = window.innerWidth - planeRect.left;
+            const leftX = -planeRect.right;
+            const rightX = window.innerWidth - planeRect.left;
+            const [fromX, toX] =
+              HERO_SKY_MOTION.plane.direction === "right-to-left"
+                ? [rightX, leftX]
+                : [leftX, rightX];
             const initialProgress = -fromX / (toX - fromX);
 
             gsap

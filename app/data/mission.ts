@@ -1,7 +1,7 @@
 export const missionContent = {
   statement:
     // A newline breaks the statement into its own spaced block, and *marked*
-    // runs are the serif key words — see BlurStatement.
+    // runs are bold key words — see BlurStatement.
     "We inspire students to *innovate* and learn *new technologies* through *hackathons*, 24-hour events with challenges, *free food & merch*, and *fun games & activities*. We host *HackUTD*, *North America's largest* 24 university hackathon. We also assist with other hackathons at UTD, and host helpful *workshops* that anyone can attend. Regardless of what we’re working on, we aim to make our hackathons *accessible and open to everyone*.\n*Hope to see you here!*",
   directorsMessage: {
     /** Rendered uppercase — keep normal casing here */

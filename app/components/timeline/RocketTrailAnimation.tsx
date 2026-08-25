@@ -1,9 +1,8 @@
 "use client";
 
-import { useId, useRef } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { CustomEase } from "gsap/CustomEase";
 import { useGSAP } from "@gsap/react";
 import BrandShaderBackground from "@/app/components/background/BrandShaderBackground";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
@@ -13,26 +12,38 @@ import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import {
   MOBILE_TIMELINE_SCRUB,
   MOBILE_TRAIL_WAVE,
-  ROCKET_FILL_PATH,
-  ROCKET_STROKE_PATH,
-  ROCKET_SLIDE_EASE,
+  ROCKET_ART,
+  ROCKET_SWEEP,
   TIMELINE_SCROLL,
-  TIMELINE_WAVE_SPEED,
+  TRAIL_FLARE,
+  TRAIL_GRADIENT,
+  TRAIL_VIEWBOX,
   TRAIL_WAVE,
   YEAR_MARKERS,
 } from "./sceneConfig";
 
 configureScrollTrigger();
 
-// Width profile: narrow at rocket → spikes to peak → settles → bursts at tail.
-// (t/peakT)·exp(1 − t/peakT) is a spike function that equals exactly 1 at t=peakT.
-// The offset term forces hw(0) = hwMin regardless of hwEnd.
-// The tailBurst term adds a dramatic flare in the last portion of the trail.
-function trailHW(t: number, hwMin: number, hwPeak: number, hwEnd: number, peakT: number, hwTailBurst: number, tailSharpness: number): number {
-  const spike     = (hwPeak - hwEnd) * (t / peakT) * Math.exp(1 - t / peakT);
-  const offset    = (hwMin  - hwEnd) * Math.exp(-20 * t);
-  const tailBurst = (hwTailBurst - hwEnd) * Math.exp(-tailSharpness * (1 - t));
-  return hwEnd + spike + offset + tailBurst;
+type TrailShape = typeof TRAIL_WAVE | typeof MOBILE_TRAIL_WAVE;
+
+/** 0→1 ramp with zero slope at both ends, so the flare has no visible kink. */
+function smoothstep(t: number): number {
+  const s = t <= 0 ? 0 : t >= 1 ? 1 : t;
+  return s * s * (3 - 2 * s);
+}
+
+// Half-height of the plume at SVG x. The power curve is strictly increasing
+// between the nozzle and fullWidthX, so there is no constant-width middle band
+// followed by a separate flare. Values beyond fullWidthX remain full bleed,
+// but are still densely sampled and animated by the travelling wave.
+function trailHW(x: number, cfg: TrailShape, halfWidthFull: number): number {
+  const progress = Math.max(
+    0,
+    Math.min(1, (x - cfg.startX) / (cfg.fullWidthX - cfg.startX)),
+  );
+  const growth = Math.pow(progress, cfg.growthPower);
+  return cfg.halfWidthMin +
+    (halfWidthFull - cfg.halfWidthMin) * growth;
 }
 
 export default function RocketTrailAnimation() {
@@ -57,6 +68,44 @@ export default function RocketTrailAnimation() {
   // only starts moving once that section reaches the top of the viewport.
   const shaderActive = useNearViewport(clipRef);
 
+  const cfg = isMobile ? MOBILE_TRAIL_WAVE : TRAIL_WAVE;
+
+  // How wide the plume has to open, in SVG units, to bleed past the top and
+  // bottom of this particular viewport. Measured rather than fixed: the SVG
+  // scales with viewport *width*, so a unit is worth a very different number of
+  // pixels on a laptop and on a phone.
+  const [halfWidthFull, setHalfWidthFull] = useState<number>(cfg.halfWidthMin);
+
+  useLayoutEffect(() => {
+    const clip = clipRef.current;
+    const assembly = assemblyRef.current;
+    if (!clip || !assembly) return;
+
+    const measure = () => {
+      // The assembly is a plain box wrapped around the SVG, so its width is the
+      // SVG's layout width — unlike the SVG itself it can't be confused by the
+      // plume overflowing the viewBox on every side.
+      const pxPerUnit = assembly.getBoundingClientRect().width / TRAIL_VIEWBOX.width;
+      if (!pxPerUnit) return;
+
+      // The assembly is centred on the clip box, and the trail's centreline sits
+      // a little above the middle of the viewBox, so the plume has further to
+      // reach downwards than up. Size it for the longer of the two.
+      const centreOffset = Math.abs(TRAIL_VIEWBOX.height / 2 - cfg.centerY);
+      const reachUnits = clip.clientHeight / (2 * pxPerUnit) + centreOffset;
+      const next = Math.max(cfg.halfWidthMin, reachUnits * TRAIL_FLARE.coverage);
+
+      // Rebuilding the polygon and its tweens isn't free, so ignore the
+      // few-pixel churn a mobile URL bar throws off while scrolling.
+      setHalfWidthFull((prev) => (Math.abs(prev - next) < 8 ? prev : next));
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(clip);
+    return () => observer.disconnect();
+  }, [cfg]);
+
   useGSAP(
     () => {
       const assembly = assemblyRef.current;
@@ -71,26 +120,36 @@ export default function RocketTrailAnimation() {
       const svg = trailPoly.ownerSVGElement;
       if (!svg) return;
 
-      const { numPoints, startX, endX, centerY, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT, maxAmplitude, staggerEach, duration, hwTailBurst, tailSharpness } = isMobile ? MOBILE_TRAIL_WAVE : TRAIL_WAVE;
+      const {
+        numPoints,
+        startX,
+        endX,
+        centerY,
+        maxAmplitude,
+        amplitudeRampLength,
+        wavelength,
+        duration,
+      } = cfg;
+
+      // Sample the entire plume rather than replacing the full-width tail with
+      // one endpoint. Every part of both edges can now take part in the wave.
+      const step = (endX - startX) / (numPoints - 1);
+      const xs: number[] = [];
+      for (let i = 0; i < numPoints; i++) xs.push(startX + i * step);
+      const pointCount = xs.length;
 
       // Build polygon: top edge (left→right) then bottom edge (right→left) = closed band
       while (trailPoly.points.numberOfItems > 0) trailPoly.points.removeItem(0);
 
-      const step = (endX - startX) / (numPoints - 1);
-
-      for (let i = 0; i < numPoints; i++) {
+      for (let i = 0; i < pointCount; i++) {
         const p = trailPoly.points.appendItem(svg.createSVGPoint());
-        const t = i / (numPoints - 1);
-        const hw = trailHW(t, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT, hwTailBurst, tailSharpness);
-        p.x = startX + i * step;
-        p.y = centerY - hw;
+        p.x = xs[i];
+        p.y = centerY - trailHW(xs[i], cfg, halfWidthFull);
       }
-      for (let i = numPoints - 1; i >= 0; i--) {
+      for (let i = pointCount - 1; i >= 0; i--) {
         const p = trailPoly.points.appendItem(svg.createSVGPoint());
-        const t = i / (numPoints - 1);
-        const hw = trailHW(t, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT, hwTailBurst, tailSharpness);
-        p.x = startX + i * step;
-        p.y = centerY + hw;
+        p.x = xs[i];
+        p.y = centerY + trailHW(xs[i], cfg, halfWidthFull);
       }
 
       // Position each marker group via GSAP so it owns the SVG transform
@@ -107,96 +166,106 @@ export default function RocketTrailAnimation() {
         return;
       }
 
-      // Scroll animation: rocket slides in from right
-      gsap.set(assembly, { autoAlpha: 1, x: "100vw" });
+      // x is owned by the sweep tween below (function-based, remeasured on refresh)
+      gsap.set(assembly, { autoAlpha: 1 });
       gsap.set(markers, { opacity: 1 });
 
       // --- Wave animation (created first so scroll callbacks can reference it) ---
       const topEdge: SVGPoint[] = [];
-      for (let i = 0; i < numPoints; i++) topEdge.push(trailPoly.points.getItem(i));
+      for (let i = 0; i < pointCount; i++) topEdge.push(trailPoly.points.getItem(i));
       const bottomEdge: SVGPoint[] = [];
-      for (let i = 0; i < numPoints; i++) bottomEdge.push(trailPoly.points.getItem(2 * numPoints - 1 - i));
+      for (let i = 0; i < pointCount; i++) {
+        bottomEdge.push(trailPoly.points.getItem(2 * pointCount - 1 - i));
+      }
 
-      const waveY = (i: number): string => {
-        const t = i / (numPoints - 1);
-        const hw = trailHW(t, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT, hwTailBurst, tailSharpness);
-        const factor = Math.min(1, (hw - halfWidthMin) / (halfWidthPeak - halfWidthMin));
-        return `+=${maxAmplitude * factor}`;
+      const topBaseY = topEdge.map((point) => point.y);
+      const bottomBaseY = bottomEdge.map((point) => point.y);
+      const waveState = { phase: 0 };
+      const phasePerUnit = (Math.PI * 2) / wavelength;
+
+      const amplitudeAt = (x: number) =>
+        maxAmplitude * smoothstep((x - startX) / amplitudeRampLength);
+      const offsetAt = (x: number) =>
+        Math.sin((x - startX) * phasePerUnit - waveState.phase) *
+        amplitudeAt(x);
+
+      const renderWave = () => {
+        for (let i = 0; i < pointCount; i++) {
+          const offset = offsetAt(xs[i]);
+          topEdge[i].y = topBaseY[i] + offset;
+          bottomEdge[i].y = bottomBaseY[i] + offset;
+        }
+
+        YEAR_MARKERS.forEach((marker, i) => {
+          const el = markerRefs.current[i];
+          if (el) {
+            gsap.set(el, {
+              y: marker.y + markerYOffset + offsetAt(marker.x),
+            });
+          }
+        });
       };
-      const staggerCfg = { each: staggerEach, repeat: -1, yoyo: true };
 
-      const topWave = gsap.to(topEdge,    { y: waveY, stagger: staggerCfg, ease: "sine.inOut", duration, paused: true });
-      const botWave = gsap.to(bottomEdge, { y: waveY, stagger: staggerCfg, ease: "sine.inOut", duration, paused: true });
-
-      // Marker tweens — each marker syncs to the trail point at its x position.
-      // Matching the stagger delay (idx * staggerEach) keeps it phase-locked with the polygon.
-      const markerTweens: gsap.core.Tween[] = [];
-      YEAR_MARKERS.forEach((marker, i) => {
-        const el = markerRefs.current[i];
-        if (!el) return;
-        const idx = Math.max(0, Math.min(numPoints - 1, Math.round((marker.x - startX) / step)));
-        const t   = idx / (numPoints - 1);
-        const hw  = trailHW(t, halfWidthMin, halfWidthPeak, halfWidthEnd, peakT, hwTailBurst, tailSharpness);
-        const amp = maxAmplitude * Math.min(1, (hw - halfWidthMin) / (halfWidthPeak - halfWidthMin));
-        markerTweens.push(
-          gsap.to(el, { y: `+=${amp}`, delay: idx * staggerEach, duration, ease: "sine.inOut", repeat: -1, yoyo: true, paused: true }),
-        );
+      // Start with a complete wave already drawn, then advance one wavelength
+      // per cycle. One phase driver keeps both edges and all markers locked.
+      renderWave();
+      const waveTween = gsap.to(waveState, {
+        phase: Math.PI * 2,
+        duration,
+        ease: "none",
+        repeat: -1,
+        paused: true,
+        onUpdate: renderWave,
       });
-
-      // Collect all wave tweens so speed control is applied uniformly
-      const allWaveTweens = [topWave, botWave, ...markerTweens];
-      allWaveTweens.forEach(tw => tw.timeScale(TIMELINE_WAVE_SPEED.active));
 
       // Run the wave tweens only while the timeline section is on screen
       const waveVisibility = ScrollTrigger.create({
         trigger,
         start: "top bottom",
         end: "bottom top",
-        onToggle: (self) => allWaveTweens.forEach(tw => tw.paused(!self.isActive)),
+        onToggle: (self) => waveTween.paused(!self.isActive),
       });
 
       // A reload restores scroll position, so the section can already be in
       // view here — start from that state rather than relying on onToggle.
       if (waveVisibility.isActive) {
-        allWaveTweens.forEach(tw => tw.paused(false));
+        waveTween.paused(false);
       }
 
-      let rocketDone = false;
-      const setWaveSpeed = (slow: boolean) => {
-        const ts = slow ? TIMELINE_WAVE_SPEED.settled : TIMELINE_WAVE_SPEED.active;
-        allWaveTweens.forEach(tw =>
-          gsap.to(tw, {
-            timeScale: ts,
-            duration: TIMELINE_WAVE_SPEED.transitionDuration,
-            ease: "power1.inOut",
-            overwrite: true,
-          }),
-        );
-      };
+      // --- Scroll-driven sweep ---
+      // One tween on the assembly div carries the trail, the rocket and the year
+      // markers together, right edge → left edge, in a single unbroken motion.
+      // Measured in px rather than vw so the SVG's min-width floor (which makes
+      // it wider than the viewport on narrow screens) is still cleared fully.
+      // The exit runs far enough past the SVG's left edge to clear every marker
+      // and carry the delayed full-bleed portion into place for the handoff.
+      const enterX = () => clip.clientWidth + ROCKET_SWEEP.overshoot;
+      const exitX = () =>
+        -(assembly.getBoundingClientRect().width * ROCKET_SWEEP.plumeExit + ROCKET_SWEEP.overshoot);
 
-      // --- Scroll-driven rocket slide ---
       const scrub = isMobile ? MOBILE_TIMELINE_SCRUB : TIMELINE_SCROLL.scrub;
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger,
-          start: TIMELINE_SCROLL.start,
-          end: TIMELINE_SCROLL.end,
-          scrub,
-          onUpdate(self) {
-            const done = self.progress >= 0.88;
-            if (done !== rocketDone) { rocketDone = done; setWaveSpeed(done); }
+      gsap.fromTo(
+        assembly,
+        { x: enterX },
+        {
+          x: exitX,
+          // A scrubbed horizontal sweep must stay linear: equal amounts of
+          // document scroll should always move the assembly by equal amounts.
+          ease: "none",
+          scrollTrigger: {
+            trigger,
+            start: TIMELINE_SCROLL.start,
+            end: TIMELINE_SCROLL.end,
+            scrub,
+            // Re-measure enterX/exitX on resize so the sweep always clears both edges
+            invalidateOnRefresh: true,
           },
-          onLeave()      { if (!rocketDone) { rocketDone = true;  setWaveSpeed(true);  } },
-          onEnterBack()  {                    rocketDone = false; setWaveSpeed(false); },
-          onLeaveBack()  {                    rocketDone = false; setWaveSpeed(false); },
         },
-      });
-
-      tl.to(assembly, { x: 0, ease: CustomEase.create("rocketSlide", ROCKET_SLIDE_EASE), duration: 0.88 }, 0);
+      );
     },
     {
       scope: clipRef,
-      dependencies: [isMobile, prefersReducedMotion],
+      dependencies: [cfg, isMobile, prefersReducedMotion, halfWidthFull],
       revertOnUpdate: true,
     },
   );
@@ -207,6 +276,18 @@ export default function RocketTrailAnimation() {
   const yearFontSize = isMobile ? 26 : 18;
   const nameFontSize = isMobile ? 18 : 9;
   const nameLetterSpacing = isMobile ? 2.0 : 1.5;
+
+  // Mask and gradient bounds have to contain the whole plume — which now runs
+  // more than two viewports past the SVG's right edge and past its top and
+  // bottom as well. Everything outside these bounds is unmasked, i.e. invisible.
+  const plumeHalf = halfWidthFull + cfg.maxAmplitude + TRAIL_FLARE.margin;
+  const bounds = {
+    x: 0,
+    y: cfg.centerY - plumeHalf,
+    width: cfg.endX + TRAIL_FLARE.margin,
+    height: plumeHalf * 2,
+  };
+  const gradientRender = isMobile ? TRAIL_GRADIENT.mobileRender : TRAIL_GRADIENT.render;
 
   return (
     <div
@@ -219,7 +300,7 @@ export default function RocketTrailAnimation() {
         className="invisible absolute top-1/2 left-0 -translate-y-1/2"
       >
         <svg
-          viewBox="0 0 1371 402"
+          viewBox={`0 0 ${TRAIL_VIEWBOX.width} ${TRAIL_VIEWBOX.height}`}
           className="w-screen text-surface-foreground"
           style={{ height: "auto", minWidth: isMobile ? "300px" : "900px", overflow: "visible" }}
           aria-hidden="true"
@@ -229,12 +310,12 @@ export default function RocketTrailAnimation() {
             <mask
               id={trailMaskId}
               maskUnits="userSpaceOnUse"
-              x="0"
-              y="-180"
-              width="1371"
-              height="760"
+              x={bounds.x}
+              y={bounds.y}
+              width={bounds.width}
+              height={bounds.height}
             >
-              <rect x="0" y="-180" width="1371" height="760" fill="black" />
+              <rect x={bounds.x} y={bounds.y} width={bounds.width} height={bounds.height} fill="black" />
               <polygon ref={trailPolyRef} fill="white" />
             </mask>
 
@@ -262,35 +343,46 @@ export default function RocketTrailAnimation() {
             </filter>
           </defs>
 
-          <foreignObject
-            x="0"
-            y="-180"
-            width="1371"
-            height="760"
-            mask={`url(#${trailMaskId})`}
-          >
-            <div
-              className="h-full w-full"
-              style={{ height: "100%", width: "100%" }}
+          {/* Trail + rocket. Translated only by the assembly above, so the
+              year markers below never drift out of sync with the fuel. */}
+          <g>
+            <foreignObject
+              x={bounds.x}
+              y={bounds.y}
+              width={bounds.width}
+              height={bounds.height}
+              mask={`url(#${trailMaskId})`}
             >
-              {shaderActive && <BrandShaderBackground lazyLoad={false} />}
-            </div>
-          </foreignObject>
+              {/* The gradient renders at a fixed size and is stretched across
+                  the plume, so the WebGL surface stays the same cost however
+                  large the plume grows. Scaling a soft gradient reads as smear,
+                  not as blur. */}
+              <div
+                style={{
+                  width: gradientRender.width,
+                  height: gradientRender.height,
+                  transform: `scale(${bounds.width / gradientRender.width}, ${bounds.height / gradientRender.height})`,
+                  transformOrigin: "0 0",
+                }}
+              >
+                {shaderActive && <BrandShaderBackground lazyLoad={false} />}
+              </div>
+            </foreignObject>
 
-          {/* Rocket body fill */}
-          <path d={ROCKET_FILL_PATH} fill="currentColor" />
+            {/* Poyo is line art — a white-furred body with black outlines, not a
+                flat glyph — so --logo-invert does not apply to it: inverting
+                would turn the fur black. Rendered as drawn, white in every theme. */}
+            <image
+              href={ROCKET_ART.src}
+              x={ROCKET_ART.x}
+              y={ROCKET_ART.y}
+              width={ROCKET_ART.width}
+              height={ROCKET_ART.height}
+              preserveAspectRatio="xMidYMid meet"
+            />
+          </g>
 
-          {/* Rocket outline */}
-          <path
-            d={ROCKET_STROKE_PATH}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-
-          {/* Year markers ride with the rocket trail as the assembly slides in */}
+          {/* Year markers ride with the rocket trail for the whole sweep */}
           <g ref={markersRef}>
             {YEAR_MARKERS.map((marker, i) => {
               // ref lets GSAP set translate(marker.x, marker.y) and then wave the y

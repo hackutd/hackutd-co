@@ -27,6 +27,23 @@ function ProjectNumber({ n, small }: { n: number; small?: boolean }) {
   );
 }
 
+function LearnMoreLink({ href }: { href: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group mt-2 inline-flex items-center gap-1 text-xs font-semibold text-accent"
+    >
+      <span className="relative pb-0.5">
+        Learn More
+        <span className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-white transition-transform duration-300 group-hover:scale-x-100" />
+      </span>
+      <span className="transition-transform duration-300 group-hover:translate-x-1">&rarr;</span>
+    </a>
+  );
+}
+
 export default function Projects() {
   const [featured, ...rest] = projects;
   const sectionRef = useRef<HTMLElement>(null);
@@ -77,7 +94,7 @@ export default function Projects() {
             <p className="mb-1 text-xs uppercase text-muted/60">{featured.label}</p>
             <h3 className="text-3xl font-medium">{featured.name}</h3>
             <p className="mt-3 text-sm text-muted/60">{featured.description}</p>
-            <a href={featured.link} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-xs font-semibold text-accent transition-all duration-150 hover:text-sm">Learn More →</a>
+            <LearnMoreLink href={featured.link} />
           </div>
         </div>
 
@@ -93,7 +110,7 @@ export default function Projects() {
                 <p className="mb-1 text-xs uppercase text-muted/60">{project.label}</p>
                 <h3 className="text-3xl font-light">{project.name}</h3>
                 <p className="mt-3 text-sm text-muted/60">{project.description}</p>
-                <a href={project.link} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-xs font-semibold text-accent transition-all duration-150 hover:text-sm">Learn More →</a>
+                <LearnMoreLink href={project.link} />
               </div>
               <Image
                 src={project.image}

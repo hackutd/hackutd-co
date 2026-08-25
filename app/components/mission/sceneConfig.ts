@@ -92,10 +92,9 @@ export const MISSION_STATEMENT_BLUR = {
 } as const;
 
 /**
- * Marks key words in the statement copy: a run between a pair of these is set
- * in the serif, everything else in the sans. A pair may span several words, and
- * may open or close mid-word — `*HackUTD*,` leaves the comma in the sans, which
- * is usually what you want for punctuation trailing an emphasised noun.
+ * Marks key words in the statement copy: a run between a pair of these receives
+ * bold emphasis while staying in the same sans-serif face as the rest of the
+ * Mission section. A pair may span several words and may open or close mid-word.
  *
  * Markers have to be balanced. An odd count flips the emphasis for the rest of
  * that block rather than failing loudly.
@@ -103,16 +102,10 @@ export const MISSION_STATEMENT_BLUR = {
 export const MISSION_KEY_WORD_DELIMITER = "*";
 
 /**
- * Applied to the marked runs, and the one place to tune how the serif sits
- * inline against the sans. Petrona and Satoshi have different x-heights, so if
- * the key words read small next to the body, a size nudge (`text-[1.05em]`)
- * belongs here rather than in the copy.
- *
- * Petrona is loaded on its full variable weight axis, so the bold is a real
- * cut rather than a synthesised one. Step down to `font-semibold` if 700 hits
- * too hard against the 400 body.
+ * Applied to the marked runs. Keep the explicit sans class here so future
+ * typography changes elsewhere cannot reintroduce a serif into Mission copy.
  */
-export const MISSION_KEY_WORD_CLASS = "font-serif font-bold";
+export const MISSION_KEY_WORD_CLASS = "font-sans font-bold";
 
 /**
  * Space above each hard-broken block of the statement (a newline in the copy).
@@ -150,7 +143,7 @@ export const MISSION_STATEMENT_INK = {
    * the floor is roughly 40, below which the closing line stops holding
    * comfortable contrast against the surface in either theme.
    */
-  bottom: 45,
+  bottom: 60,
 } as const;
 
 /**
