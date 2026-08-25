@@ -14,9 +14,8 @@ import { DIRECTORS_CARD, DIRECTORS_PIN, MISSION_LAYOUT } from "./sceneConfig";
 configureScrollTrigger();
 
 /**
- * Body is set in the sans; the key words marked in the copy come back in the
- * serif (see MISSION_KEY_WORD_DELIMITER), so the statement carries its own
- * emphasis rather than being one uniform face.
+ * Body and marked key words use the sans-serif face throughout; marked words
+ * carry their emphasis through weight rather than a typeface change.
  *
  * It is painted in surface ink and <BlurStatement /> ramps each word back from
  * it (see MISSION_STATEMENT_INK), so the top lines read at full strength and

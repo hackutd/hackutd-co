@@ -128,7 +128,13 @@ export default function CometTrailBackground() {
         },
       });
     },
-    { scope: wrapperRef, dependencies: [isMobile, prefersReducedMotion] },
+    {
+      scope: wrapperRef,
+      dependencies: [isMobile, prefersReducedMotion],
+      // The ribbon is re-sampled at the new breakpoint, so the previous trail
+      // has to be reverted rather than left running alongside the new one.
+      revertOnUpdate: true,
+    },
   );
 
   return (

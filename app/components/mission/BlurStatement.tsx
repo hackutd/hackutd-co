@@ -43,7 +43,7 @@ function rampedInk(index: number, total: number) {
   return inkAt(top + (bottom - top) * t);
 }
 
-/** A run of characters within one word, and whether it is a serif key word */
+/** A run of characters within one word, and whether it is an emphasized key word */
 type WordPart = { text: string; keyWord: boolean };
 
 /**

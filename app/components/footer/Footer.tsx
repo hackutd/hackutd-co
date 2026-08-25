@@ -14,6 +14,7 @@ const links: FooterLink[] = [
   { label: "LinkedIn", href: "https://www.linkedin.com/company/hackutd/" },
   { label: "TikTok", href: "https://www.tiktok.com/@hackutd" },
   { label: "GitHub", href: "https://github.com/hackutd" },
+  { label: "Contact", href: "mailto:hello@hackutd.co" },
 ];
 
 type FooterProps = ComponentPropsWithoutRef<"footer"> & {
@@ -26,7 +27,7 @@ type FooterProps = ComponentPropsWithoutRef<"footer"> & {
 };
 
 const footerBaseClassName =
-  "min-h-[440px] overflow-hidden border-t border-black/10 bg-surface px-5 py-8 text-surface-foreground sm:min-h-[400px] sm:px-8 md:min-h-[280px] md:px-10 md:py-8 lg:px-[3.75rem]";
+  "min-h-[400px] w-full max-w-full overflow-hidden border-t border-black/10 bg-surface px-2 py-8 text-surface-foreground sm:px-8 md:min-h-[360px] md:px-10 lg:px-[3.75rem]";
 
 const Footer = forwardRef<HTMLElement, FooterProps>(function Footer(
   { className, shaderMount = "lazy", ...props },
@@ -68,56 +69,72 @@ const Footer = forwardRef<HTMLElement, FooterProps>(function Footer(
         )}
       </div>
 
-      <div className="relative z-10 flex min-h-[376px] flex-col justify-between gap-10 sm:min-h-[336px] md:min-h-[216px] md:flex-row md:items-end md:justify-between md:gap-8">
-        <div className="md:pb-1">
-          <p className="font-serif text-[2.875rem] font-light leading-none tracking-normal text-white sm:text-[3.625rem] md:text-[4.25rem] lg:text-[5.125rem] [text-shadow:0_2px_20px_rgba(0,0,0,0.55),0_1px_3px_rgba(0,0,0,0.45)]">
-            HackUTD
-          </p>
-          <p className="mt-4 font-serif text-[1.375rem] font-light italic leading-none text-white sm:mt-5 sm:text-[1.625rem] md:text-[1.875rem] lg:text-[2rem] [text-shadow:0_2px_16px_rgba(0,0,0,0.55),0_1px_2px_rgba(0,0,0,0.45)]">
-            Happy Hacking
-          </p>
-          <p className="mt-5 text-[0.6875rem] font-light uppercase tracking-[0.08em] text-white/90 sm:mt-7 sm:text-xs [text-shadow:0_1px_8px_rgba(0,0,0,0.5)]">
-            &copy; {year} HackUTD by{" "}
-            <a
-              href="https://acmutd.co/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline decoration-white/40 underline-offset-2 transition-colors hover:text-white"
-            >
-              ACM UTD
-            </a>{" "}
-            &middot; Made with &lt;3
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-7 pb-1 sm:items-end md:max-w-[46vw] md:gap-8">
-          <p className="text-[0.6875rem] font-light uppercase tracking-[0.08em] text-white sm:text-xs [text-shadow:0_1px_8px_rgba(0,0,0,0.5)]">
-            CONNECT
-          </p>
+      <div className="relative z-10 flex min-h-[336px] flex-col items-center justify-center text-center md:min-h-[296px]">
+        <div className="grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 sm:gap-6 lg:gap-12">
           <nav
-            aria-label="HackUTD social links"
-            className="grid grid-cols-2 gap-x-10 gap-y-4 sm:flex sm:flex-wrap sm:justify-end sm:gap-x-10 sm:gap-y-3 md:gap-x-8 lg:gap-x-12 xl:gap-x-14"
+            aria-label="HackUTD social links, first group"
+            className="flex min-w-0 flex-col items-center gap-4 sm:gap-5"
           >
-            {links.map((link) => (
+            {links.slice(0, 3).map((link) => (
               <a
                 key={link.label}
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`HackUTD on ${link.label}`}
-                className="text-[0.75rem] font-light uppercase tracking-[0.08em] text-white transition-colors hover:text-white sm:text-xs [text-shadow:0_1px_8px_rgba(0,0,0,0.5)]"
+                className="group relative pb-1 text-xs font-light uppercase tracking-[0.08em] text-white/75 transition-colors duration-300 hover:text-white sm:text-sm [text-shadow:0_1px_8px_rgba(0,0,0,0.5)]"
               >
-                {link.label}
+                <span>{link.label}</span>
+                <span className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-white transition-transform duration-300 group-hover:scale-x-100" />
               </a>
             ))}
-            <a
-              href="mailto:hello@hackutd.co"
-              className="text-[0.75rem] font-light uppercase tracking-[0.08em] text-white transition-colors hover:text-white sm:text-xs [text-shadow:0_1px_8px_rgba(0,0,0,0.5)]"
-            >
-              Contact
-            </a>
+          </nav>
+
+          <p className="translate-y-3 font-serif text-[clamp(2.25rem,12vw,10rem)] font-light leading-[0.82] tracking-[-0.045em] text-white [text-shadow:0_2px_24px_rgba(0,0,0,0.55),0_1px_3px_rgba(0,0,0,0.45)]">
+            hackutd
+          </p>
+
+          <nav
+            aria-label="HackUTD social and contact links, second group"
+            className="flex min-w-0 flex-col items-center gap-4 sm:gap-5"
+          >
+            {links.slice(3).map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                target={link.href.startsWith("http") ? "_blank" : undefined}
+                rel={
+                  link.href.startsWith("http")
+                    ? "noopener noreferrer"
+                    : undefined
+                }
+                aria-label={
+                  link.label === "Contact"
+                    ? "Contact HackUTD by email"
+                    : `HackUTD on ${link.label}`
+                }
+                className="group relative pb-1 text-xs font-light uppercase tracking-[0.08em] text-white/75 transition-colors duration-300 hover:text-white sm:text-sm [text-shadow:0_1px_8px_rgba(0,0,0,0.5)]"
+              >
+                <span>{link.label}</span>
+                <span className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-white transition-transform duration-300 group-hover:scale-x-100" />
+              </a>
+            ))}
           </nav>
         </div>
+
+        <p className="mt-10 text-[0.6875rem] font-light uppercase tracking-[0.08em] text-white/90 sm:text-xs md:mt-12 [text-shadow:0_1px_8px_rgba(0,0,0,0.5)]">
+          &copy; {year} hackutd by{" "}
+          <a
+            href="https://acmutd.co/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group relative inline-block pb-1 text-white/75 transition-colors duration-300 hover:text-white"
+          >
+            <span>ACM UTD</span>
+            <span className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-white transition-transform duration-300 group-hover:scale-x-100" />
+          </a>{" "}
+          &middot; Made with &lt;3
+        </p>
       </div>
     </footer>
   );

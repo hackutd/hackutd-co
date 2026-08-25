@@ -71,9 +71,8 @@ export const HERO_WHITEOUT = {
 
 /**
  * The skyline band keeps the artwork readable on narrow phones and clear of the
- * hero copy on short landscape viewports. The mask itself uses `contain`, so
- * the complete, taller skyline plate stays centered instead of being enlarged
- * and cropped to span the viewport.
+ * hero copy on short landscape viewports. Its uncapped height matches the
+ * artwork's aspect ratio so the skyline spans the viewport without side gaps.
  */
 export const HERO_SKYLINE = {
   /**
@@ -82,7 +81,7 @@ export const HERO_SKYLINE = {
    * keeps the whole composition in proportion at every viewport.
    */
   heightVar: "--hero-skyline-h",
-  height: "min(max(27.1vw, 170px), 45vh)",
+  height: "min(max(28.41vw, 170px), 45vh)",
   /**
    * Shared by the skyline band and the sky layer so the two boxes stay exactly
    * registered; the sky element coordinates are fractions of this box. The
@@ -98,21 +97,28 @@ export const HERO_SKYLINE = {
  * theme already flips from white to near-black, so the buildings recolor
  * themselves with no second file and no swap logic.
  *
- * `contain` intentionally leaves breathing room to the left and right of the
- * new, taller plate. The `-webkit-` pairs are kept for older Safari, matching
- * the masked navbar seam.
+ * The mask fills the shared skyline band so the full artwork reaches both
+ * viewport edges while staying registered with the animated sky elements. The
+ * `-webkit-` pairs are kept for older Safari, matching the masked navbar seam.
  */
-const SKYLINE_ART = "url(/hero/skyline_black.png)";
+const SKYLINE_ART = "url(/hero/skyline.png)";
+
+/** SVG morphology filter used to delicately erode the rendered line weight. */
+export const HERO_SKYLINE_STROKE_FILTER = {
+  id: "hero-skyline-thin-strokes",
+  radius: 0.9,
+} as const;
 
 export const HERO_SKYLINE_MASK: CSSProperties = {
   maskImage: SKYLINE_ART,
   WebkitMaskImage: SKYLINE_ART,
-  maskSize: "contain",
-  WebkitMaskSize: "contain",
+  maskSize: "100% 100%",
+  WebkitMaskSize: "100% 100%",
   maskPosition: "bottom center",
   WebkitMaskPosition: "bottom center",
   maskRepeat: "no-repeat",
   WebkitMaskRepeat: "no-repeat",
+  filter: `url(#${HERO_SKYLINE_STROKE_FILTER.id})`,
 };
 
 export type HeroSkyMotion = "drift-left" | "drift-right" | "cross" | "rise";
@@ -160,6 +166,9 @@ const CLOUD_RIGHT = {
  */
 export const HERO_SKY_LIFT = 0.32;
 
+/** Uniform size reduction for the cloud flock. */
+export const HERO_CLOUD_SCALE = 0.85;
+
 export const HERO_SKY_ELEMENTS: HeroSkyElement[] = [
   {
     id: "plane",
@@ -167,7 +176,7 @@ export const HERO_SKY_ELEMENTS: HeroSkyElement[] = [
     aspect: 3.2821,
     fx: 0.16,
     fy: 0.09,
-    width: 0.245,
+    width: 0.285,
     motion: "cross",
     verticalLift: "clamp(130px, 26svh, 260px)",
   },
@@ -176,7 +185,7 @@ export const HERO_SKY_ELEMENTS: HeroSkyElement[] = [
     ...CLOUD_LEFT,
     fx: 0.09,
     fy: 0.49,
-    width: 0.4,
+    width: 0.4 * HERO_CLOUD_SCALE,
     motion: "drift-right",
     duration: 17,
   },
@@ -185,7 +194,7 @@ export const HERO_SKY_ELEMENTS: HeroSkyElement[] = [
     ...CLOUD_RIGHT,
     fx: 0.22,
     fy: -0.16,
-    width: 0.34,
+    width: 0.34 * HERO_CLOUD_SCALE,
     motion: "drift-right",
     duration: 20,
     className: "hidden sm:block",
@@ -195,7 +204,7 @@ export const HERO_SKY_ELEMENTS: HeroSkyElement[] = [
     ...CLOUD_LEFT,
     fx: 0.42,
     fy: -0.2,
-    width: 0.32,
+    width: 0.32 * HERO_CLOUD_SCALE,
     motion: "drift-right",
     duration: 15,
   },
@@ -204,7 +213,7 @@ export const HERO_SKY_ELEMENTS: HeroSkyElement[] = [
     ...CLOUD_RIGHT,
     fx: 0.65,
     fy: 0.51,
-    width: 0.3,
+    width: 0.3 * HERO_CLOUD_SCALE,
     motion: "drift-left",
     duration: 19,
     className: "hidden sm:block",
@@ -214,7 +223,7 @@ export const HERO_SKY_ELEMENTS: HeroSkyElement[] = [
     ...CLOUD_LEFT,
     fx: 0.755,
     fy: 0.47,
-    width: 0.36,
+    width: 0.36 * HERO_CLOUD_SCALE,
     motion: "drift-left",
     duration: 22,
   },
@@ -223,7 +232,7 @@ export const HERO_SKY_ELEMENTS: HeroSkyElement[] = [
     ...CLOUD_RIGHT,
     fx: 0.905,
     fy: -0.12,
-    width: 0.38,
+    width: 0.38 * HERO_CLOUD_SCALE,
     motion: "drift-left",
     duration: 16,
     className: "hidden md:block",
@@ -234,7 +243,7 @@ export const HERO_SKY_ELEMENTS: HeroSkyElement[] = [
     aspect: 0.7143,
     fx: 0.82,
     fy: -0.05,
-    width: 0.1,
+    width: 0.13,
     motion: "rise",
   },
 ];
@@ -253,6 +262,7 @@ export const HERO_SKY_MOTION = {
   plane: {
     duration: 48,
     ease: "none",
+    direction: "right-to-left",
   },
   /**
    * `from`/`to` are multiples of the band height. The balloon begins in view

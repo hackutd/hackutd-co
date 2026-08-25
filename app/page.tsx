@@ -1,3 +1,4 @@
+import { SCROLL_ROOT_ATTR } from "./lib/scrollAnchor";
 import PageBackground from "./components/background/PageBackground";
 import Navbar from "./components/navbar/Navbar";
 import Hero from "./components/hero/Hero";
@@ -13,7 +14,9 @@ export default function Home() {
   return (
     <>
       <PageBackground />
-      <div className="relative z-10">
+      {/* The in-flow children of this wrapper are the page's scroll
+          sections; the resize anchor reads them from here. */}
+      <div {...{ [SCROLL_ROOT_ATTR]: "" }} className="relative z-10">
         <ThemeCurtain />
         <Navbar />
         <Hero />

@@ -134,7 +134,13 @@ export default function CometAnimation() {
       );
 
     },
-    { scope: wrapperRef, dependencies: [isMobile, prefersReducedMotion] },
+    {
+      scope: wrapperRef,
+      dependencies: [isMobile, prefersReducedMotion],
+      // As with the trail background: a breakpoint cross rebuilds the reveal, so
+      // the previous timeline must be reverted instead of stacking.
+      revertOnUpdate: true,
+    },
   );
 
   useGSAP(
