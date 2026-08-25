@@ -1,6 +1,7 @@
 "use client";
 
-import { useId, useRef } from "react";
+import { useCallback, useId, useRef, useState } from "react";
+import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { CustomEase } from "gsap/CustomEase";
@@ -11,6 +12,7 @@ import { useNearViewport } from "@/app/hooks/useNearViewport";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import {
+  CARD_POPOVER,
   MOBILE_TIMELINE_SCRUB,
   MOBILE_TRAIL_WAVE,
   ROCKET_FILL_PATH,
@@ -46,6 +48,30 @@ export default function RocketTrailAnimation() {
   const trailPolyRef = useRef<SVGPolygonElement>(null);
   // Individual refs for each marker <g> so GSAP can wave them in sync with the trail
   const markerRefs = useRef<(SVGGElement | null)[]>([]);
+
+  // Hovered marker index + anchor position (px, relative to the clip box)
+  const [hoveredCard, setHoveredCard] = useState<{
+    index: number;
+    left: number;
+    top: number;
+  } | null>(null);
+
+  const showCard = useCallback((index: number, target: SVGGElement) => {
+    const clip = clipRef.current;
+    if (!clip) return;
+    const clipRect = clip.getBoundingClientRect();
+    const rect = target.getBoundingClientRect();
+    const halfCard = CARD_POPOVER.width / 2;
+    const left = gsap.utils.clamp(
+      halfCard + CARD_POPOVER.edgeMargin,
+      clipRect.width - halfCard - CARD_POPOVER.edgeMargin,
+      rect.left + rect.width / 2 - clipRect.left,
+    );
+    const top = Math.max(CARD_POPOVER.topMargin, rect.top - clipRect.top - CARD_POPOVER.gap);
+    setHoveredCard({ index, left, top });
+  }, []);
+
+  const hideCard = useCallback(() => setHoveredCard(null), []);
 
   const isMobile = useIsMobile();
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -208,6 +234,8 @@ export default function RocketTrailAnimation() {
   const nameFontSize = isMobile ? 18 : 9;
   const nameLetterSpacing = isMobile ? 2.0 : 1.5;
 
+  const hoveredMarker = hoveredCard ? YEAR_MARKERS[hoveredCard.index] : null;
+
   return (
     <div
       ref={clipRef}
@@ -334,7 +362,13 @@ export default function RocketTrailAnimation() {
               );
 
               return (
-                <g key={marker.year} ref={el => { markerRefs.current[i] = el; }}>
+                <g
+                  key={`${marker.year}-${marker.name}`}
+                  ref={el => { markerRefs.current[i] = el; }}
+                  style={{ pointerEvents: "auto" }}
+                  onPointerEnter={(event) => showCard(i, event.currentTarget)}
+                  onPointerLeave={hideCard}
+                >
                   {marker.href ? (
                     <a
                       href={marker.href}
@@ -351,6 +385,32 @@ export default function RocketTrailAnimation() {
           </g>
         </svg>
       </div>
+
+      {/* Hover card: legacy recap image for the hovered hackathon */}
+      {hoveredCard && hoveredMarker && (
+        <div
+          className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full"
+          style={{ left: hoveredCard.left, top: hoveredCard.top, width: CARD_POPOVER.width }}
+        >
+          <div className="overflow-hidden rounded-2xl border border-foreground/12 bg-background/95 shadow-[0_24px_64px_rgba(0,0,0,0.6)] backdrop-blur-md">
+            <Image
+              src={hoveredMarker.card}
+              alt={`${hoveredMarker.name} recap`}
+              width={1035}
+              height={561}
+              className="h-auto w-full"
+            />
+            <div className="flex items-baseline justify-between px-4 py-2.5">
+              <p className="text-sm font-semibold text-foreground">
+                {hoveredMarker.name}
+              </p>
+              <p className="text-[0.7rem] uppercase tracking-[0.18em] text-foreground/40">
+                {hoveredMarker.date}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
