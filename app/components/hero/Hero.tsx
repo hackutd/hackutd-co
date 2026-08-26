@@ -18,12 +18,50 @@ import {
   HERO_SKYLINE,
   HERO_SKYLINE_MASK,
   HERO_SKYLINE_STROKE_FILTER,
+  HERO_TEXT_EFFECT,
   HERO_WHITEOUT,
   MOBILE_SCRUB,
 } from "./sceneConfig";
 import CometTrailBackground from "./CometTrailBackground";
 
 configureScrollTrigger();
+
+const HERO_TEXT_CHARACTER_DATA_ATTR = "data-hero-text-character";
+
+/** Keeps natural word wrapping while exposing each glyph as a GSAP target. */
+function renderHeroText(text: string) {
+  return text.split(/(\s+)/).map((segment, segmentIndex) => {
+    if (/^\s+$/.test(segment)) {
+      return (
+        <span
+          key={`space-${segmentIndex}`}
+          aria-hidden="true"
+          className="whitespace-pre-wrap"
+        >
+          {segment}
+        </span>
+      );
+    }
+
+    return (
+      <span
+        key={`word-${segmentIndex}`}
+        aria-hidden="true"
+        className="inline-block whitespace-nowrap"
+      >
+        {Array.from(segment).map((character, characterIndex) => (
+          <span
+            key={`${segmentIndex}-${characterIndex}`}
+            {...{ [HERO_TEXT_CHARACTER_DATA_ATTR]: "" }}
+            className="inline-block"
+          >
+            {character}
+          </span>
+        ))}
+      </span>
+    );
+  });
+}
 
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -43,6 +81,13 @@ export default function Hero() {
       const skylineLayer = skylineLayerRef.current;
       const cometLayer = cometLayerRef.current;
       const heroText = heroTextRef.current;
+      const heroTextCharacters = heroText
+        ? Array.from(
+            heroText.querySelectorAll<HTMLElement>(
+              `[${HERO_TEXT_CHARACTER_DATA_ATTR}]`,
+            ),
+          )
+        : [];
 
       if (!section) {
         return;
@@ -53,7 +98,14 @@ export default function Hero() {
           gsap.set(cometBackgroundLayer, { autoAlpha: 1 });
         }
         if (heroText) {
-          gsap.set(heroText, { opacity: 1 });
+          gsap.set(heroText, { autoAlpha: 1 });
+        }
+        if (heroTextCharacters.length > 0) {
+          gsap.set(heroTextCharacters, {
+            autoAlpha: 1,
+            filter: "blur(0px) brightness(100%)",
+            y: 0,
+          });
         }
         return;
       }
@@ -87,6 +139,56 @@ export default function Hero() {
 
       if (heroText) {
         gsap.set(heroText, { autoAlpha: 1 });
+      }
+
+      if (heroTextCharacters.length > 0) {
+        const exitTween = gsap.fromTo(
+          heroTextCharacters,
+          {
+            autoAlpha: 1,
+            filter: "blur(0px) brightness(100%)",
+            y: 0,
+          },
+          {
+            autoAlpha: 0,
+            filter: `blur(${HERO_TEXT_EFFECT.exit.blur}px) brightness(0%)`,
+            y: HERO_TEXT_EFFECT.exit.y,
+            duration: HERO_TEXT_EFFECT.exit.duration,
+            stagger: HERO_TEXT_EFFECT.exit.stagger,
+            ease: HERO_TEXT_EFFECT.exit.ease,
+            immediateRender: false,
+            overwrite: "auto",
+            scrollTrigger: {
+              trigger: section,
+              start: HERO_TEXT_EFFECT.exit.start,
+              end: HERO_TEXT_EFFECT.exit.end,
+              scrub,
+            },
+          },
+        );
+
+        // Only run the entrance when the page is above the exit range. This
+        // avoids an entrance tween fighting the scroll state after a reload or
+        // breakpoint change farther down the page.
+        if (!exitTween.scrollTrigger || exitTween.scrollTrigger.progress === 0) {
+          gsap.fromTo(
+            heroTextCharacters,
+            {
+              autoAlpha: 0,
+              filter: `blur(${HERO_TEXT_EFFECT.reveal.blur}px) brightness(0%)`,
+              y: 0,
+            },
+            {
+              autoAlpha: 1,
+              filter: "blur(0px) brightness(100%)",
+              y: 0,
+              duration: HERO_TEXT_EFFECT.reveal.duration,
+              stagger: HERO_TEXT_EFFECT.reveal.stagger,
+              ease: HERO_TEXT_EFFECT.reveal.ease,
+              overwrite: "auto",
+            },
+          );
+        }
       }
 
       if (cometBackgroundLayer) {
@@ -130,23 +232,6 @@ export default function Hero() {
         );
       }
 
-      if (heroText) {
-        gsap.fromTo(
-          heroText,
-          { autoAlpha: 1 },
-          {
-            autoAlpha: 0,
-            ease: HERO_WHITEOUT.text.ease,
-            immediateRender: false,
-            scrollTrigger: {
-              trigger: section,
-              start: HERO_WHITEOUT.text.start,
-              end: HERO_WHITEOUT.text.end,
-              scrub,
-            },
-          },
-        );
-      }
     },
     {
       scope: sectionRef,
@@ -228,11 +313,17 @@ export default function Hero() {
           ref={heroTextRef}
           className={`relative z-20 flex h-full flex-col items-center justify-center px-5 text-center md:px-8 ${HERO_LAYOUT.textLift}`}
         >
-          <p className="mb-2 font-serif text-base font-normal italic sm:text-lg md:mb-3 md:text-xl">
-            {HERO_COPY.eyebrow}
+          <p
+            aria-label={HERO_COPY.eyebrow}
+            className="mb-2 font-serif text-base font-normal italic sm:text-lg md:mb-3 md:text-xl"
+          >
+            {renderHeroText(HERO_COPY.eyebrow)}
           </p>
-          <h1 className="w-full min-w-0 max-w-[20ch] font-sans text-[2rem] font-bold leading-[1.1] sm:max-w-[26ch] sm:text-[2.5rem] md:max-w-[40ch] md:text-5xl lg:text-[3.5rem]">
-            {HERO_COPY.headline}
+          <h1
+            aria-label={HERO_COPY.headline}
+            className="w-full min-w-0 max-w-[20ch] font-sans text-[2rem] font-bold leading-[1.1] sm:max-w-[26ch] sm:text-[2.5rem] md:max-w-[40ch] md:text-5xl lg:text-[3.5rem]"
+          >
+            {renderHeroText(HERO_COPY.headline)}
           </h1>
         </div>
       </div>

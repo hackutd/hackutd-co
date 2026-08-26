@@ -16,6 +16,25 @@ export const MISSION_LAYOUT = {
 } as const;
 
 /**
+ * Mission statement — sticky word reveal.
+ *
+ * The first 92% of the scroll range starts each word in reading order. Every
+ * word gets an overlapping 8% window to brighten from its resting ink to full
+ * ink. The 420svh section makes that progression deliberately unhurried, while
+ * the short numeric scrub removes wheel/touch stepping without adding a long
+ * catch-up delay after scrolling stops.
+ */
+export const MISSION_WORD_REVEAL = {
+  kicker: "Our mission · scroll to reveal",
+  restOpacity: 0.15,
+  revealSpan: 0.92,
+  wordWindow: 0.08,
+  scrollHeight: "420svh",
+  handoffHeight: "h-[130svh]",
+  scrub: 0.55,
+} as const;
+
+/**
  * Mission statement — cinematic per-word blur reveal.
  *
  * One scrubbed timeline owns the whole read cycle: words resolve out of a blur
@@ -164,33 +183,6 @@ export const MISSION_STATEMENT_INK = {
 export const MISSION_BLUR_COST = {
   dropBelow: 0.4,
   stepPx: 0.5,
-} as const;
-
-/** Directors section pins at viewport top, content fades in, then unpins */
-export const DIRECTORS_PIN = {
-  scrub: MISSION_SCRUB,
-  start: "top top",
-  end: "+=500",
-  initialYPercent: 12,
-} as const;
-
-/**
- * Directors card — the photo overhangs the card's top edge. Every offset is a
- * percentage of the card width (percentage margins/padding always resolve
- * against the containing block's width), so the whole composition scales as one
- * unit at any breakpoint.
- */
-export const DIRECTORS_CARD = {
-  /** Card width, also clamped by viewport height so the pinned card never overflows */
-  width: "w-full max-w-[min(42rem,78vh)]",
-  /** 16:9 photo, slightly narrower than the card */
-  photo: "w-[86%] aspect-[16/9] rounded-2xl",
-  /** Photo is 86% of a card that never exceeds 42rem — cap the served width there */
-  photoSizes: "(max-width: 640px) 86vw, 580px",
-  /** Pulls the card up under the photo, leaving ~8% of the card width exposed above it */
-  overlap: "-mt-[40%]",
-  /** Top padding clears the overlapped photo plus breathing room before the label */
-  padding: "pt-[47%] px-8 pb-16 sm:px-12 md:pb-20",
 } as const;
 
 /**

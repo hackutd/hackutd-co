@@ -16,6 +16,42 @@ export const HERO_SCENE_DATA_ATTR = "data-bg-hero-scene";
 export const MISSION_STATEMENT_DATA_ATTR = "data-bg-mission-statement";
 export const TIMELINE_SECTION_DATA_ATTR = "data-bg-timeline-section";
 export const SPONSORS_SECTION_DATA_ATTR = "data-bg-sponsors-section";
+export const SECTION_GRADIENT_DATA_ATTR = "data-section-gradient";
+export const SECTION_GRADIENT_END_ID = "footer";
+
+/**
+ * Page-order labels for the persistent lower-left gradient. Each matching
+ * section carries SECTION_GRADIENT_DATA_ATTR with the corresponding id.
+ */
+export const SECTION_GRADIENT_SECTIONS = [
+  { id: "mission", label: "Mission" },
+  { id: "stats", label: "Stats" },
+  { id: "directors", label: "Directors" },
+  { id: "teams", label: "Teams" },
+  { id: "projects", label: "Projects" },
+  { id: "timeline", label: "Timeline" },
+  { id: "sponsors", label: "Sponsors" },
+] as const;
+
+export const SECTION_GRADIENT_MOTION = {
+  revealStart: "top bottom",
+  revealEnd: "top 70%",
+  revealScrub: 0.45,
+  hideStart: "top 115%",
+  hideEnd: "top 100%",
+  hideScrub: 0.45,
+  transitionStart: "top 64%",
+  transitionEnd: "top 42%",
+  transitionScrub: 0.45,
+  labelTravelPercent: 22,
+  parallaxScrub: 0.8,
+  parallax: {
+    fromXPercent: -1,
+    fromYPercent: 3,
+    toXPercent: 2,
+    toYPercent: -4,
+  },
+} as const;
 
 export type PageBgPhase = {
   /** Data attribute identifying the section that drives this phase */
@@ -45,7 +81,7 @@ export const TIMELINE_LIGHTEN_PHASE = {
   ease: "power1.inOut",
 } as const satisfies PageBgPhase;
 
-/** Phases in page order: hero whiteout → mission darken → timeline lighten */
+/** Phases in page order: hero whiteout → post-Mission reset → timeline lighten */
 export const PAGE_BG_PHASES: readonly PageBgPhase[] = [
   {
     attr: HERO_SCENE_DATA_ATTR,
@@ -59,8 +95,13 @@ export const PAGE_BG_PHASES: readonly PageBgPhase[] = [
     attr: MISSION_STATEMENT_DATA_ATTR,
     from: 1,
     to: 0,
-    start: "center top",
-    end: "bottom top",
+    // This attribute lives on the transparent handoff *after* the reveal.
+    // Its top reaches the viewport top only once the sticky statement has
+    // completely cleared, so the fixed surface and navbar palette cannot reset
+    // while any Mission copy is still visible. The handoff is 130svh tall: the
+    // 30vh fade finishes exactly as Stats reaches the bottom of the viewport.
+    start: "top top",
+    end: "top -30%",
     ease: "power1.in",
   },
   TIMELINE_LIGHTEN_PHASE,

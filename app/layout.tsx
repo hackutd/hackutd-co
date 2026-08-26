@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Petrona } from "next/font/google";
 import Script from "next/script";
+import SiteCursor from "./components/cursor/SiteCursor";
 import "./globals.css";
 
 const satoshi = localFont({
@@ -44,7 +45,13 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        {/* Last child of <body> on purpose: the drawn cursor blends against
+            the backdrop of its own stacking context, so it has to be painted
+            from here to invert the whole page rather than one section of it. */}
+        <SiteCursor />
+      </body>
     </html>
   );
 }

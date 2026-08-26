@@ -1,0 +1,132 @@
+.scroll-word-reveal-frame {
+  position: relative;
+  width: 100%;
+}
+
+.scroll-word-reveal {
+  position: relative;
+  min-height: var(--scroll-word-reveal-height, 220svh);
+}
+
+.scroll-word-reveal__stage {
+  position: sticky;
+  top: 0;
+  display: flex;
+  min-height: 100svh;
+  align-items: center;
+  overflow: clip;
+  padding: clamp(4rem, 10svh, 8rem) clamp(2rem, 6vw, 6rem);
+}
+
+.scroll-word-reveal__layout {
+  display: grid;
+  width: min(100%, 92rem);
+  margin-inline: auto;
+  grid-template-columns: 1px minmax(0, 1fr);
+  gap: clamp(1.5rem, 4vw, 4.5rem);
+  align-items: center;
+}
+
+.scroll-word-reveal__progress {
+  width: 1px;
+  height: min(72svh, 44rem);
+  overflow: hidden;
+  border-radius: 9999px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.scroll-word-reveal__progress > span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(
+    to bottom,
+    var(--color-purple),
+    var(--color-pink),
+    var(--color-orange)
+  );
+  transform: scaleY(0);
+  transform-origin: top center;
+  will-change: transform;
+}
+
+.scroll-word-reveal__content {
+  width: 100%;
+}
+
+.scroll-word-reveal__kicker {
+  margin-bottom: clamp(1.25rem, 2.5vw, 2.25rem);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: color-mix(in srgb, currentColor 54%, transparent);
+}
+
+.scroll-word-reveal__heading {
+  margin: 0;
+  max-width: 36ch;
+  text-wrap: pretty;
+}
+
+.scroll-word-reveal__line {
+  display: block;
+}
+
+.scroll-word-reveal__line--spaced {
+  margin-top: 0.75em;
+}
+
+.scroll-word-reveal__word {
+  display: inline-block;
+}
+
+.scroll-word-reveal__word strong {
+  font-family: inherit;
+  font-style: inherit;
+}
+
+.scroll-word-reveal-frame[data-reduced-motion="true"]
+  .scroll-word-reveal {
+  min-height: 100svh;
+}
+
+.scroll-word-reveal-frame[data-reduced-motion="true"]
+  .scroll-word-reveal__stage {
+  position: relative;
+}
+
+.scroll-word-reveal-frame[data-reduced-motion="true"]
+  .scroll-word-reveal__progress
+  > span {
+  transform: scaleY(1);
+}
+
+@media (max-width: 767px) {
+  .scroll-word-reveal__stage {
+    padding: 6rem 1.5rem 4rem;
+  }
+
+  .scroll-word-reveal__layout {
+    grid-template-columns: 1px minmax(0, 1fr);
+    gap: 1.25rem;
+  }
+
+  .scroll-word-reveal__progress {
+    width: 1px;
+    height: min(64svh, 34rem);
+  }
+
+  .scroll-word-reveal__kicker {
+    margin-bottom: 1rem;
+    font-size: 0.6875rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-word-reveal__progress > span {
+    will-change: auto;
+  }
+}

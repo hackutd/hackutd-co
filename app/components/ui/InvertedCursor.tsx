@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import gsap from "gsap";
 import { useHasFinePointer } from "@/app/hooks/useHasFinePointer";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
+import { suppressSiteCursor } from "@/app/components/cursor/siteCursorSuppression";
 
 /**
  * How the disc chases the pointer. Short enough to feel attached to the hand,
@@ -124,6 +125,18 @@ export default function InvertedCursor({
       gsap.killTweensOf(disc);
     };
   }, [origin, prefersReducedMotion, size]);
+
+  // The site cursor stands down while this disc is up. Both are painted white
+  // under `mix-blend-mode: difference`, and stacked they invert each other —
+  // the small one would read as a hole punched in this one rather than as a
+  // second cursor.
+  useEffect(() => {
+    if (!origin) {
+      return;
+    }
+
+    return suppressSiteCursor();
+  }, [origin]);
 
   // Nothing renders until a pointer has entered, which is both what keeps the
   // server and first client render identical and what makes `document` safe to

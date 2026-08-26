@@ -44,6 +44,7 @@ export default function Timeline() {
     <section
       ref={sectionRef}
       id="hackathons"
+      data-section-gradient="timeline"
       {...(prefersReducedMotion
         ? { "data-navbar-theme": "light" }
         : { [TIMELINE_SECTION_DATA_ATTR]: "" })}

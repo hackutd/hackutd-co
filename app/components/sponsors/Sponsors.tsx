@@ -299,6 +299,7 @@ export default function Sponsors() {
         <section
           ref={sectionRef}
           id="sponsors"
+          data-section-gradient="sponsors"
           className="relative bg-surface px-8 text-surface-foreground"
           data-navbar-theme="light"
           data-sponsor-panel
@@ -320,7 +321,7 @@ export default function Sponsors() {
                 href={s.url || "#"}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center rounded-lg p-4 transition-opacity hover:opacity-75"
+                className="flex items-center justify-center p-4 transition-opacity hover:opacity-75"
               >
                 <img
                   src={s.logo || ""}
@@ -345,25 +346,16 @@ export default function Sponsors() {
       <section
         ref={sectionRef}
         id="sponsors"
+        data-section-gradient="sponsors"
         className="relative z-20 px-8 pt-20 pb-32 text-surface-foreground"
         data-navbar-theme="light"
         data-sponsor-panel
         {...{ [SPONSORS_SECTION_DATA_ATTR]: "" }}
       >
-        {/* The wall's own white, and the reason `bg-surface` is not on the
-            section itself. The section now overlaps the timeline's last 50vh,
-            and an opaque panel over that stretch is exactly the hard edge that
-            cutting the plume produced before — so the overlapping part is left
-            transparent and the solid panel starts where the section's top edge
-            used to be. Nothing is lost by that: PAGE_BG has already carried the
-            page to this same panel colour by then (SPONSORS_PANEL_PHASE), so
-            the transparent band reads as the identical white, while the plume
-            behind it is free to finish dissolving in full view underneath the
-            heading and the logos rather than being clipped by them. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-[50vh] bottom-0 -z-10 bg-surface"
-        />
+        {/* PageBackground has already reached the sponsor panel color here and
+            paints the persistent section gradient above it. Keeping this wall
+            transparent lets both remain visible while the section's z-index
+            still holds its content over the departing timeline scene. */}
 
         {/* Header */}
         <div ref={headerRef} className="flex items-end justify-between">
@@ -381,9 +373,9 @@ export default function Sponsors() {
           ref={sceneRef}
           className="flex flex-col gap-8 lg:flex-row lg:gap-20"
         >
-          {/* Sponsor logos grid - Left side */}
+          {/* Sponsor logos grid - Right side */}
           <div
-            className="relative z-10 order-2 w-full lg:sticky lg:top-0 lg:order-1 lg:h-screen lg:w-[48%] lg:overflow-hidden"
+            className="relative z-10 order-2 w-full lg:sticky lg:top-0 lg:h-screen lg:w-[48%] lg:overflow-hidden"
           >
             <style dangerouslySetInnerHTML={{ __html: `
               /* ── Sponsor tiles ──────────────────────────────────────
@@ -567,7 +559,7 @@ export default function Sponsors() {
                       href={s.url || "#"}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="sponsor-card flex h-full items-center justify-center rounded-xl border border-surface-foreground/10 p-4"
+                      className="sponsor-card flex h-full items-center justify-center border border-surface-foreground/10 p-4"
                     >
                       <img
                         src={s.logo || ""}
@@ -583,8 +575,8 @@ export default function Sponsors() {
             </div>
           </div>
 
-          {/* 3D Reunion Tower — Right side */}
-          <div className="relative order-1 h-[400vh] w-full lg:order-2 lg:w-[45%]">
+          {/* 3D Reunion Tower — Left side */}
+          <div className="relative order-1 h-[400vh] w-full lg:w-[45%]">
             <div
               ref={towerWrapRef}
               className="sticky top-0"

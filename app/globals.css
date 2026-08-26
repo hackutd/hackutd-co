@@ -99,6 +99,23 @@ body {
   background-color: color-mix(in srgb, var(--color-foreground) 45%, transparent);
 }
 
+/* ── Custom cursor ──────────────────────────────────────────────────────────
+   The site draws its own pointer (app/components/cursor/SiteCursor.tsx), so
+   the native one is hidden — but only while that component is mounted and
+   actually drawing a replacement, which is what the attribute on <html>
+   marks. It is never set on a device without a fine pointer, so a touch
+   reader is never left aiming at nothing.
+
+   `!important` is what beats the `cursor-pointer` utilities scattered through
+   the JSX. Those classes still matter: the cursor component reads them to
+   decide when to sharpen into an arrowhead. They just must not paint a native
+   hand on top of the drawn one. */
+
+html[data-site-cursor],
+html[data-site-cursor] * {
+  cursor: none !important;
+}
+
 @keyframes site-star-twinkle {
   0%,
   100% {

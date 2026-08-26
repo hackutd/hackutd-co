@@ -374,6 +374,7 @@ export default function Teams() {
       return (
         <section
           id="team"
+          data-section-gradient="teams"
           className={`relative overflow-hidden ${TEAMS_LAYOUT.mobileSectionPadding}`}
         >
           <div className="relative mx-auto max-w-6xl">
@@ -409,6 +410,7 @@ export default function Teams() {
       <section
         id="team"
         ref={mobileSectionRef}
+        data-section-gradient="teams"
         className="relative"
         style={{ minHeight: `${100 + ORDERED_OFFICER_TEAMS.length * 22}vh` }}
       >
@@ -474,6 +476,7 @@ export default function Teams() {
     return (
       <section
         id="team"
+        data-section-gradient="teams"
         className={`relative overflow-hidden ${TEAMS_LAYOUT.mobileSectionPadding} md:px-8 md:py-32`}
       >
         <div className="relative mx-auto max-w-7xl">
@@ -512,6 +515,7 @@ export default function Teams() {
     <section
       id="team"
       ref={sectionRef}
+      data-section-gradient="teams"
       className={`relative ${TEAMS_LAYOUT.desktopSectionMinHeight}`}
     >
       <div className={`sticky top-0 overflow-visible ${TEAMS_LAYOUT.desktopViewportHeight}`}>

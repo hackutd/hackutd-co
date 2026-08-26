@@ -38,15 +38,29 @@ export const HERO_COPY = {
    * with the Satoshi headline so the two lines read as separate voices.
    */
   eyebrow: "North America’s Largest 24 hour Hackathon",
-  headline: "Building something worth showing up for.",
+  headline: "Build something worth showing up for",
+} as const;
+
+/** Per-character reveal and scroll exit for the Hero copy. */
+export const HERO_TEXT_EFFECT = {
+  reveal: {
+    blur: 10,
+    duration: 0.4,
+    stagger: 0.01,
+    ease: "power2.out",
+  },
+  exit: {
+    start: WHITEOUT_SCROLL.start,
+    end: "78% bottom",
+    blur: 10,
+    y: -30,
+    duration: 0.4,
+    stagger: 0.01,
+    ease: "power1.in",
+  },
 } as const;
 
 export const HERO_WHITEOUT = {
-  text: {
-    start: WHITEOUT_SCROLL.start,
-    end: "78% bottom",
-    ease: "power1.in",
-  },
   overlay: {
     start: "70% bottom",
     end: WHITEOUT_SCROLL.end,

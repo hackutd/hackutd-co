@@ -3,11 +3,12 @@ import PageBackground from "./components/background/PageBackground";
 import Navbar from "./components/navbar/Navbar";
 import Hero from "./components/hero/Hero";
 import Mission from "./components/mission/Mission";
+import BoldStats from "./components/ui/stats-bold";
 import Teams from "./components/teams/Teams";
 import Projects from "./components/projects/Projects";
 import Timeline from "./components/timeline/Timeline";
 import Sponsors from "./components/sponsors/Sponsors";
-import FooterReveal from "./components/footer/FooterReveal";
+import Footer from "./components/footer/Footer";
 import ThemeCurtain from "./components/theme/ThemeCurtain";
 
 export default function Home() {
@@ -20,12 +21,12 @@ export default function Home() {
         <ThemeCurtain />
         <Navbar />
         <Hero />
-        <Mission />
+        <Mission afterStatement={<BoldStats />} />
         <Teams />
         <Projects />
         <Timeline />
         <Sponsors />
-        <FooterReveal />
+        <Footer />
       </div>
     </>
   );

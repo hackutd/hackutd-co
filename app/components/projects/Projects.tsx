@@ -74,7 +74,12 @@ export default function Projects() {
   );
 
   return (
-    <section id="projects" ref={sectionRef} className="px-8 py-32">
+    <section
+      id="projects"
+      ref={sectionRef}
+      data-section-gradient="projects"
+      className="px-8 py-32"
+    >
       <div className={PROJECTS_LAYOUT.grid}>
         <div
           data-project-card

@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import {
+  type PointerEvent as ReactPointerEvent,
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -65,56 +73,60 @@ export default function RocketTrailAnimation() {
   // Individual refs for each marker <g> so GSAP can wave them in sync with the trail
   const markerRefs = useRef<(SVGGElement | null)[]>([]);
 
+  const isMobile = useIsMobile();
+  const prefersReducedMotion = usePrefersReducedMotion();
+
   // Which marker is hovered. The card's position is written straight to the DOM
-  // by the ticker below rather than kept in state, so tracking a moving marker
+  // by the follow tweens below rather than kept in state, so chasing the cursor
   // costs no re-renders.
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const hideTimer = useRef<number | null>(null);
+  // Last pointer position, in client coordinates. Seeded by the pointerenter
+  // that opens the card so its very first frame is already under the cursor.
+  const pointerRef = useRef({ x: 0, y: 0 });
 
   const cardHeight =
     CARD_POPOVER.width / CARD_POPOVER.imageAspect + CARD_POPOVER.captionHeight;
 
-  // Anchor the card to a marker's current on-screen box: above it by preference,
-  // flipped below when there is no room, then clamped inside the clip box. The
-  // clip is overflow-hidden, so anything outside it is simply cut off.
-  const positionCard = useCallback(
-    (index: number) => {
-      const clip = clipRef.current;
-      const marker = markerRefs.current[index];
-      const card = cardRef.current;
-      if (!clip || !marker || !card) return;
+  // Where the card wants to sit for the pointer's current position: centred on
+  // the cursor and above it by preference, flipped below when there is no room,
+  // then clamped inside the clip box. The clip is overflow-hidden, so a card
+  // allowed past its edge would simply be cut off.
+  const cardTarget = useCallback(() => {
+    const clip = clipRef.current;
+    if (!clip) return null;
 
-      const clipRect = clip.getBoundingClientRect();
-      const rect = marker.getBoundingClientRect();
-      const half = CARD_POPOVER.width / 2;
+    const clipRect = clip.getBoundingClientRect();
+    const half = CARD_POPOVER.width / 2;
+    const pointerX = pointerRef.current.x - clipRect.left;
+    const pointerY = pointerRef.current.y - clipRect.top;
 
-      const left = gsap.utils.clamp(
+    const left = gsap.utils.clamp(
+      half + CARD_POPOVER.edgeMargin,
+      Math.max(
         half + CARD_POPOVER.edgeMargin,
-        Math.max(
-          half + CARD_POPOVER.edgeMargin,
-          clipRect.width - half - CARD_POPOVER.edgeMargin,
-        ),
-        rect.left + rect.width / 2 - clipRect.left,
-      );
+        clipRect.width - half - CARD_POPOVER.edgeMargin,
+      ),
+      pointerX,
+    );
 
-      const above = rect.top - clipRect.top - CARD_POPOVER.gap - cardHeight;
-      const below = rect.bottom - clipRect.top + CARD_POPOVER.gap;
-      const top = gsap.utils.clamp(
+    const above = pointerY - CARD_POPOVER.gap - cardHeight;
+    const below = pointerY + CARD_POPOVER.gap;
+    const top = gsap.utils.clamp(
+      CARD_POPOVER.edgeMargin,
+      Math.max(
         CARD_POPOVER.edgeMargin,
-        Math.max(
-          CARD_POPOVER.edgeMargin,
-          clipRect.height - cardHeight - CARD_POPOVER.edgeMargin,
-        ),
-        above >= CARD_POPOVER.edgeMargin ? above : below,
-      );
+        clipRect.height - cardHeight - CARD_POPOVER.edgeMargin,
+      ),
+      above >= CARD_POPOVER.edgeMargin ? above : below,
+    );
 
-      gsap.set(card, { x: left, y: top, xPercent: -50 });
-    },
-    [cardHeight],
-  );
+    return { left, top };
+  }, [cardHeight]);
 
-  const showCard = useCallback((index: number) => {
+  const showCard = useCallback((index: number, event: ReactPointerEvent) => {
+    pointerRef.current = { x: event.clientX, y: event.clientY };
     if (hideTimer.current !== null) {
       clearTimeout(hideTimer.current);
       hideTimer.current = null;
@@ -141,18 +153,58 @@ export default function RocketTrailAnimation() {
     [],
   );
 
-  // Keep the card glued to its marker the whole time it is shown — the marker is
-  // still riding the wave, and the scrubbed sweep is still carrying it left.
+  // Chase the pointer for as long as the card is up. It mounts already parked
+  // under the cursor — the pointerenter that opened it supplied the position —
+  // and every move after that is handed to a catch-up tween.
   useLayoutEffect(() => {
     if (hoveredIndex === null) return;
-    const follow = () => positionCard(hoveredIndex);
-    follow();
-    gsap.ticker.add(follow);
-    return () => gsap.ticker.remove(follow);
-  }, [hoveredIndex, positionCard]);
+    const card = cardRef.current;
+    const start = cardTarget();
+    if (!card || !start) return;
 
-  const isMobile = useIsMobile();
-  const prefersReducedMotion = usePrefersReducedMotion();
+    gsap.set(card, { xPercent: -50, x: start.left, y: start.top });
+
+    let follow: (target: { left: number; top: number }) => void;
+    if (prefersReducedMotion) {
+      follow = (target) => gsap.set(card, { x: target.left, y: target.top });
+    } else {
+      gsap.fromTo(
+        card,
+        { autoAlpha: 0, scale: CARD_POPOVER.reveal.scaleFrom },
+        {
+          autoAlpha: 1,
+          scale: 1,
+          duration: CARD_POPOVER.reveal.duration,
+          ease: CARD_POPOVER.reveal.ease,
+        },
+      );
+      const quickX = gsap.quickTo(card, "x", CARD_POPOVER.follow);
+      const quickY = gsap.quickTo(card, "y", CARD_POPOVER.follow);
+      follow = (target) => {
+        quickX(target.left);
+        quickY(target.top);
+      };
+    }
+
+    // Listening on the window rather than on the marker keeps the card attached
+    // to the cursor across the gaps between a marker's own glyphs and through
+    // the hide grace period, neither of which raises an SVG pointer event.
+    const onPointerMove = (event: PointerEvent) => {
+      pointerRef.current = { x: event.clientX, y: event.clientY };
+      const target = cardTarget();
+      if (target) follow(target);
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    return () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      // Moving straight onto a neighbouring marker re-runs this effect against
+      // the same DOM node, so retire the outgoing chase rather than leaving two
+      // tweens writing the same two properties.
+      gsap.killTweensOf(card);
+    };
+  }, [hoveredIndex, cardTarget, prefersReducedMotion]);
+
   // The trail canvas is parked a full viewport to the right inside an
   // overflow-hidden box, so the canvas's own lazy observer can't see it until
   // the rocket has already slid into frame — by which point the trail shows the
@@ -595,7 +647,7 @@ export default function RocketTrailAnimation() {
                   key={`${marker.year}-${marker.name}`}
                   ref={el => { markerRefs.current[i] = el; }}
                   style={{ pointerEvents: "auto" }}
-                  onPointerEnter={() => showCard(i)}
+                  onPointerEnter={(event) => showCard(i, event)}
                   onPointerLeave={hideCard}
                 >
                   {marker.href ? (
@@ -622,12 +674,18 @@ export default function RocketTrailAnimation() {
           className="pointer-events-none absolute top-0 left-0 z-20"
           style={{ width: CARD_POPOVER.width }}
         >
-          <div className="overflow-hidden rounded-2xl border border-foreground/12 bg-background/95 shadow-[0_24px_64px_rgba(0,0,0,0.6)] backdrop-blur-md">
+          <div className="overflow-hidden border border-foreground/12 bg-background/95 shadow-[0_24px_64px_rgba(0,0,0,0.6)] backdrop-blur-md">
+            {/* The card slot is a fixed CARD_POPOVER.width px wide. Without a
+                sizes hint next/image builds its srcset from [width, width*2] —
+                1035 and 2070 — which snap up to the 1080 and 3840 device sizes,
+                so a retina browser downloads the 3840 variant for a 320px box.
+                Pinning sizes to the real slot keeps it on the small variants. */}
             <Image
               src={hoveredMarker.card}
               alt={`${hoveredMarker.name} recap`}
               width={1035}
               height={561}
+              sizes={`${CARD_POPOVER.width}px`}
               className="h-auto w-full"
             />
             <div className="flex items-baseline justify-between px-4 py-2.5">
