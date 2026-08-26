@@ -7,7 +7,7 @@ export const TRAIL_VIEWBOX = { width: 1371, height: 402 } as const;
 
 /** Poyo artwork positioned in the original rocket's SVG-coordinate footprint. */
 export const ROCKET_ART = {
-  src: "/poyo_rocket.webp",
+  src: "/timeline/poyo_rocket.webp",
   // Tuck the plume beneath the rear engine bells so it appears to originate
   // from Poyo's rocket instead of beginning beside the artwork.
   x: 18,
@@ -63,13 +63,13 @@ export const YEAR_MARKERS: YearMarker[] = [
   // Base coordinates are spaced 165 units apart from x=450. Responsive pitch
   // multipliers below spread those coordinates further apart at render time.
   { year: "2024", name: "RIPPLE EFFECT",      date: "Fall 2024",   x: 450,  y: 150, image: "/timeline/logos/ripple-2024.png",             imageWidth: 110, imageHeight: 25, card: "/timeline/cards/ripple-2024.png",             href: "https://ripple.hackutd.co" },
-  { year: "2023", name: "HACKUTD X",          date: "Fall 2023",   x: 615,  y: 198, image: "/hackX.png",                                  imageWidth: 64,  imageHeight: 80, card: "/timeline/cards/hackutd-x-2023.png",          href: "https://x.hackutd.co" },
+  { year: "2023", name: "HACKUTD X",          date: "Fall 2023",   x: 615,  y: 198, image: "/timeline/logos/hackutd-x-2023.png",          imageWidth: 64,  imageHeight: 80, card: "/timeline/cards/hackutd-x-2023.png",          href: "https://x.hackutd.co" },
   { year: "2023", name: "AXXESS HACKATHON",   date: "Spring 2023", x: 780,  y: 146, image: "/timeline/logos/axxess-2023.png",             imageWidth: 100, imageHeight: 29, card: "/timeline/cards/axxess-2023.png",             href: "https://www.axxess.com/hackathon" },
-  { year: "2022", name: "HACKUTD IX",         date: "Fall 2022",   x: 945,  y: 198, image: "/hackIX.png",                                 imageWidth: 78,  imageHeight: 77, card: "/timeline/cards/hackutd-ix-2022.png",         href: "https://ix.hackutd.co/" },
-  { year: "2021", name: "HACKUTD VIII",       date: "Fall 2021",   x: 1110, y: 148, image: "/hackVIII.png",                               imageWidth: 68,  imageHeight: 79, card: "/timeline/cards/hackutd-viii-2021.png",       href: "https://viii.hackutd.co/" },
-  { year: "2021", name: "HACKUTD VII",        date: "Spring 2021", x: 1275, y: 200, image: "/hackVII.png",                                imageWidth: 60,  imageHeight: 80, card: "/timeline/cards/hackutd-vii-2021.png",        href: "https://vii.hackutd.co/" },
+  { year: "2022", name: "HACKUTD IX",         date: "Fall 2022",   x: 945,  y: 198, image: "/timeline/logos/hackutd-ix-2022.png",         imageWidth: 78,  imageHeight: 77, card: "/timeline/cards/hackutd-ix-2022.png",         href: "https://ix.hackutd.co/" },
+  { year: "2021", name: "HACKUTD VIII",       date: "Fall 2021",   x: 1110, y: 148, image: "/timeline/logos/hackutd-viii-2021.png",       imageWidth: 68,  imageHeight: 79, card: "/timeline/cards/hackutd-viii-2021.png",       href: "https://viii.hackutd.co/" },
+  { year: "2021", name: "HACKUTD VII",        date: "Spring 2021", x: 1275, y: 200, image: "/timeline/logos/hackutd-vii-2021.png",        imageWidth: 60,  imageHeight: 80, card: "/timeline/cards/hackutd-vii-2021.png",        href: "https://vii.hackutd.co/" },
   { year: "2020", name: "GAME JAM",           date: "Fall 2020",   x: 1440, y: 150, image: "/timeline/logos/gamejam-2020.png",            imageWidth: 84,  imageHeight: 47, card: "/timeline/cards/gamejam-2020.png",            href: "https://gamejam.hackutd.co/" },
-  { year: "2019", name: "HACKUTD VI",         date: "Fall 2019",   x: 1605, y: 198, image: "/hackVI.png",                                 imageWidth: 62,  imageHeight: 80, card: "/timeline/cards/hackutd-vi-2019.png",         href: "https://hackutd-vi.devpost.com/" },
+  { year: "2019", name: "HACKUTD VI",         date: "Fall 2019",   x: 1605, y: 198, image: "/timeline/logos/hackutd-vi-2019.png",         imageWidth: 62,  imageHeight: 80, card: "/timeline/cards/hackutd-vi-2019.png",         href: "https://hackutd-vi.devpost.com/" },
   { year: "2019", name: "HACKUTD 19",         date: "Spring 2019", x: 1770, y: 146, image: "/timeline/logos/hackutd-2019.png",            imageWidth: 100, imageHeight: 43, card: "/timeline/cards/hackutd-2019.png",            href: "https://hackutd2019.devpost.com/" },
   { year: "2018", name: "HACKS FOR HUMANITY", date: "Fall 2018",   x: 1935, y: 198, image: "/timeline/logos/hacks-for-humanity-2018.png", imageWidth: 84,  imageHeight: 45, card: "/timeline/cards/hacks-for-humanity-2018.png", href: "https://hfhutd18.devpost.com/" },
   { year: "2018", name: "HACKUTD 18",         date: "Spring 2018", x: 2100, y: 148, image: "/timeline/logos/hackutd-2018.png",            imageWidth: 104, imageHeight: 34, card: "/timeline/cards/hackutd-2018.png",            href: "https://hackutd18.devpost.com/" },

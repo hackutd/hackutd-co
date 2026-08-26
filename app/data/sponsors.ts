@@ -13,7 +13,7 @@ const nmc2 = "/sponsors/nmc2_dark.webp";
 // SVG imports
 // for further context, the reason these are in separate locations is because I didn't want to work on configuring
 // an SVG loader for webpack for the default import; this could be a potential future improvement
-const SVG_LOC = "/svg/sponsors";
+const SVG_LOC = "/sponsors/svg";
 const nvidia = `${SVG_LOC}/nvidia_dark.svg`;
 const google = `${SVG_LOC}/google.svg`;
 const statefarm = `${SVG_LOC}/statefarm.svg`;
