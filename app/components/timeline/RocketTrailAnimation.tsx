@@ -1,15 +1,21 @@
 "use client";
 
-import { useId, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import BrandShaderBackground from "@/app/components/background/BrandShaderBackground";
+import BrandSvgGradient from "@/app/components/background/BrandSvgGradient";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { useNearViewport } from "@/app/hooks/useNearViewport";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import {
+  CARD_POPOVER,
+  MARKER_IMAGE_SCALE,
+  MARKER_SPACING,
+  MARKER_WAVE_FOLLOW,
   MOBILE_TIMELINE_SCRUB,
   MOBILE_TRAIL_WAVE,
   ROCKET_ART,
@@ -34,8 +40,8 @@ function smoothstep(t: number): number {
 
 // Half-height of the plume at SVG x. The power curve is strictly increasing
 // between the nozzle and fullWidthX, so there is no constant-width middle band
-// followed by a separate flare. Values beyond fullWidthX remain full bleed,
-// but are still densely sampled and animated by the travelling wave.
+// followed by a separate flare. Values beyond fullWidthX stay at the configured
+// full-bleed maximum while remaining densely sampled for the travelling wave.
 function trailHW(x: number, cfg: TrailShape, halfWidthFull: number): number {
   const progress = Math.max(
     0,
@@ -50,6 +56,7 @@ export default function RocketTrailAnimation() {
   const reactId = useId();
   const safeReactId = reactId.replace(/:/g, "");
   const trailMaskId = `timelineTrailMask-${safeReactId}`;
+  const trailGradientId = `timelineTrailGradient-${safeReactId}`;
   const markerImageFilterId = `timelineMarkerImageFilter-${safeReactId}`;
   const clipRef = useRef<HTMLDivElement>(null);
   const assemblyRef = useRef<HTMLDivElement>(null);
@@ -57,6 +64,92 @@ export default function RocketTrailAnimation() {
   const trailPolyRef = useRef<SVGPolygonElement>(null);
   // Individual refs for each marker <g> so GSAP can wave them in sync with the trail
   const markerRefs = useRef<(SVGGElement | null)[]>([]);
+
+  // Which marker is hovered. The card's position is written straight to the DOM
+  // by the ticker below rather than kept in state, so tracking a moving marker
+  // costs no re-renders.
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const hideTimer = useRef<number | null>(null);
+
+  const cardHeight =
+    CARD_POPOVER.width / CARD_POPOVER.imageAspect + CARD_POPOVER.captionHeight;
+
+  // Anchor the card to a marker's current on-screen box: above it by preference,
+  // flipped below when there is no room, then clamped inside the clip box. The
+  // clip is overflow-hidden, so anything outside it is simply cut off.
+  const positionCard = useCallback(
+    (index: number) => {
+      const clip = clipRef.current;
+      const marker = markerRefs.current[index];
+      const card = cardRef.current;
+      if (!clip || !marker || !card) return;
+
+      const clipRect = clip.getBoundingClientRect();
+      const rect = marker.getBoundingClientRect();
+      const half = CARD_POPOVER.width / 2;
+
+      const left = gsap.utils.clamp(
+        half + CARD_POPOVER.edgeMargin,
+        Math.max(
+          half + CARD_POPOVER.edgeMargin,
+          clipRect.width - half - CARD_POPOVER.edgeMargin,
+        ),
+        rect.left + rect.width / 2 - clipRect.left,
+      );
+
+      const above = rect.top - clipRect.top - CARD_POPOVER.gap - cardHeight;
+      const below = rect.bottom - clipRect.top + CARD_POPOVER.gap;
+      const top = gsap.utils.clamp(
+        CARD_POPOVER.edgeMargin,
+        Math.max(
+          CARD_POPOVER.edgeMargin,
+          clipRect.height - cardHeight - CARD_POPOVER.edgeMargin,
+        ),
+        above >= CARD_POPOVER.edgeMargin ? above : below,
+      );
+
+      gsap.set(card, { x: left, y: top, xPercent: -50 });
+    },
+    [cardHeight],
+  );
+
+  const showCard = useCallback((index: number) => {
+    if (hideTimer.current !== null) {
+      clearTimeout(hideTimer.current);
+      hideTimer.current = null;
+    }
+    setHoveredIndex(index);
+  }, []);
+
+  // Deferred rather than immediate: a marker drifting out from under a pointer
+  // that never moved would otherwise tear the card down, and re-entering a frame
+  // later would build it again — which reads as flicker. Coming back cancels
+  // this before it fires, so nothing is seen.
+  const hideCard = useCallback(() => {
+    if (hideTimer.current !== null) clearTimeout(hideTimer.current);
+    hideTimer.current = window.setTimeout(() => {
+      hideTimer.current = null;
+      setHoveredIndex(null);
+    }, CARD_POPOVER.hideDelay);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (hideTimer.current !== null) clearTimeout(hideTimer.current);
+    },
+    [],
+  );
+
+  // Keep the card glued to its marker the whole time it is shown — the marker is
+  // still riding the wave, and the scrubbed sweep is still carrying it left.
+  useLayoutEffect(() => {
+    if (hoveredIndex === null) return;
+    const follow = () => positionCard(hoveredIndex);
+    follow();
+    gsap.ticker.add(follow);
+    return () => gsap.ticker.remove(follow);
+  }, [hoveredIndex, positionCard]);
 
   const isMobile = useIsMobile();
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -70,10 +163,10 @@ export default function RocketTrailAnimation() {
 
   const cfg = isMobile ? MOBILE_TRAIL_WAVE : TRAIL_WAVE;
 
-  // How wide the plume has to open, in SVG units, to bleed past the top and
-  // bottom of this particular viewport. Measured rather than fixed: the SVG
-  // scales with viewport *width*, so a unit is worth a very different number of
-  // pixels on a laptop and on a phone.
+  // How wide the plume can open, in SVG units. The far end fills the viewport
+  // on every screen size, while the nozzle stays pinned to halfWidthMin. The SVG
+  // scales with viewport width, so this must be measured rather than pinned to
+  // one user-space value.
   const [halfWidthFull, setHalfWidthFull] = useState<number>(cfg.halfWidthMin);
 
   useLayoutEffect(() => {
@@ -93,7 +186,11 @@ export default function RocketTrailAnimation() {
       // reach downwards than up. Size it for the longer of the two.
       const centreOffset = Math.abs(TRAIL_VIEWBOX.height / 2 - cfg.centerY);
       const reachUnits = clip.clientHeight / (2 * pxPerUnit) + centreOffset;
-      const next = Math.max(cfg.halfWidthMin, reachUnits * TRAIL_FLARE.coverage);
+      const coverage = isMobile
+        ? TRAIL_FLARE.coverage.mobile
+        : TRAIL_FLARE.coverage.desktop;
+      const fullBleedHalfWidth = reachUnits * coverage;
+      const next = Math.max(cfg.halfWidthMin, fullBleedHalfWidth);
 
       // Rebuilding the polygon and its tweens isn't free, so ignore the
       // few-pixel churn a mobile URL bar throws off while scrolling.
@@ -104,7 +201,7 @@ export default function RocketTrailAnimation() {
     const observer = new ResizeObserver(measure);
     observer.observe(clip);
     return () => observer.disconnect();
-  }, [cfg]);
+  }, [cfg, isMobile]);
 
   useGSAP(
     () => {
@@ -155,9 +252,20 @@ export default function RocketTrailAnimation() {
       // Position each marker group via GSAP so it owns the SVG transform
       // (children use group-relative coordinates, GSAP then animates y in the wave)
       const markerYOffset = isMobile ? -30 : 0;
+      const markerSpacingScale = isMobile
+        ? MARKER_SPACING.mobileScale
+        : MARKER_SPACING.desktopScale;
+      const markerX = (baseX: number) =>
+        MARKER_SPACING.anchorX +
+        (baseX - MARKER_SPACING.anchorX) * markerSpacingScale;
       YEAR_MARKERS.forEach((marker, i) => {
         const el = markerRefs.current[i];
-        if (el) gsap.set(el, { x: marker.x, y: marker.y + markerYOffset });
+        if (el) {
+          gsap.set(el, {
+            x: markerX(marker.x),
+            y: marker.y + markerYOffset,
+          });
+        }
       });
 
       if (prefersReducedMotion) {
@@ -200,7 +308,10 @@ export default function RocketTrailAnimation() {
           const el = markerRefs.current[i];
           if (el) {
             gsap.set(el, {
-              y: marker.y + markerYOffset + offsetAt(marker.x),
+              y:
+                marker.y +
+                markerYOffset +
+                offsetAt(markerX(marker.x)) * MARKER_WAVE_FOLLOW,
             });
           }
         });
@@ -238,10 +349,13 @@ export default function RocketTrailAnimation() {
       // Measured in px rather than vw so the SVG's min-width floor (which makes
       // it wider than the viewport on narrow screens) is still cleared fully.
       // The exit runs far enough past the SVG's left edge to clear every marker
-      // and carry the delayed full-bleed portion into place for the handoff.
+      // and carry the widest portion into place for the Sponsors handoff.
       const enterX = () => clip.clientWidth + ROCKET_SWEEP.overshoot;
+      const plumeExit = isMobile
+        ? ROCKET_SWEEP.plumeExit.mobile
+        : ROCKET_SWEEP.plumeExit.desktop;
       const exitX = () =>
-        -(assembly.getBoundingClientRect().width * ROCKET_SWEEP.plumeExit + ROCKET_SWEEP.overshoot);
+        -(assembly.getBoundingClientRect().width * plumeExit + ROCKET_SWEEP.overshoot);
 
       const scrub = isMobile ? MOBILE_TIMELINE_SCRUB : TIMELINE_SCROLL.scrub;
       gsap.fromTo(
@@ -276,6 +390,11 @@ export default function RocketTrailAnimation() {
   const yearFontSize = isMobile ? 26 : 18;
   const nameFontSize = isMobile ? 18 : 9;
   const nameLetterSpacing = isMobile ? 2.0 : 1.5;
+  const markerImageScale = isMobile
+    ? MARKER_IMAGE_SCALE.mobile
+    : MARKER_IMAGE_SCALE.desktop;
+
+  const hoveredMarker = hoveredIndex === null ? null : YEAR_MARKERS[hoveredIndex];
 
   // Mask and gradient bounds have to contain the whole plume — which now runs
   // more than two viewports past the SVG's right edge and past its top and
@@ -287,7 +406,7 @@ export default function RocketTrailAnimation() {
     width: cfg.endX + TRAIL_FLARE.margin,
     height: plumeHalf * 2,
   };
-  const gradientRender = isMobile ? TRAIL_GRADIENT.mobileRender : TRAIL_GRADIENT.render;
+  const gradientRender = TRAIL_GRADIENT.render;
 
   return (
     <div
@@ -319,6 +438,18 @@ export default function RocketTrailAnimation() {
               <polygon ref={trailPolyRef} fill="white" />
             </mask>
 
+            {isMobile && (
+              <BrandSvgGradient
+                id={trailGradientId}
+                x={bounds.x}
+                y={bounds.y}
+                width={bounds.width}
+                height={bounds.height}
+                animate={!prefersReducedMotion}
+                duration={14}
+              />
+            )}
+
             <filter
               id={markerImageFilterId}
               x="-60%"
@@ -346,28 +477,40 @@ export default function RocketTrailAnimation() {
           {/* Trail + rocket. Translated only by the assembly above, so the
               year markers below never drift out of sync with the fuel. */}
           <g>
-            <foreignObject
-              x={bounds.x}
-              y={bounds.y}
-              width={bounds.width}
-              height={bounds.height}
-              mask={`url(#${trailMaskId})`}
-            >
-              {/* The gradient renders at a fixed size and is stretched across
-                  the plume, so the WebGL surface stays the same cost however
-                  large the plume grows. Scaling a soft gradient reads as smear,
-                  not as blur. */}
-              <div
-                style={{
-                  width: gradientRender.width,
-                  height: gradientRender.height,
-                  transform: `scale(${bounds.width / gradientRender.width}, ${bounds.height / gradientRender.height})`,
-                  transformOrigin: "0 0",
-                }}
+            {isMobile ? (
+              <rect
+                data-mobile-brand-gradient=""
+                x={bounds.x}
+                y={bounds.y}
+                width={bounds.width}
+                height={bounds.height}
+                fill={`url(#${trailGradientId})`}
+                mask={`url(#${trailMaskId})`}
+              />
+            ) : (
+              <foreignObject
+                x={bounds.x}
+                y={bounds.y}
+                width={bounds.width}
+                height={bounds.height}
+                mask={`url(#${trailMaskId})`}
               >
-                {shaderActive && <BrandShaderBackground lazyLoad={false} />}
-              </div>
-            </foreignObject>
+                {/* The gradient renders at a fixed size and is stretched across
+                    the plume, so the WebGL surface stays the same cost however
+                    large the plume grows. Scaling a soft gradient reads as smear,
+                    not as blur. */}
+                <div
+                  style={{
+                    width: gradientRender.width,
+                    height: gradientRender.height,
+                    transform: `scale(${bounds.width / gradientRender.width}, ${bounds.height / gradientRender.height})`,
+                    transformOrigin: "0 0",
+                  }}
+                >
+                  {shaderActive && <BrandShaderBackground lazyLoad={false} />}
+                </div>
+              </foreignObject>
+            )}
 
             {/* Poyo is line art — a white-furred body with black outlines, not a
                 flat glyph — so --logo-invert does not apply to it: inverting
@@ -385,17 +528,39 @@ export default function RocketTrailAnimation() {
           {/* Year markers ride with the rocket trail for the whole sweep */}
           <g ref={markersRef}>
             {YEAR_MARKERS.map((marker, i) => {
-              // ref lets GSAP set translate(marker.x, marker.y) and then wave the y
-              // children use group-relative coords (origin = marker center)
-              const labelBaseY = marker.imageHeight / 2 + yearFontSize * 1.2;
+              // GSAP applies the responsive marker position and wave offset;
+              // children use group-relative coords (origin = marker center).
+              const imageWidth = marker.imageWidth * markerImageScale;
+              const imageHeight = marker.imageHeight * markerImageScale;
+              const labelBaseY = imageHeight / 2 + yearFontSize * 1.2;
+              // One padded, invisible hit area covering the artwork and both
+              // labels. Hovering is then a question of being near the marker
+              // rather than exactly over its glyphs, so the few units it still
+              // drifts can't drop the hover. Sitting inside the link, it doubles
+              // as a click target.
+              const nameWidth =
+                marker.name.length * (nameFontSize * 0.58 + nameLetterSpacing);
+              const hitWidth =
+                Math.max(imageWidth, nameWidth) + CARD_POPOVER.hitPadX * 2;
+              const hitTop = -imageHeight / 2 - CARD_POPOVER.hitPadY;
+              const hitBottom =
+                labelBaseY + nameFontSize * 1.6 + CARD_POPOVER.hitPadY;
               const inner = (
                 <>
+                  <rect
+                    x={-hitWidth / 2}
+                    y={hitTop}
+                    width={hitWidth}
+                    height={hitBottom - hitTop}
+                    fill="transparent"
+                    style={{ pointerEvents: "all" }}
+                  />
                   <image
                     href={marker.image}
-                    x={-marker.imageWidth / 2}
-                    y={-marker.imageHeight / 2}
-                    width={marker.imageWidth}
-                    height={marker.imageHeight}
+                    x={-imageWidth / 2}
+                    y={-imageHeight / 2}
+                    width={imageWidth}
+                    height={imageHeight}
                     preserveAspectRatio="xMidYMid meet"
                     filter={`url(#${markerImageFilterId})`}
                   />
@@ -426,7 +591,13 @@ export default function RocketTrailAnimation() {
               );
 
               return (
-                <g key={marker.year} ref={el => { markerRefs.current[i] = el; }}>
+                <g
+                  key={`${marker.year}-${marker.name}`}
+                  ref={el => { markerRefs.current[i] = el; }}
+                  style={{ pointerEvents: "auto" }}
+                  onPointerEnter={() => showCard(i)}
+                  onPointerLeave={hideCard}
+                >
                   {marker.href ? (
                     <a
                       href={marker.href}
@@ -443,6 +614,33 @@ export default function RocketTrailAnimation() {
           </g>
         </svg>
       </div>
+
+      {/* Hover card: legacy recap image for the hovered hackathon */}
+      {hoveredMarker && (
+        <div
+          ref={cardRef}
+          className="pointer-events-none absolute top-0 left-0 z-20"
+          style={{ width: CARD_POPOVER.width }}
+        >
+          <div className="overflow-hidden rounded-2xl border border-foreground/12 bg-background/95 shadow-[0_24px_64px_rgba(0,0,0,0.6)] backdrop-blur-md">
+            <Image
+              src={hoveredMarker.card}
+              alt={`${hoveredMarker.name} recap`}
+              width={1035}
+              height={561}
+              className="h-auto w-full"
+            />
+            <div className="flex items-baseline justify-between px-4 py-2.5">
+              <p className="text-sm font-semibold text-foreground">
+                {hoveredMarker.name}
+              </p>
+              <p className="text-[0.7rem] uppercase tracking-[0.18em] text-foreground/40">
+                {hoveredMarker.date}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

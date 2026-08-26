@@ -7,6 +7,7 @@ import { useRef } from "react";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
+import { buildStarPoints } from "../background/starGeometry";
 import {
   COMET_TUNING,
   HERO_SCENE_SCROLL,
@@ -15,7 +16,6 @@ import {
 } from "./sceneConfig";
 import {
   buildRibbonSegmentPath,
-  buildStarPoints,
   clamp,
   interpolateSpineSample,
   orbitGradientCoord,
@@ -284,13 +284,7 @@ export default function CometAnimation() {
           transform={`translate(${COMET_TUNING.gradient.x2}, ${COMET_TUNING.gradient.y2})`}
           opacity="0"
         >
-          <polygon
-            points={buildStarPoints(
-              COMET_TUNING.star.outer,
-              COMET_TUNING.star.inner,
-            )}
-            fill="var(--color-amber)"
-          />
+          <polygon points={buildStarPoints()} fill="var(--color-amber)" />
         </g>
       </svg>
     </div>

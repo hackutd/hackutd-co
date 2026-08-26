@@ -20,6 +20,7 @@ import {
   PAGE_BG_SNAP_DELTA,
   type PageBgPhase,
 } from "./sceneConfig";
+import StarField from "./StarField";
 
 configureScrollTrigger();
 
@@ -200,6 +201,7 @@ export default function PageBackground() {
         ref={panelLayerRef}
         className="absolute inset-0 bg-(--sponsor-panel) opacity-0"
       />
+      <StarField />
     </div>
   );
 }
