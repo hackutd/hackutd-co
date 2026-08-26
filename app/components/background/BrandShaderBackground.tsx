@@ -1,7 +1,8 @@
 "use client";
 
-import type { ComponentProps, CSSProperties } from "react";
+import { useRef, type ComponentProps, type CSSProperties } from "react";
 import { ShaderGradient, ShaderGradientCanvas } from "@shadergradient/react";
+import { useNearViewport } from "@/app/hooks/useNearViewport";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 
 type ShaderGradientProps = ComponentProps<typeof ShaderGradient> & {
@@ -76,7 +77,13 @@ export default function BrandShaderBackground({
   shaderProps,
   style,
 }: BrandShaderBackgroundProps) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
+  // When self-managed (`lazyLoad`), the canvas is unmounted entirely while it
+  // is away from the viewport rather than merely paused: a paused WebGL canvas
+  // still holds its context, drawing buffers, and compiled scene in memory.
+  const isNearViewport = useNearViewport(wrapperRef, rootMargin);
+  const shouldMountCanvas = !lazyLoad || isNearViewport;
   const mergedShaderProps = {
     ...brandShaderGradientProps,
     ...shaderProps,
@@ -87,24 +94,27 @@ export default function BrandShaderBackground({
 
   return (
     <div
+      ref={wrapperRef}
       className={wrapperClassName}
       style={{ height: "100%", width: "100%", ...style }}
     >
-      <ShaderGradientCanvas
-        className="h-full w-full"
-        style={{ height: "100%", width: "100%" }}
-        pixelDensity={mergedShaderProps.pixelDensity}
-        fov={mergedShaderProps.fov}
-        pointerEvents="none"
-        lazyLoad={lazyLoad}
-        threshold={0}
-        rootMargin={rootMargin}
-      >
-        <ShaderGradient
-          {...mergedShaderProps}
-          animate={prefersReducedMotion ? "off" : "on"}
-        />
-      </ShaderGradientCanvas>
+      {shouldMountCanvas && (
+        <ShaderGradientCanvas
+          className="h-full w-full"
+          style={{ height: "100%", width: "100%" }}
+          pixelDensity={mergedShaderProps.pixelDensity}
+          fov={mergedShaderProps.fov}
+          pointerEvents="none"
+          lazyLoad={lazyLoad}
+          threshold={0}
+          rootMargin={rootMargin}
+        >
+          <ShaderGradient
+            {...mergedShaderProps}
+            animate={prefersReducedMotion ? "off" : "on"}
+          />
+        </ShaderGradientCanvas>
+      )}
     </div>
   );
 }
