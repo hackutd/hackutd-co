@@ -125,10 +125,10 @@ export const MARKER_WAVE_FOLLOW = 0.25;
 export const TIMELINE_SCROLL = {
   start: "top top",
   // Parks the sweep on the exact frame the sticky stage stops being pinned. By
-  // then Poyo and every marker have cleared the left edge and the plume has
-  // grown past all four edges, so the scene comes to rest on a full-bleed wash
-  // of gradient rather than on an empty stage — and the very next frame of
-  // scroll starts carrying that wash off the top with Sponsors right behind it.
+  // then Poyo and every marker have cleared the left edge. Desktop retains the
+  // full-bleed gradient handoff; mobile parks a bounded plume so the gradient
+  // never becomes the entire phone screen. The next frame starts carrying the
+  // stage off the top with Sponsors right behind it.
   end: "bottom bottom",
   scrub: 0.9,
 } as const;
@@ -149,11 +149,11 @@ export const TIMELINE_LAYOUT = {
 export const MOBILE_TIMELINE_SCRUB = 0.9;
 
 /**
- * The handoff into Sponsors: the full-bleed plume dissolves uniformly, in
- * place, into a page background that PAGE_BG's sponsor phase is carrying to the
- * sponsor wall's own white over the same stretch (SPONSORS_PANEL_PHASE). Both
- * land together, so the whole frame simply becomes white — no edge crosses it,
- * and nothing is clipped or wiped.
+ * The handoff into Sponsors: the plume dissolves uniformly, in place, into a
+ * page background that PAGE_BG's sponsor phase is carrying to the sponsor
+ * wall's own white over the same stretch (SPONSORS_PANEL_PHASE). On desktop the
+ * plume is full bleed; on mobile it remains bounded and fades without ever
+ * obscuring the whole viewport.
  *
  * The window is set by where the wall is, not by where the sweep stops. A
  * `top-0` sticky of one viewport unpins a full viewport before its section
@@ -181,7 +181,8 @@ export const TIMELINE_EXIT_FADE = {
  * jet at the nozzle.
  *
  * Profile, left to right: pinched at Poyo's exhaust → continuously grows through
- * every year marker → reaches full bleed near the end. The whole length is
+ * every year marker → reaches its maximum width near the end. That maximum is
+ * full bleed on desktop and viewport-capped on mobile. The whole length is
  * densely sampled so the travelling wave continues through the far plume too.
  */
 export const TRAIL_WAVE = {
@@ -202,7 +203,7 @@ export const TRAIL_WAVE = {
    * Still strictly increasing, so there is no plateau.
    */
   growthPower: 0.85,
-  /** The continuously growing profile reaches full viewport coverage here. */
+  /** The continuously growing profile reaches its configured maximum here. */
   fullWidthX: 2300,
   /**
    * Far end of the plume. It remains densely sampled after reaching full width
@@ -227,10 +228,9 @@ export const MOBILE_TRAIL_WAVE = {
 } as const;
 
 /**
- * How wide "full-bleed" is. Measured at runtime rather than pinned to a
- * constant because the SVG is width-driven (`w-screen`, `height: auto`): one
- * SVG unit is worth ~1px on a laptop and ~0.28px on a phone, so no single
- * number could clear the top and bottom of both.
+ * Runtime plume-width limits. Measured rather than pinned to a constant because
+ * the SVG is width-driven (`w-screen`, `height: auto`): one SVG unit is worth
+ * ~1px on a laptop and ~0.28px on a phone.
  */
 export const TRAIL_FLARE = {
   /**
@@ -240,18 +240,19 @@ export const TRAIL_FLARE = {
    * fuel band.
    */
   coverage: 1.05,
+  /** Maximum total mobile plume height as a fraction of the visible viewport. */
+  mobileMaxViewportHeight: 0.42,
   /** Extra units of mask and gradient beyond the widest the plume ever gets. */
   margin: 32,
 } as const;
 
 /**
- * Size of the gradient canvas behind the plume, in SVG units, before it is
- * stretched to cover the whole plume. Fixed so the WebGL surface costs the same
- * no matter how far the plume grows, and kept at the plume's original ~16:9 so
- * the gradient keeps the framing it has always had — the stretch then reads as
- * motion smear rather than as a different gradient.
+ * Size of the desktop gradient canvas behind the plume, in SVG units, before it
+ * is stretched to cover the whole plume. Fixed so the WebGL surface costs the
+ * same no matter how far the plume grows, and kept at the plume's original
+ * ~16:9 so the stretch reads as motion smear rather than a different gradient.
+ * Mobile uses the native SVG gradient instead and never mounts this canvas.
  */
 export const TRAIL_GRADIENT = {
   render: { width: 1600, height: 900 },
-  mobileRender: { width: 1100, height: 620 },
 } as const;

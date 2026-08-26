@@ -6,6 +6,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import BrandShaderBackground from "@/app/components/background/BrandShaderBackground";
+import BrandSvgGradient from "@/app/components/background/BrandSvgGradient";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { useNearViewport } from "@/app/hooks/useNearViewport";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
@@ -37,8 +38,9 @@ function smoothstep(t: number): number {
 
 // Half-height of the plume at SVG x. The power curve is strictly increasing
 // between the nozzle and fullWidthX, so there is no constant-width middle band
-// followed by a separate flare. Values beyond fullWidthX remain full bleed,
-// but are still densely sampled and animated by the travelling wave.
+// followed by a separate flare. Values beyond fullWidthX stay at the configured
+// maximum (full bleed on desktop, viewport-capped on mobile) while remaining
+// densely sampled for the travelling wave.
 function trailHW(x: number, cfg: TrailShape, halfWidthFull: number): number {
   const progress = Math.max(
     0,
@@ -53,6 +55,7 @@ export default function RocketTrailAnimation() {
   const reactId = useId();
   const safeReactId = reactId.replace(/:/g, "");
   const trailMaskId = `timelineTrailMask-${safeReactId}`;
+  const trailGradientId = `timelineTrailGradient-${safeReactId}`;
   const markerImageFilterId = `timelineMarkerImageFilter-${safeReactId}`;
   const clipRef = useRef<HTMLDivElement>(null);
   const assemblyRef = useRef<HTMLDivElement>(null);
@@ -159,10 +162,10 @@ export default function RocketTrailAnimation() {
 
   const cfg = isMobile ? MOBILE_TRAIL_WAVE : TRAIL_WAVE;
 
-  // How wide the plume has to open, in SVG units, to bleed past the top and
-  // bottom of this particular viewport. Measured rather than fixed: the SVG
-  // scales with viewport *width*, so a unit is worth a very different number of
-  // pixels on a laptop and on a phone.
+  // How wide the plume can open, in SVG units. Desktop keeps the full-bleed
+  // handoff; mobile is capped to a viewport fraction so the fuel never hides the
+  // whole phone screen. The SVG scales with viewport width, so this must be
+  // measured rather than pinned to one user-space value.
   const [halfWidthFull, setHalfWidthFull] = useState<number>(cfg.halfWidthMin);
 
   useLayoutEffect(() => {
@@ -182,7 +185,17 @@ export default function RocketTrailAnimation() {
       // reach downwards than up. Size it for the longer of the two.
       const centreOffset = Math.abs(TRAIL_VIEWBOX.height / 2 - cfg.centerY);
       const reachUnits = clip.clientHeight / (2 * pxPerUnit) + centreOffset;
-      const next = Math.max(cfg.halfWidthMin, reachUnits * TRAIL_FLARE.coverage);
+      const fullBleedHalfWidth = reachUnits * TRAIL_FLARE.coverage;
+      const mobileHalfWidthCap =
+        (clip.clientHeight * TRAIL_FLARE.mobileMaxViewportHeight) /
+          (2 * pxPerUnit) -
+        cfg.maxAmplitude;
+      const next = Math.max(
+        cfg.halfWidthMin,
+        isMobile
+          ? Math.min(fullBleedHalfWidth, mobileHalfWidthCap)
+          : fullBleedHalfWidth,
+      );
 
       // Rebuilding the polygon and its tweens isn't free, so ignore the
       // few-pixel churn a mobile URL bar throws off while scrolling.
@@ -193,7 +206,7 @@ export default function RocketTrailAnimation() {
     const observer = new ResizeObserver(measure);
     observer.observe(clip);
     return () => observer.disconnect();
-  }, [cfg]);
+  }, [cfg, isMobile]);
 
   useGSAP(
     () => {
@@ -330,7 +343,7 @@ export default function RocketTrailAnimation() {
       // Measured in px rather than vw so the SVG's min-width floor (which makes
       // it wider than the viewport on narrow screens) is still cleared fully.
       // The exit runs far enough past the SVG's left edge to clear every marker
-      // and carry the delayed full-bleed portion into place for the handoff.
+      // and carry the widest portion into place for the Sponsors handoff.
       const enterX = () => clip.clientWidth + ROCKET_SWEEP.overshoot;
       const exitX = () =>
         -(assembly.getBoundingClientRect().width * ROCKET_SWEEP.plumeExit + ROCKET_SWEEP.overshoot);
@@ -381,7 +394,7 @@ export default function RocketTrailAnimation() {
     width: cfg.endX + TRAIL_FLARE.margin,
     height: plumeHalf * 2,
   };
-  const gradientRender = isMobile ? TRAIL_GRADIENT.mobileRender : TRAIL_GRADIENT.render;
+  const gradientRender = TRAIL_GRADIENT.render;
 
   return (
     <div
@@ -413,6 +426,18 @@ export default function RocketTrailAnimation() {
               <polygon ref={trailPolyRef} fill="white" />
             </mask>
 
+            {isMobile && (
+              <BrandSvgGradient
+                id={trailGradientId}
+                x={bounds.x}
+                y={bounds.y}
+                width={bounds.width}
+                height={bounds.height}
+                animate={!prefersReducedMotion}
+                duration={14}
+              />
+            )}
+
             <filter
               id={markerImageFilterId}
               x="-60%"
@@ -440,28 +465,40 @@ export default function RocketTrailAnimation() {
           {/* Trail + rocket. Translated only by the assembly above, so the
               year markers below never drift out of sync with the fuel. */}
           <g>
-            <foreignObject
-              x={bounds.x}
-              y={bounds.y}
-              width={bounds.width}
-              height={bounds.height}
-              mask={`url(#${trailMaskId})`}
-            >
-              {/* The gradient renders at a fixed size and is stretched across
-                  the plume, so the WebGL surface stays the same cost however
-                  large the plume grows. Scaling a soft gradient reads as smear,
-                  not as blur. */}
-              <div
-                style={{
-                  width: gradientRender.width,
-                  height: gradientRender.height,
-                  transform: `scale(${bounds.width / gradientRender.width}, ${bounds.height / gradientRender.height})`,
-                  transformOrigin: "0 0",
-                }}
+            {isMobile ? (
+              <rect
+                data-mobile-brand-gradient=""
+                x={bounds.x}
+                y={bounds.y}
+                width={bounds.width}
+                height={bounds.height}
+                fill={`url(#${trailGradientId})`}
+                mask={`url(#${trailMaskId})`}
+              />
+            ) : (
+              <foreignObject
+                x={bounds.x}
+                y={bounds.y}
+                width={bounds.width}
+                height={bounds.height}
+                mask={`url(#${trailMaskId})`}
               >
-                {shaderActive && <BrandShaderBackground lazyLoad={false} />}
-              </div>
-            </foreignObject>
+                {/* The gradient renders at a fixed size and is stretched across
+                    the plume, so the WebGL surface stays the same cost however
+                    large the plume grows. Scaling a soft gradient reads as smear,
+                    not as blur. */}
+                <div
+                  style={{
+                    width: gradientRender.width,
+                    height: gradientRender.height,
+                    transform: `scale(${bounds.width / gradientRender.width}, ${bounds.height / gradientRender.height})`,
+                    transformOrigin: "0 0",
+                  }}
+                >
+                  {shaderActive && <BrandShaderBackground lazyLoad={false} />}
+                </div>
+              </foreignObject>
+            )}
 
             {/* Poyo is line art — a white-furred body with black outlines, not a
                 flat glyph — so --logo-invert does not apply to it: inverting
