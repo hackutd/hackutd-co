@@ -12,7 +12,7 @@ export const missionContent = {
     /** Rendered uppercase — keep normal casing here */
     role: "Co-Directors, HackUTD '26",
     photo: {
-      src: "/directors.JPG",
+      src: "/mission/directors.JPG",
       alt: "Veer Shah and Alan Roybal, HackUTD 2026 co-directors",
     },
   },
