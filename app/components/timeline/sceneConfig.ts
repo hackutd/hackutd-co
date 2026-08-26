@@ -189,12 +189,19 @@ export const TRAIL_WAVE = {
   numPoints: 200,
   startX: 202,
   centerY: 179,
-  // Width of the plume where it leaves the nozzle. Set against the *visible*
-  // band rather than on its own: the band is this plus the wave's amplitude, so
-  // the shallower wave has to be paid back here for the opening to read wider.
-  halfWidthMin: 78,
-  /** Exponent above 1 keeps early growth controlled without creating a plateau. */
-  growthPower: 1.15,
+  // Width of the plume exactly where it leaves Poyo's exhaust. The wave's
+  // amplitude ramps up from zero over amplitudeRampLength, so at this one point
+  // the visible band is this value alone — nothing else narrows or widens it.
+  halfWidthMin: 46,
+  /**
+   * Exponent on the 0->1 growth between the nozzle and fullWidthX. Below 1 the
+   * plume opens fastest as it leaves the nozzle and eases off further out,
+   * which is what lets the opening be pinched tight without the body behind it
+   * going thin with it: paired with halfWidthMin 46, the band is 41% narrower
+   * at the nozzle yet back to its previous width by the first year marker.
+   * Still strictly increasing, so there is no plateau.
+   */
+  growthPower: 0.85,
   /** The continuously growing profile reaches full viewport coverage here. */
   fullWidthX: 2300,
   /**
