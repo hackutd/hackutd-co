@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useId, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -8,6 +8,7 @@ import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import BrandShaderBackground from "../background/BrandShaderBackground";
+import BrandSvgGradient from "../background/BrandSvgGradient";
 import {
   COMET_TUNING,
   HERO_SCENE_SCROLL,
@@ -23,6 +24,10 @@ import {
 configureScrollTrigger();
 
 export default function CometTrailBackground() {
+  const reactId = useId();
+  const safeReactId = reactId.replace(/:/g, "");
+  const shaderMaskId = `heroCometShaderMask-${safeReactId}`;
+  const mobileGradientId = `heroCometMobileGradient-${safeReactId}`;
   const wrapperRef = useRef<HTMLDivElement>(null);
   const spineRef = useRef<SVGPathElement>(null);
   const maskPathRef = useRef<SVGPathElement>(null);
@@ -149,28 +154,49 @@ export default function CometTrailBackground() {
         aria-hidden="true"
       >
         <defs>
-          <mask id="cometShaderMask" maskUnits="userSpaceOnUse">
+          <mask id={shaderMaskId} maskUnits="userSpaceOnUse">
             <rect x="0" y="0" width="1440" height="900" fill="black" />
             <path ref={maskPathRef} d="" fill="white" />
           </mask>
+          {isMobile && (
+            <BrandSvgGradient
+              id={mobileGradientId}
+              width={1440}
+              height={900}
+              animate={!prefersReducedMotion}
+              duration={18}
+            />
+          )}
         </defs>
 
         <path ref={spineRef} d={COMET_TUNING.spine} fill="none" opacity="0" />
 
-        <foreignObject
-          x="0"
-          y="0"
-          width="1440"
-          height="900"
-          mask="url(#cometShaderMask)"
-        >
-          <div
-            className="h-full w-full"
-            style={{ height: "100%", width: "100%" }}
+        {isMobile ? (
+          <rect
+            data-mobile-brand-gradient=""
+            x="0"
+            y="0"
+            width="1440"
+            height="900"
+            fill={`url(#${mobileGradientId})`}
+            mask={`url(#${shaderMaskId})`}
+          />
+        ) : (
+          <foreignObject
+            x="0"
+            y="0"
+            width="1440"
+            height="900"
+            mask={`url(#${shaderMaskId})`}
           >
-            <BrandShaderBackground />
-          </div>
-        </foreignObject>
+            <div
+              className="h-full w-full"
+              style={{ height: "100%", width: "100%" }}
+            >
+              <BrandShaderBackground />
+            </div>
+          </foreignObject>
+        )}
       </svg>
     </div>
   );

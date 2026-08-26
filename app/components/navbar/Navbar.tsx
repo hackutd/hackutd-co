@@ -117,7 +117,7 @@ export default function Navbar() {
       <Link href="/" className="flex items-center">
         <span className="relative block h-6 w-33.5 md:h-8 md:w-44.5">
           <Image
-            src="/white-hackutd-logo.svg"
+            src="/brand/white-hackutd-logo.svg"
             alt="HackUTD"
             width={2048}
             height={585}
@@ -127,7 +127,7 @@ export default function Navbar() {
             priority
           />
           <Image
-            src="/black-hackutd-logo.svg"
+            src="/brand/black-hackutd-logo.svg"
             alt="HackUTD"
             width={2048}
             height={585}

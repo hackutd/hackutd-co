@@ -15,8 +15,8 @@ export type ActiveNodeState = {
   personId: string;
 } | null;
 
-function getMemberCountLabel(memberCount: number) {
-  return `${memberCount} MEMBERS`;
+function getOfficerCountLabel(officerCount: number) {
+  return `${officerCount} OFFICERS`;
 }
 
 function getTeamOpacity(activeTeamId: string | null, teamId: string) {
@@ -63,7 +63,7 @@ export function TeamConstellation({
   centerTooltip?: boolean;
 }) {
   const teamOpacity = getTeamOpacity(activeTeamId, layout.team.id);
-  const memberCountLabel = getMemberCountLabel(layout.nodes.length);
+  const officerCountLabel = getOfficerCountLabel(layout.nodes.length);
   const graphBounds = layout.nodes.reduce(
     (bounds, node) => {
       const radius = (node.isLead ? box.leadNodeSize : box.nodeSize) / 2 + 6;
@@ -241,7 +241,7 @@ export function TeamConstellation({
             {layout.team.label}
           </h3>
           <p className="mt-2 text-[0.78rem] uppercase tracking-[0.1em] text-foreground/34">
-            {memberCountLabel}
+            {officerCountLabel}
           </p>
         </div>
       ) : null}
