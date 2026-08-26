@@ -14,8 +14,8 @@ export const projects: Project[] = [
   {
     name: "HackUTD 2026",
     label: "Fall 2026",
-    description: "The largest hackathon at UT Dallas returns with new challenge tracks.",
-    link: "https://github.com/hackutd/harp",
+    description: "Texas' largest 24-hour hackathon returns.",
+    link: "https://zeroday.hackutd.co/",
     image: "/projects/zero_day.png",
     imageWidth: 781,
     imageHeight: 307,
@@ -23,7 +23,7 @@ export const projects: Project[] = [
   {
     name: "Jury",
     label: "Competition",
-    description: "Industry professionals evaluate projects across execution and impact.",
+    description: "Fair, fast project judging.",
     link: "https://github.com/hackutd/jury",
     image: "/projects/jury.png",
     imageWidth: 311,
@@ -32,7 +32,7 @@ export const projects: Project[] = [
   {
     name: "Harp",
     label: "Spring Event",
-    description: "A creative-focused companion event pairing design and hardware.",
+    description: "Design meets hardware.",
     link: "https://github.com/hackutd/harp",
     image: "/projects/harp.png",
     imageWidth: 512,
