@@ -299,13 +299,20 @@ export default function Sponsors() {
         <section
           ref={sectionRef}
           id="sponsors"
+          aria-labelledby="sponsors-heading"
           data-section-gradient="sponsors"
           className="relative bg-surface px-8 text-surface-foreground"
           data-navbar-theme="light"
           data-sponsor-panel
         >
-          <div className="flex items-end justify-between">
-            <h2 className="text-4xl font-bold md:text-5xl">Our Sponsors</h2>
+          <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <h2
+              id="sponsors-heading"
+              className="font-sans text-[clamp(2.5rem,5vw,4.5rem)] font-normal leading-[0.9] tracking-[-0.045em]"
+            >
+              <span className="block text-surface-foreground">Past</span>
+              <span className="block text-pink">Sponsors</span>
+            </h2>
             <a
               href="mailto:hackutdindustry@acmutd.co"
               className="group relative pb-1 text-sm text-muted transition-colors hover:text-foreground"
@@ -346,6 +353,7 @@ export default function Sponsors() {
       <section
         ref={sectionRef}
         id="sponsors"
+        aria-labelledby="sponsors-heading"
         data-section-gradient="sponsors"
         className="relative z-20 px-8 pt-20 pb-32 text-surface-foreground"
         data-navbar-theme="light"
@@ -358,8 +366,17 @@ export default function Sponsors() {
             still holds its content over the departing timeline scene. */}
 
         {/* Header */}
-        <div ref={headerRef} className="flex items-end justify-between">
-          <h2 className="text-4xl font-bold md:text-5xl">Our Sponsors</h2>
+        <div
+          ref={headerRef}
+          className="flex flex-col items-start gap-6 sm:flex-row sm:items-end sm:justify-between"
+        >
+          <h2
+            id="sponsors-heading"
+            className="font-sans text-[clamp(2.5rem,5vw,4.5rem)] font-normal leading-[0.9] tracking-[-0.045em]"
+          >
+            <span className="block text-surface-foreground">Past</span>
+            <span className="block text-pink">Sponsors</span>
+          </h2>
           <a
             href="mailto:hackutdindustry@acmutd.co"
             className="group relative pb-1 text-sm text-muted transition-colors hover:text-foreground"
@@ -375,7 +392,7 @@ export default function Sponsors() {
         >
           {/* Sponsor logos grid - Right side */}
           <div
-            className="relative z-10 order-2 w-full lg:sticky lg:top-0 lg:h-screen lg:w-[48%] lg:overflow-hidden"
+            className="relative z-10 order-1 w-full lg:order-2 lg:sticky lg:top-0 lg:h-screen lg:w-[48%] lg:overflow-hidden"
           >
             <style dangerouslySetInnerHTML={{ __html: `
               /* ── Sponsor tiles ──────────────────────────────────────
@@ -465,9 +482,9 @@ export default function Sponsors() {
                 pointer-events: none;
                 opacity: 0;
                 background: radial-gradient(
-                  150px circle at var(--mx) var(--my),
-                  rgba(108, 23, 254, 0.18),
-                  rgba(108, 23, 254, 0) 70%
+                  210px circle at var(--mx) var(--my),
+                  rgba(76, 12, 170, 0.26),
+                  rgba(76, 12, 170, 0) 70%
                 );
                 transition: opacity 0.35s ease var(--hold);
               }
@@ -576,7 +593,7 @@ export default function Sponsors() {
           </div>
 
           {/* 3D Reunion Tower — Left side */}
-          <div className="relative order-1 h-[400vh] w-full lg:w-[45%]">
+          <div className="relative order-2 h-[400vh] w-full lg:order-1 lg:w-[45%]">
             <div
               ref={towerWrapRef}
               className="sticky top-0"

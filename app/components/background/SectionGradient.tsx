@@ -23,6 +23,7 @@ export default function SectionGradient() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const artworkRef = useRef<HTMLDivElement>(null);
   const pullLayerRef = useRef<HTMLDivElement>(null);
+  const labelLayerRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
 
   useGSAP(
@@ -30,11 +31,12 @@ export default function SectionGradient() {
       const wrapper = wrapperRef.current;
       const artwork = artworkRef.current;
       const pullLayer = pullLayerRef.current;
+      const labelLayer = labelLayerRef.current;
       const scrollRoot = document.querySelector<HTMLElement>(
         `[${SCROLL_ROOT_ATTR}]`,
       );
 
-      if (!wrapper || !artwork || !pullLayer || !scrollRoot) {
+      if (!wrapper || !artwork || !pullLayer || !labelLayer || !scrollRoot) {
         return;
       }
 
@@ -64,9 +66,10 @@ export default function SectionGradient() {
       );
 
       const labels = entries.map(({ label }) => label);
+      const visibleLayers = [artwork, labelLayer];
       gsap.set(labels, { autoAlpha: 0, yPercent: 0 });
       gsap.set(entries[0].label, { autoAlpha: 1 });
-      gsap.set(artwork, { autoAlpha: 0 });
+      gsap.set(visibleLayers, { autoAlpha: 0 });
 
       if (prefersReducedMotion) {
         const showLabel = (index: number) => {
@@ -94,7 +97,7 @@ export default function SectionGradient() {
 
         const missionSection = entries[0].section;
         const setArtworkVisibility = (visible: boolean) => {
-          gsap.set(artwork, { autoAlpha: visible ? 1 : 0 });
+          gsap.set(visibleLayers, { autoAlpha: visible ? 1 : 0 });
         };
         ScrollTrigger.create({
           trigger: missionSection,
@@ -150,7 +153,7 @@ export default function SectionGradient() {
       });
 
       gsap.fromTo(
-        artwork,
+        visibleLayers,
         { autoAlpha: 0 },
         {
           autoAlpha: 1,
@@ -170,7 +173,7 @@ export default function SectionGradient() {
         // the footer's opaque surface then cleanly covers everything beneath
         // its border instead of making the artwork dissolve in place.
         gsap.fromTo(
-          pullLayer,
+          [pullLayer, labelLayer],
           { y: 0 },
           {
             y: () => -window.innerHeight,
@@ -220,8 +223,9 @@ export default function SectionGradient() {
     <div ref={wrapperRef} className="absolute inset-0">
       <div
         ref={artworkRef}
-        className="invisible fixed -bottom-32 -left-16 h-[clamp(34rem,62vw,58rem)] w-[clamp(56rem,118vw,125rem)] opacity-0"
+        className="invisible fixed -left-16 h-[clamp(34rem,max(62vw,78svh),58rem)] w-[clamp(56rem,118vw,125rem)] opacity-0"
         style={{
+          bottom: "clamp(-8rem, -15svh, -3rem)",
           willChange: prefersReducedMotion ? "auto" : "transform, opacity",
         }}
       >
@@ -233,7 +237,7 @@ export default function SectionGradient() {
           }}
         >
           <div
-            className="absolute inset-0 scale-[1.04] blur-[32px]"
+            className="absolute inset-0 scale-[1.04] blur-[clamp(20px,3vw,32px)]"
             style={{
               backgroundImage: [
                 "radial-gradient(ellipse 42% 27% at 39% 98%, rgba(255, 216, 48, 1) 0%, rgba(255, 176, 29, 0.82) 49%, transparent 95%)",
@@ -255,24 +259,33 @@ export default function SectionGradient() {
                 "radial-gradient(ellipse 88% 92% at 0% 100%, #000 0%, rgba(0, 0, 0, 0.96) 42%, rgba(0, 0, 0, 0.68) 62%, rgba(0, 0, 0, 0.18) 78%, transparent 92%)",
             }}
           />
-
-          <div className="absolute bottom-[12%] left-[9%]">
-            {SECTION_GRADIENT_SECTIONS.map(({ id, label }, index) => (
-              <span
-                key={id}
-                {...{ [LABEL_DATA_ATTR]: id }}
-                className={`absolute bottom-0 left-0 whitespace-nowrap select-none text-[clamp(4rem,10vw,12rem)] font-black leading-none tracking-[-0.08em] text-white/25 blur-[5px] mix-blend-soft-light ${index === 0 ? "visible opacity-100" : "invisible opacity-0"}`}
-                style={{
-                  willChange: prefersReducedMotion
-                    ? "auto"
-                    : "transform, opacity",
-                }}
-              >
-                {label}
-              </span>
-            ))}
-          </div>
         </div>
+      </div>
+
+      {/* Keep the active label inside the viewport independently of the much
+          larger gradient canvas. It still joins the same footer-pull tween, so
+          the artwork and word leave as one piece at the final separator. */}
+      <div
+        ref={labelLayerRef}
+        className="invisible fixed bottom-[clamp(1rem,4svh,3rem)] left-[clamp(1rem,4vw,4rem)] h-0 w-0 opacity-0"
+        style={{
+          willChange: prefersReducedMotion ? "auto" : "transform, opacity",
+        }}
+      >
+        {SECTION_GRADIENT_SECTIONS.map(({ id, label }, index) => (
+          <span
+            key={id}
+            {...{ [LABEL_DATA_ATTR]: id }}
+            className={`absolute bottom-0 left-0 whitespace-nowrap select-none text-[clamp(3rem,10vw,12rem)] font-black leading-none tracking-[-0.08em] text-white/35 blur-[clamp(2px,0.35vw,5px)] ${index === 0 ? "visible opacity-100" : "invisible opacity-0"}`}
+            style={{
+              willChange: prefersReducedMotion
+                ? "auto"
+                : "transform, opacity",
+            }}
+          >
+            {label}
+          </span>
+        ))}
       </div>
     </div>
   );

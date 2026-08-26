@@ -8,6 +8,15 @@
 export const MISSION_SCRUB = 0.35;
 export const MISSION_MOBILE_SCRUB = 0.3;
 
+/** Directors card blocks use the same inward fade as the About section. */
+export const DIRECTORS_ENTER_REVEAL = {
+  start: "top 88%",
+  distance: 44,
+  duration: 0.85,
+  ease: "power2.out",
+  toggleActions: "play none none reverse",
+} as const;
+
 export const MISSION_LAYOUT = {
   sectionPadding: "px-8 py-32 sm:px-10 md:py-40 lg:px-12",
   sectionMinHeight: "min-h-screen",
@@ -16,13 +25,31 @@ export const MISSION_LAYOUT = {
 } as const;
 
 /**
- * Mission statement — sticky word reveal.
+ * Mission statement — sticky word reveal, arriving already centred.
  *
  * The first 92% of the scroll range starts each word in reading order. Every
  * word gets an overlapping 8% window to brighten from its resting ink to full
- * ink. The 420svh section makes that progression deliberately unhurried, while
- * the short numeric scrub removes wheel/touch stepping without adding a long
- * catch-up delay after scrolling stops.
+ * ink, and the short numeric scrub removes wheel/touch stepping without adding
+ * a long catch-up delay after the reader stops.
+ *
+ * `pullUp` is what makes the statement *arrive* rather than be scrolled to.
+ * The hero's sticky viewport is exactly one screen tall, so it releases one
+ * screen before the hero section ends; without the pull, the statement then has
+ * to travel that whole screen from the bottom edge before it pins, and the
+ * reader spends a viewport of scroll on a blank page watching it climb. Pulling
+ * the section up by exactly that screen puts its top at the scroll position the
+ * hero lets go at: the stage pins on the same frame, so the statement is
+ * centred and ready to read the moment the hero is done, and every scroll after
+ * that goes into the reveal itself.
+ *
+ * The value has to stay equal to HERO_LAYOUT.stickyViewportHeight — it is the
+ * height of the viewport the hero pins, not a spacing taste.
+ *
+ * `arrivalStart`/`arrivalEnd` pay for the overlap the pull creates. The section
+ * now sits over the hero's last screen, so it fades up over the final stretch
+ * before the pin, landing at full strength exactly as it settles — early enough
+ * to read as the statement arriving, late enough that the hero has finished
+ * whiting out and nothing of the statement is ever drawn over the comet.
  */
 export const MISSION_WORD_REVEAL = {
   kicker: "Our mission · scroll to reveal",
@@ -30,8 +57,11 @@ export const MISSION_WORD_REVEAL = {
   revealSpan: 0.92,
   wordWindow: 0.08,
   scrollHeight: "420svh",
-  handoffHeight: "h-[130svh]",
   scrub: 0.55,
+  /** Must match HERO_LAYOUT.stickyViewportHeight */
+  pullUp: "-mt-[100svh] md:-mt-[100vh]",
+  arrivalStart: "top 20%",
+  arrivalEnd: "top top",
 } as const;
 
 /**

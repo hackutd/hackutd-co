@@ -36,6 +36,9 @@
   --theme-muted: #a3a3a3;
   --theme-surface: #f2f2f2;
   --theme-surface-foreground: #1a1a1a;
+  /* Secondary ink for a section riding the surface — the muted step, measured
+     against that surface rather than against the page background. */
+  --theme-surface-muted: #5f5f5f;
   --theme-card: #171717;
   /* One step off the background so the panel stays readable as a distinct
      sheet against the page it's about to reveal. */
@@ -57,9 +60,25 @@
   --theme-muted: #5f5f5f;
   --theme-surface: #1a1a1a;
   --theme-surface-foreground: #ffffff;
+  --theme-surface-muted: #a3a3a3;
   --theme-card: #ffffff;
   --theme-curtain: #e2e2e2;
   --logo-invert: 0;
+}
+
+/* A section that sits on the lit surface rather than on the page background —
+   the mission statement's neighbours, which the hero's whiteout hands the page
+   to and which keep it until the palette returns further down.
+
+   Pointing the ink tokens at their surface counterparts, rather than hardcoding
+   colours on each child, means `text-foreground`, `text-muted` and the borders
+   derived from them keep working exactly as written — they just resolve against
+   the surface the section is actually on. Because both sides are theme tokens,
+   the swap holds in both themes: the dark theme's lit surface takes near-black
+   ink, and the light theme's dark surface takes white. */
+[data-surface-ink] {
+  --theme-foreground: var(--theme-surface-foreground);
+  --theme-muted: var(--theme-surface-muted);
 }
 
 html[data-mission-scrollbar] {

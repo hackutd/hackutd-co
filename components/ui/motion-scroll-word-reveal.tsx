@@ -94,12 +94,26 @@ type ScrollWordRevealProps = {
   wordWindow?: number;
   scrub?: number;
   scrollHeight?: string;
+  /**
+   * Fades the whole composition up as the block travels the last stretch into
+   * its pinned position, so a section that is pulled up over the one before it
+   * is invisible on the way in and is simply *there*, centred, once it pins.
+   * Both anchors are needed for the fade to run at all.
+   */
+  arrivalStart?: string;
+  arrivalEnd?: string;
 };
 
 /**
  * Keeps a statement in a sticky reading stage while its words brighten in
  * reading order. A single ScrollTrigger timeline owns both the words and the
  * progress rail, so the visual always follows the document scroll position.
+ *
+ * `arrivalStart`/`arrivalEnd` add a second, shorter range in front of that one:
+ * the composition fades up as the block settles into its pinned position, which
+ * is what lets the section be pulled up over the previous one — it is invisible
+ * on the way in, and the reader meets it centred and ready to read rather than
+ * scrolling a viewport to reach it.
  */
 export function ScrollWordReveal({
   text = DEFAULT_TEXT,
@@ -115,9 +129,12 @@ export function ScrollWordReveal({
   wordWindow = DEFAULT_WORD_WINDOW,
   scrub = 0.25,
   scrollHeight = "220svh",
+  arrivalStart,
+  arrivalEnd,
 }: ScrollWordRevealProps) {
   const frameRef = useRef<HTMLDivElement>(null);
   const targetRef = useRef<HTMLElement>(null);
+  const layoutRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const progressRef = useRef<HTMLSpanElement>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -139,20 +156,51 @@ export function ScrollWordReveal({
     () => {
       const target = targetRef.current;
       const progress = progressRef.current;
+      const layout = layoutRef.current;
       const words = gsap.utils.toArray<HTMLElement>(`[${WORD_ATTR}]`);
 
-      if (!target || !progress || words.length === 0) {
+      if (!target || !progress || !layout || words.length === 0) {
         return;
       }
 
       if (prefersReducedMotion) {
+        gsap.set(layout, { autoAlpha: 1 });
         gsap.set(words, { opacity: 1 });
         gsap.set(progress, { scaleY: 1, transformOrigin: "top center" });
         return;
       }
 
-      gsap.set(words, { opacity: restOpacity });
       gsap.set(progress, { scaleY: 0, transformOrigin: "top center" });
+      gsap.set(words, { opacity: restOpacity });
+
+      // Hidden up front and given a literal `from`, rather than left to a
+      // `to()` that would read its start value off the live element: the block
+      // sits over the previous section on the way in, so "not yet arrived" has
+      // to be its declared resting state, not one inferred mid-scroll.
+      //
+      // `autoAlpha` also takes it out of the hit-testing while it waits, so the
+      // pulled-up stage cannot swallow pointer events over the section it is
+      // covering.
+      if (arrivalStart && arrivalEnd) {
+        gsap.set(layout, { autoAlpha: 0 });
+        gsap.fromTo(
+          layout,
+          { autoAlpha: 0 },
+          {
+            autoAlpha: 1,
+            ease: "none",
+            immediateRender: false,
+            scrollTrigger: {
+              trigger: target,
+              start: arrivalStart,
+              end: arrivalEnd,
+              scrub,
+            },
+          },
+        );
+      } else {
+        gsap.set(layout, { autoAlpha: 1 });
+      }
 
       const timeline = gsap.timeline({
         defaults: { ease: "none" },
@@ -187,6 +235,8 @@ export function ScrollWordReveal({
     {
       scope: frameRef,
       dependencies: [
+        arrivalEnd,
+        arrivalStart,
         prefersReducedMotion,
         restOpacity,
         revealSpan,
@@ -215,7 +265,7 @@ export function ScrollWordReveal({
         aria-labelledby={headingId}
       >
         <div className="scroll-word-reveal__stage">
-          <div className="scroll-word-reveal__layout">
+          <div ref={layoutRef} className="scroll-word-reveal__layout">
             <div className="scroll-word-reveal__progress" aria-hidden="true">
               <span ref={progressRef} />
             </div>

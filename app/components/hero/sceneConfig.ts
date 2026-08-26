@@ -45,17 +45,17 @@ export const HERO_COPY = {
 export const HERO_TEXT_EFFECT = {
   reveal: {
     blur: 10,
-    duration: 0.4,
-    stagger: 0.01,
+    duration: 0.6,
+    stagger: 0.015,
     ease: "power2.out",
   },
   exit: {
     start: WHITEOUT_SCROLL.start,
-    end: "78% bottom",
+    end: "84% bottom",
     blur: 10,
     y: -30,
-    duration: 0.4,
-    stagger: 0.01,
+    duration: 0.6,
+    stagger: 0.015,
     ease: "power1.in",
   },
 } as const;

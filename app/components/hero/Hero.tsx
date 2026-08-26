@@ -321,7 +321,7 @@ export default function Hero() {
           </p>
           <h1
             aria-label={HERO_COPY.headline}
-            className="w-full min-w-0 max-w-[20ch] font-sans text-[2rem] font-bold leading-[1.1] sm:max-w-[26ch] sm:text-[2.5rem] md:max-w-[40ch] md:text-5xl lg:text-[3.5rem]"
+            className="w-full min-w-0 max-w-[20ch] font-sans text-[2rem] font-medium leading-[1.1] sm:max-w-[26ch] sm:text-[2.5rem] md:max-w-[40ch] md:text-5xl lg:text-[3.5rem]"
           >
             {renderHeroText(HERO_COPY.headline)}
           </h1>

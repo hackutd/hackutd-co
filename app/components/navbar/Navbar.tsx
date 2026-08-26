@@ -39,9 +39,10 @@ const PANEL_PALETTE = {
 } as CSSProperties;
 
 const NAV_LINKS = [
+  { href: "#mission", label: "MISSION" },
   { href: "#about", label: "ABOUT" },
   { href: "#team", label: "COMMUNITY" },
-  { href: "#sponsors", label: "SPONSORS" },
+  { href: "#sponsors", label: "PAST SPONSORS" },
 ];
 
 export default function Navbar() {
@@ -140,7 +141,7 @@ export default function Navbar() {
       </Link>
 
       {/* Desktop nav */}
-      <div className="hidden md:flex items-center gap-8">
+      <div className="hidden items-center gap-4 md:flex lg:gap-6 xl:gap-8">
         {NAV_LINKS.map((link) => (
           <Link
             key={link.label}

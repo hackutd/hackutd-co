@@ -5,7 +5,6 @@ import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { missionContent } from "@/app/data/mission";
 import TeamMemberCard from "@/app/components/ui/team-member-card";
 import ScrollWordReveal from "@/components/ui/motion-scroll-word-reveal";
-import { MISSION_STATEMENT_DATA_ATTR } from "../background/sceneConfig";
 import {
   MISSION_KEY_WORD_CLASS,
   MISSION_KEY_WORD_DELIMITER,
@@ -15,16 +14,18 @@ import {
 
 /**
  * The sticky stage gives the full statement one viewport to breathe while the
- * document scroll progressively restores each word to full ink. Marked key
- * words retain the existing sans-serif weight emphasis, and the whole heading
- * remains the hover target for the difference-blended cursor highlight.
+ * document scroll progressively restores each word to full ink — and it is
+ * pulled up so that viewport pins the instant the hero's does, so the statement
+ * is already centred when the reader meets it. Marked key words retain the
+ * existing sans-serif weight emphasis, and the whole heading remains the hover
+ * target for the difference-blended cursor highlight.
  */
 const MISSION_STATEMENT_CLASS_NAME =
   "relative w-full font-sans text-[1.75rem] font-normal leading-[1.18] sm:text-[2.25rem] md:text-[3rem] lg:text-[3.5rem]";
 
 const MISSION_ANCHOR = (
   <span
-    id="about"
+    id="mission"
     aria-hidden="true"
     className="pointer-events-none absolute left-1/2 top-1/2 h-px w-px scroll-mt-[50svh] md:scroll-mt-[50vh]"
   />
@@ -65,6 +66,10 @@ export default function Mission({ afterStatement }: MissionProps) {
       return;
     }
 
+    // The section is pulled up over the hero's last screen, so plain
+    // intersection would widen the scrollbar — and reflow the page — while the
+    // hero is still on it. Watching only the top band of the viewport holds the
+    // switch until the statement is actually the thing being read.
     const observer = new IntersectionObserver(
       ([entry]) => {
         document.documentElement.toggleAttribute(
@@ -72,7 +77,7 @@ export default function Mission({ afterStatement }: MissionProps) {
           entry.isIntersecting,
         );
       },
-      { threshold: 0.05 },
+      { rootMargin: "0px 0px -85% 0px" },
     );
 
     observer.observe(missionSection);
@@ -84,7 +89,17 @@ export default function Mission({ afterStatement }: MissionProps) {
   }, []);
 
   return (
-    <div className="relative">
+    // The pull is what removes the viewport of blank scrolling between the hero
+    // letting go and the statement pinning; see MISSION_WORD_REVEAL.pullUp. It
+    // only applies where there is a whiteout to arrive out of — the
+    // reduced-motion hero keeps its scene, so the statement stays below it.
+    <div
+      className={
+        prefersReducedMotion
+          ? "relative"
+          : `relative ${MISSION_WORD_REVEAL.pullUp}`
+      }
+    >
       {/* The page-level background owns this surface and its navbar palette. */}
       <div
         ref={missionSectionRef}
@@ -106,6 +121,12 @@ export default function Mission({ afterStatement }: MissionProps) {
           wordWindow={MISSION_WORD_REVEAL.wordWindow}
           scrollHeight={MISSION_WORD_REVEAL.scrollHeight}
           scrub={MISSION_WORD_REVEAL.scrub}
+          arrivalStart={
+            prefersReducedMotion ? undefined : MISSION_WORD_REVEAL.arrivalStart
+          }
+          arrivalEnd={
+            prefersReducedMotion ? undefined : MISSION_WORD_REVEAL.arrivalEnd
+          }
           cursorSize={MISSION_STATEMENT_CURSOR.size}
           invertedCursor
         >
@@ -113,16 +134,10 @@ export default function Mission({ afterStatement }: MissionProps) {
         </ScrollWordReveal>
       </div>
 
-      {/* Empty paint-free runway: the statement leaves before PageBackground
-          restores the base palette, and Stats arrives after the restore. */}
-      {prefersReducedMotion ? null : (
-        <div
-          aria-hidden="true"
-          {...{ [MISSION_STATEMENT_DATA_ATTR]: "" }}
-          className={`relative z-20 ${MISSION_WORD_REVEAL.handoffHeight}`}
-        />
-      )}
-
+      {/* About follows immediately, on the same lit surface: the palette only
+          returns to base on the way out of About (see ABOUT_EXIT_DATA_ATTR), so
+          there is no colour step between the statement and it, and no runway to
+          scroll through to get from one to the other. */}
       {afterStatement}
 
       {/* Directors message — enters editorially and remains in normal page flow. */}

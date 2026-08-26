@@ -6,6 +6,7 @@ import gsap from "gsap";
 import Image from "next/image";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
+import { DIRECTORS_ENTER_REVEAL } from "@/app/components/mission/sceneConfig";
 
 gsap.registerPlugin(useGSAP);
 configureScrollTrigger();
@@ -26,9 +27,9 @@ export interface TeamMemberCardProps {
 }
 
 /**
- * Editorial team card with an overlapping portrait, display typography, and a
- * staggered GSAP entrance. The layout becomes a full-width landscape card on
- * small screens so group photos and long bios remain readable.
+ * Editorial team card with an overlapping portrait, display typography, and
+ * an inward directional entrance. The layout becomes a full-width landscape
+ * card on small screens so group photos and long bios remain readable.
  */
 export default function TeamMemberCard({
   position = "left",
@@ -60,51 +61,34 @@ export default function TeamMemberCard({
         return;
       }
 
-      const timeline = gsap.timeline({
-        scrollTrigger: {
-          trigger: root,
-          start: "top 82%",
-          once: true,
-        },
-      });
+      const revealItems = [
+        { target: label, fromRight: isPositionRight },
+        { target: image, fromRight: isPositionRight },
+        { target: info, fromRight: !isPositionRight },
+      ];
 
-      timeline
-        .from(root, {
-          autoAlpha: 0,
-          duration: 0.6,
-          ease: "power3.out",
-        })
-        .from(
-          label,
+      revealItems.forEach(({ target, fromRight }) => {
+        gsap.fromTo(
+          target,
           {
             autoAlpha: 0,
-            x: isPositionRight ? 20 : -20,
-            duration: 0.5,
-            ease: "power2.out",
+            x: fromRight
+              ? DIRECTORS_ENTER_REVEAL.distance
+              : -DIRECTORS_ENTER_REVEAL.distance,
           },
-          0.1,
-        )
-        .from(
-          image,
           {
-            autoAlpha: 0,
-            scale: 0.95,
-            y: 30,
-            duration: 0.7,
-            ease: "power3.out",
+            autoAlpha: 1,
+            x: 0,
+            duration: DIRECTORS_ENTER_REVEAL.duration,
+            ease: DIRECTORS_ENTER_REVEAL.ease,
+            scrollTrigger: {
+              trigger: target,
+              start: DIRECTORS_ENTER_REVEAL.start,
+              toggleActions: DIRECTORS_ENTER_REVEAL.toggleActions,
+            },
           },
-          0.15,
-        )
-        .from(
-          info,
-          {
-            autoAlpha: 0,
-            x: isPositionRight ? -40 : 40,
-            duration: 0.6,
-            ease: "power3.out",
-          },
-          0.3,
         );
+      });
     },
     {
       dependencies: [isPositionRight, prefersReducedMotion],
