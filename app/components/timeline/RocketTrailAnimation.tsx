@@ -13,6 +13,8 @@ import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import {
   CARD_POPOVER,
+  MARKER_IMAGE_SCALE,
+  MARKER_SPACING,
   MARKER_WAVE_FOLLOW,
   MOBILE_TIMELINE_SCRUB,
   MOBILE_TRAIL_WAVE,
@@ -39,8 +41,7 @@ function smoothstep(t: number): number {
 // Half-height of the plume at SVG x. The power curve is strictly increasing
 // between the nozzle and fullWidthX, so there is no constant-width middle band
 // followed by a separate flare. Values beyond fullWidthX stay at the configured
-// maximum (full bleed on desktop, viewport-capped on mobile) while remaining
-// densely sampled for the travelling wave.
+// full-bleed maximum while remaining densely sampled for the travelling wave.
 function trailHW(x: number, cfg: TrailShape, halfWidthFull: number): number {
   const progress = Math.max(
     0,
@@ -162,10 +163,10 @@ export default function RocketTrailAnimation() {
 
   const cfg = isMobile ? MOBILE_TRAIL_WAVE : TRAIL_WAVE;
 
-  // How wide the plume can open, in SVG units. Desktop keeps the full-bleed
-  // handoff; mobile is capped to a viewport fraction so the fuel never hides the
-  // whole phone screen. The SVG scales with viewport width, so this must be
-  // measured rather than pinned to one user-space value.
+  // How wide the plume can open, in SVG units. The far end fills the viewport
+  // on every screen size, while the nozzle stays pinned to halfWidthMin. The SVG
+  // scales with viewport width, so this must be measured rather than pinned to
+  // one user-space value.
   const [halfWidthFull, setHalfWidthFull] = useState<number>(cfg.halfWidthMin);
 
   useLayoutEffect(() => {
@@ -185,17 +186,11 @@ export default function RocketTrailAnimation() {
       // reach downwards than up. Size it for the longer of the two.
       const centreOffset = Math.abs(TRAIL_VIEWBOX.height / 2 - cfg.centerY);
       const reachUnits = clip.clientHeight / (2 * pxPerUnit) + centreOffset;
-      const fullBleedHalfWidth = reachUnits * TRAIL_FLARE.coverage;
-      const mobileHalfWidthCap =
-        (clip.clientHeight * TRAIL_FLARE.mobileMaxViewportHeight) /
-          (2 * pxPerUnit) -
-        cfg.maxAmplitude;
-      const next = Math.max(
-        cfg.halfWidthMin,
-        isMobile
-          ? Math.min(fullBleedHalfWidth, mobileHalfWidthCap)
-          : fullBleedHalfWidth,
-      );
+      const coverage = isMobile
+        ? TRAIL_FLARE.coverage.mobile
+        : TRAIL_FLARE.coverage.desktop;
+      const fullBleedHalfWidth = reachUnits * coverage;
+      const next = Math.max(cfg.halfWidthMin, fullBleedHalfWidth);
 
       // Rebuilding the polygon and its tweens isn't free, so ignore the
       // few-pixel churn a mobile URL bar throws off while scrolling.
@@ -257,9 +252,20 @@ export default function RocketTrailAnimation() {
       // Position each marker group via GSAP so it owns the SVG transform
       // (children use group-relative coordinates, GSAP then animates y in the wave)
       const markerYOffset = isMobile ? -30 : 0;
+      const markerSpacingScale = isMobile
+        ? MARKER_SPACING.mobileScale
+        : MARKER_SPACING.desktopScale;
+      const markerX = (baseX: number) =>
+        MARKER_SPACING.anchorX +
+        (baseX - MARKER_SPACING.anchorX) * markerSpacingScale;
       YEAR_MARKERS.forEach((marker, i) => {
         const el = markerRefs.current[i];
-        if (el) gsap.set(el, { x: marker.x, y: marker.y + markerYOffset });
+        if (el) {
+          gsap.set(el, {
+            x: markerX(marker.x),
+            y: marker.y + markerYOffset,
+          });
+        }
       });
 
       if (prefersReducedMotion) {
@@ -305,7 +311,7 @@ export default function RocketTrailAnimation() {
               y:
                 marker.y +
                 markerYOffset +
-                offsetAt(marker.x) * MARKER_WAVE_FOLLOW,
+                offsetAt(markerX(marker.x)) * MARKER_WAVE_FOLLOW,
             });
           }
         });
@@ -345,8 +351,11 @@ export default function RocketTrailAnimation() {
       // The exit runs far enough past the SVG's left edge to clear every marker
       // and carry the widest portion into place for the Sponsors handoff.
       const enterX = () => clip.clientWidth + ROCKET_SWEEP.overshoot;
+      const plumeExit = isMobile
+        ? ROCKET_SWEEP.plumeExit.mobile
+        : ROCKET_SWEEP.plumeExit.desktop;
       const exitX = () =>
-        -(assembly.getBoundingClientRect().width * ROCKET_SWEEP.plumeExit + ROCKET_SWEEP.overshoot);
+        -(assembly.getBoundingClientRect().width * plumeExit + ROCKET_SWEEP.overshoot);
 
       const scrub = isMobile ? MOBILE_TIMELINE_SCRUB : TIMELINE_SCROLL.scrub;
       gsap.fromTo(
@@ -381,6 +390,9 @@ export default function RocketTrailAnimation() {
   const yearFontSize = isMobile ? 26 : 18;
   const nameFontSize = isMobile ? 18 : 9;
   const nameLetterSpacing = isMobile ? 2.0 : 1.5;
+  const markerImageScale = isMobile
+    ? MARKER_IMAGE_SCALE.mobile
+    : MARKER_IMAGE_SCALE.desktop;
 
   const hoveredMarker = hoveredIndex === null ? null : YEAR_MARKERS[hoveredIndex];
 
@@ -516,9 +528,11 @@ export default function RocketTrailAnimation() {
           {/* Year markers ride with the rocket trail for the whole sweep */}
           <g ref={markersRef}>
             {YEAR_MARKERS.map((marker, i) => {
-              // ref lets GSAP set translate(marker.x, marker.y) and then wave the y
-              // children use group-relative coords (origin = marker center)
-              const labelBaseY = marker.imageHeight / 2 + yearFontSize * 1.2;
+              // GSAP applies the responsive marker position and wave offset;
+              // children use group-relative coords (origin = marker center).
+              const imageWidth = marker.imageWidth * markerImageScale;
+              const imageHeight = marker.imageHeight * markerImageScale;
+              const labelBaseY = imageHeight / 2 + yearFontSize * 1.2;
               // One padded, invisible hit area covering the artwork and both
               // labels. Hovering is then a question of being near the marker
               // rather than exactly over its glyphs, so the few units it still
@@ -527,8 +541,8 @@ export default function RocketTrailAnimation() {
               const nameWidth =
                 marker.name.length * (nameFontSize * 0.58 + nameLetterSpacing);
               const hitWidth =
-                Math.max(marker.imageWidth, nameWidth) + CARD_POPOVER.hitPadX * 2;
-              const hitTop = -marker.imageHeight / 2 - CARD_POPOVER.hitPadY;
+                Math.max(imageWidth, nameWidth) + CARD_POPOVER.hitPadX * 2;
+              const hitTop = -imageHeight / 2 - CARD_POPOVER.hitPadY;
               const hitBottom =
                 labelBaseY + nameFontSize * 1.6 + CARD_POPOVER.hitPadY;
               const inner = (
@@ -543,10 +557,10 @@ export default function RocketTrailAnimation() {
                   />
                   <image
                     href={marker.image}
-                    x={-marker.imageWidth / 2}
-                    y={-marker.imageHeight / 2}
-                    width={marker.imageWidth}
-                    height={marker.imageHeight}
+                    x={-imageWidth / 2}
+                    y={-imageHeight / 2}
+                    width={imageWidth}
+                    height={imageHeight}
                     preserveAspectRatio="xMidYMid meet"
                     filter={`url(#${markerImageFilterId})`}
                   />

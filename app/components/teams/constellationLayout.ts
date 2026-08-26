@@ -21,7 +21,6 @@ export type OfficerTeam = {
   label: string;
   order: number;
   templateId?: string;
-  description?: string;
   groupPhotoUrl?: string;
   lead: OfficerMember;
   members: OfficerMember[];

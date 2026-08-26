@@ -1,13 +1,12 @@
 // Teams.tsx — Main client component for the Teams section. Renders each officer team as
 // an interactive star constellation using layouts from constellationLayout.ts and config
 // from sceneConfig.ts. On mobile, page scroll drives a snapping horizontal track that
-// centers one constellation at a time, with description and photo updating above it.
+// centers one constellation at a time.
 // On desktop, a sticky viewport with a scroll-driven horizontal track shows all teams.
 // Node hover/tap opens a member tooltip; reduced-motion gets a static snap-scroll fallback.
 
 "use client";
 
-import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 import { useIsAndroid } from "@/app/hooks/useIsAndroid";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
@@ -21,7 +20,6 @@ import {
   getDesktopConstellationBox,
   type ConstellationBox,
   TEAM_CLUSTER_BOX,
-  TEAMS_BACKGROUND_STARS,
   TEAMS_COPY,
   TEAMS_LAYOUT,
   TEAMS_SCROLL,
@@ -59,13 +57,11 @@ export default function Teams() {
   const trackViewportRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const tooltipCloseTimeoutRef = useRef<number | null>(null);
-  const descTransitionRef = useRef<number | null>(null);
   const activeTeamIndexRef = useRef(0);
   const isMobile = useIsMobile();
   const isAndroid = useIsAndroid();
   const prefersReducedMotion = usePrefersReducedMotion();
   const [displayedTeamIndex, setDisplayedTeamIndex] = useState(0);
-  const [descVisible, setDescVisible] = useState(true);
   const [desktopBox, setDesktopBox] = useState<ConstellationBox>(
     TEAM_CLUSTER_BOX.desktop,
   );
@@ -120,7 +116,7 @@ export default function Teams() {
         const leadNodeSize = Math.round(nodeSize * 1.3);
         setMobileBox({
           width: w,
-          // reduced from 0.46 to leave room for photo + description panel above
+          // Leave room for the section heading above the constellation.
           height: Math.round(h * 0.38),
           padding: Math.round(w * 0.08),
           verticalBias: 12,
@@ -130,7 +126,7 @@ export default function Teams() {
       } else {
         setMobileBox({
           width: w,
-          // reduced from 0.54 to leave room for photo + description panel above
+          // Leave room for the section heading above the constellation.
           height: Math.round(h * 0.40),
           padding: Math.round(w * 0.07),
           verticalBias: 16,
@@ -188,15 +184,7 @@ export default function Teams() {
 
       if (nextIndex !== activeTeamIndexRef.current) {
         activeTeamIndexRef.current = nextIndex;
-        setDescVisible(false);
-        if (descTransitionRef.current !== null) {
-          window.clearTimeout(descTransitionRef.current);
-        }
-        descTransitionRef.current = window.setTimeout(() => {
-          setDisplayedTeamIndex(nextIndex);
-          setDescVisible(true);
-          descTransitionRef.current = null;
-        }, 200);
+        setDisplayedTeamIndex(nextIndex);
       }
 
       if (progress <= 0.001 || progress >= 0.999) {
@@ -284,15 +272,6 @@ export default function Teams() {
         );
         if (nextIndex !== activeTeamIndexRef.current) {
           activeTeamIndexRef.current = nextIndex;
-          setDescVisible(false);
-          if (descTransitionRef.current !== null) {
-            window.clearTimeout(descTransitionRef.current);
-          }
-          descTransitionRef.current = window.setTimeout(() => {
-            setDisplayedTeamIndex(nextIndex);
-            setDescVisible(true);
-            descTransitionRef.current = null;
-          }, 200);
         }
       }
 
@@ -360,9 +339,6 @@ export default function Teams() {
       if (tooltipCloseTimeoutRef.current !== null) {
         window.clearTimeout(tooltipCloseTimeoutRef.current);
       }
-      if (descTransitionRef.current !== null) {
-        window.clearTimeout(descTransitionRef.current);
-      }
     };
   }, []);
 
@@ -394,35 +370,13 @@ export default function Teams() {
   const mobileLayouts = buildLayouts(ORDERED_OFFICER_TEAMS, mobileBox);
 
   if (isMobile) {
-    const mobileStars = (
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-        {TEAMS_BACKGROUND_STARS.map((star) => {
-          const starStyle: CSSProperties = {
-            top: `${star.top}%`,
-            left: `${star.left}%`,
-            width: `${star.size}px`,
-            height: `${star.size}px`,
-            opacity: star.opacity,
-          };
-          return (
-            <span key={star.id} className="absolute rounded-full bg-foreground" style={starStyle} />
-          );
-        })}
-      </div>
-    );
-
-
     if (prefersReducedMotion) {
       return (
         <section
           id="team"
-          className={`relative overflow-hidden bg-background ${TEAMS_LAYOUT.mobileSectionPadding}`}
+          className={`relative overflow-hidden ${TEAMS_LAYOUT.mobileSectionPadding}`}
         >
-          {mobileStars}
           <div className="relative mx-auto max-w-6xl">
-            <p className="text-[0.62rem] uppercase tracking-[0.2em] text-foreground/26">
-              {TEAMS_COPY.eyebrow}
-            </p>
             <h2 className={TEAMS_LAYOUT.mobileHeading}>
               {TEAMS_COPY.heading[0]}
               <br />
@@ -459,57 +413,17 @@ export default function Teams() {
         style={{ minHeight: `${100 + ORDERED_OFFICER_TEAMS.length * 22}vh` }}
       >
         <div className={`sticky top-0 overflow-hidden ${isAndroid ? TEAMS_LAYOUT.mobileViewportHeightAndroid : TEAMS_LAYOUT.mobileViewportHeight}`}>
-          {mobileStars}
-
           <div className="relative flex h-full flex-col">
-            {/* Top info zone: heading + full description + photo, capped at ~50% height */}
+            {/* Top info zone */}
             <div
               className="shrink-0 overflow-y-auto px-5 pt-16 pb-3"
               style={{ maxHeight: isAndroid ? "52%" : "50%" }}
             >
-              <p className="text-[0.62rem] uppercase tracking-[0.2em] text-foreground/26">
-                {TEAMS_COPY.eyebrow}
-              </p>
               <h2 className={TEAMS_LAYOUT.mobileHeading}>
                 {TEAMS_COPY.heading[0]}
                 <br />
                 {TEAMS_COPY.heading[1]}
               </h2>
-
-              <div
-                className="mt-3 transition-opacity duration-200"
-                style={{ opacity: descVisible ? 1 : 0 }}
-              >
-                {ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.description ? (
-                  <p className="text-sm leading-relaxed text-foreground/50">
-                    {ORDERED_OFFICER_TEAMS[displayedTeamIndex]!.description}
-                  </p>
-                ) : null}
-                {/* Group photos aren't finalized yet — re-enable once ready.
-                <div className="mt-3">
-                  {ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.groupPhotoUrl ? (
-                    <Image
-                      key={ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.id}
-                      src={ORDERED_OFFICER_TEAMS[displayedTeamIndex]!.groupPhotoUrl!}
-                      alt={`${ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.label} team`}
-                      width={400}
-                      height={96}
-                      className="w-full rounded-xl object-cover border border-foreground/10"
-                      style={{ maxHeight: "96px" }}
-                    />
-                  ) : (
-                    <div
-                      className="flex w-full items-center justify-center rounded-xl border border-foreground/8 bg-foreground/[0.02]"
-                      style={{ height: "72px" }}
-                    >
-                      <p className="text-[0.68rem] uppercase tracking-[0.18em] text-foreground/20">
-                        Group photo coming soon
-                      </p>
-                    </div>
-                  )}
-                </div>
-                */}
-              </div>
             </div>
 
             {/* Bottom constellation zone: takes all remaining space */}
@@ -560,32 +474,9 @@ export default function Teams() {
     return (
       <section
         id="team"
-        className={`relative overflow-hidden bg-background ${TEAMS_LAYOUT.mobileSectionPadding} md:px-8 md:py-32`}
+        className={`relative overflow-hidden ${TEAMS_LAYOUT.mobileSectionPadding} md:px-8 md:py-32`}
       >
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-          {TEAMS_BACKGROUND_STARS.map((star) => {
-            const starStyle: CSSProperties = {
-              top: `${star.top}%`,
-              left: `${star.left}%`,
-              width: `${star.size}px`,
-              height: `${star.size}px`,
-              opacity: star.opacity,
-            };
-
-            return (
-              <span
-                key={star.id}
-                className="absolute rounded-full bg-foreground"
-                style={starStyle}
-              />
-            );
-          })}
-        </div>
-
         <div className="relative mx-auto max-w-7xl">
-          <p className="text-[0.62rem] uppercase tracking-[0.2em] text-foreground/26">
-            {TEAMS_COPY.eyebrow}
-          </p>
           <h2 className={TEAMS_LAYOUT.mobileHeading}>
             {TEAMS_COPY.heading[0]}
             <br />
@@ -624,70 +515,13 @@ export default function Teams() {
       className={`relative ${TEAMS_LAYOUT.desktopSectionMinHeight}`}
     >
       <div className={`sticky top-0 overflow-visible ${TEAMS_LAYOUT.desktopViewportHeight}`}>
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-          {TEAMS_BACKGROUND_STARS.map((star) => {
-            const starStyle: CSSProperties = {
-              top: `${star.top}%`,
-              left: `${star.left}%`,
-              width: `${star.size}px`,
-              height: `${star.size}px`,
-              opacity: star.opacity,
-            };
-
-            return (
-              <span
-                key={star.id}
-                className="absolute rounded-full bg-foreground"
-                style={starStyle}
-              />
-            );
-          })}
-        </div>
-
         <div className={TEAMS_LAYOUT.desktopContainer}>
           <div className={`relative z-30 ${TEAMS_LAYOUT.introWidth}`}>
-            <p className="text-[0.62rem] uppercase tracking-[0.2em] text-foreground/26">
-              {TEAMS_COPY.eyebrow}
-            </p>
             <h2 className={TEAMS_LAYOUT.desktopHeading}>
               {TEAMS_COPY.heading[0]}
               <br />
               {TEAMS_COPY.heading[1]}
             </h2>
-            <p
-              className="mt-5 text-lg leading-relaxed text-foreground/50 transition-opacity duration-200"
-              style={{ opacity: descVisible ? 1 : 0 }}
-            >
-              {ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.description ?? ""}
-            </p>
-
-            {/* Group photos aren't finalized yet — re-enable once ready.
-            <div
-              className="mt-8 transition-opacity duration-200"
-              style={{ opacity: descVisible ? 1 : 0 }}
-            >
-              {ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.groupPhotoUrl ? (
-                <Image
-                  key={ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.id}
-                  src={ORDERED_OFFICER_TEAMS[displayedTeamIndex]!.groupPhotoUrl!}
-                  alt={`${ORDERED_OFFICER_TEAMS[displayedTeamIndex]?.label} team`}
-                  width={320}
-                  height={200}
-                  className="w-full rounded-2xl object-cover border border-foreground/10"
-                  style={{ maxWidth: "320px" }}
-                />
-              ) : (
-                <div
-                  className="flex w-full items-center justify-center rounded-2xl border border-foreground/8 bg-foreground/[0.02]"
-                  style={{ maxWidth: "320px", height: "200px" }}
-                >
-                  <p className="text-[0.68rem] uppercase tracking-[0.18em] text-foreground/20">
-                    Group photo coming soon
-                  </p>
-                </div>
-              )}
-            </div>
-            */}
           </div>
 
           <div

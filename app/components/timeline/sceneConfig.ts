@@ -8,7 +8,9 @@ export const TRAIL_VIEWBOX = { width: 1371, height: 402 } as const;
 /** Poyo artwork positioned in the original rocket's SVG-coordinate footprint. */
 export const ROCKET_ART = {
   src: "/poyo_rocket.webp",
-  x: 0,
+  // Tuck the plume beneath the rear engine bells so it appears to originate
+  // from Poyo's rocket instead of beginning beside the artwork.
+  x: 18,
   // Align Poyo's upper exhaust opening with the trail's narrow origin at y≈179.
   y: 40,
   width: 246,
@@ -26,17 +28,14 @@ export const ROCKET_SWEEP = {
   overshoot: 32,
   /**
    * How far past its own left edge the assembly keeps travelling, as a multiple
-   * of the SVG's layout width. A little over 1 clears Poyo and every marker;
-   * beyond that it also carries the delayed flare across the viewport for the
-   * Sponsors handoff.
-   *
-   * 2.0 is set by the marker roster rather than by the flare: fourteen
-   * hackathons spaced far enough apart to read individually reach x≈2595, and a
-   * marker only clears the left edge if x < 1371 * plumeExit. The extra travel
-   * is paid for by a matching increase in TIMELINE_LAYOUT.minHeight, so the
-   * sweep still moves *slower* per unit of scroll than it did at 1.55.
+   * of the SVG's layout width. The mobile exit is longer because its marker
+   * pitch is substantially wider. Both values leave enough room for the final
+   * logo to clear before the Sponsors handoff.
    */
-  plumeExit: 2.0,
+  plumeExit: {
+    desktop: 2.15,
+    mobile: 2.75,
+  },
 } as const;
 
 export type YearMarker = {
@@ -45,9 +44,8 @@ export type YearMarker = {
   /** Season + year the hackathon ran, shown in the hover card */
   date: string;
   // Coordinates in RocketWithTrail.svg space (0 0 1371 402)
-  // The plume runs far past the viewBox: markers can sit anywhere from x≈450
-  // out to x≈2500 and still clear the left edge before the sweep parks. Roughly
-  // 165 units apart reads as one screen's worth every ~8 markers.
+  // These are base positions; MARKER_SPACING expands them responsively while
+  // keeping them inside the plume and the configured sweep exit.
   x: number;
   y: number;
   /** Render image URL shown at the marker point */
@@ -62,14 +60,8 @@ export type YearMarker = {
 
 export const YEAR_MARKERS: YearMarker[] = [
   // Listed newest to oldest, laid out left-to-right across the trail.
-  // Spaced 165 units apart from x=450 — roughly eight markers per viewport
-  // width, so each one is read on its own rather than as part of a clump. At
-  // that pitch no image or label overlaps its neighbour at either the desktop
-  // or the (much larger, in SVG units) mobile font sizes.
-  //
-  // The last marker lands at x=2595. A marker only clears the left edge before
-  // the sweep parks if x < ~1371 * ROCKET_SWEEP.plumeExit, which is why
-  // plumeExit is 2.0: at the old 1.55 the budget stopped at ~2100.
+  // Base coordinates are spaced 165 units apart from x=450. Responsive pitch
+  // multipliers below spread those coordinates further apart at render time.
   { year: "2024", name: "RIPPLE EFFECT",      date: "Fall 2024",   x: 450,  y: 150, image: "/timeline/logos/ripple-2024.png",             imageWidth: 110, imageHeight: 25, card: "/timeline/cards/ripple-2024.png",             href: "https://ripple.hackutd.co" },
   { year: "2023", name: "HACKUTD X",          date: "Fall 2023",   x: 615,  y: 198, image: "/hackX.png",                                  imageWidth: 64,  imageHeight: 80, card: "/timeline/cards/hackutd-x-2023.png",          href: "https://x.hackutd.co" },
   { year: "2023", name: "AXXESS HACKATHON",   date: "Spring 2023", x: 780,  y: 146, image: "/timeline/logos/axxess-2023.png",             imageWidth: 100, imageHeight: 29, card: "/timeline/cards/axxess-2023.png",             href: "https://www.axxess.com/hackathon" },
@@ -85,6 +77,23 @@ export const YEAR_MARKERS: YearMarker[] = [
   { year: "2016", name: "HACKUTD 16",         date: "Spring 2016", x: 2430, y: 148, image: "/timeline/logos/hackutd-2016.png",            imageWidth: 110, imageHeight: 22, card: "/timeline/cards/hackutd-2016.png",            href: "https://hackutd16.devpost.com/" },
   { year: "2015", name: "HACKUTD",            date: "Spring 2015", x: 2595, y: 196, image: "/timeline/logos/hackutd-2015.png",            imageWidth: 116, imageHeight: 20, card: "/timeline/cards/hackutd-2015.png",            href: "https://hackutd.devpost.com/" },
 ];
+
+/**
+ * Marker artwork scales independently from the width-driven timeline SVG.
+ * Without the stronger mobile multiplier, logos that are 60–116 SVG units
+ * wide render at only about 17–33 physical pixels on a 390px viewport.
+ */
+export const MARKER_IMAGE_SCALE = {
+  desktop: 1.2,
+  mobile: 1.75,
+} as const;
+
+/** Keep the first marker anchored while increasing every following gap. */
+export const MARKER_SPACING = {
+  anchorX: 450,
+  desktopScale: 1.1,
+  mobileScale: 1.45,
+} as const;
 
 // Hover card that previews the legacy recap image above a marker (px values)
 export const CARD_POPOVER = {
@@ -125,24 +134,17 @@ export const MARKER_WAVE_FOLLOW = 0.25;
 export const TIMELINE_SCROLL = {
   start: "top top",
   // Parks the sweep on the exact frame the sticky stage stops being pinned. By
-  // then Poyo and every marker have cleared the left edge. Desktop retains the
-  // full-bleed gradient handoff; mobile parks a bounded plume so the gradient
-  // never becomes the entire phone screen. The next frame starts carrying the
+  // then Poyo and every marker have cleared the left edge, leaving a full-bleed
+  // gradient handoff on every viewport. The next frame starts carrying the
   // stage off the top with Sponsors right behind it.
   end: "bottom bottom",
   scrub: 0.9,
 } as const;
 
 export const TIMELINE_LAYOUT = {
-  // Give the sweep a longer runway so Poyo takes roughly one and a half
-  // viewport-heights of scrolling to cross the screen on common viewports.
-  //
-  // The pin range is `minHeight - 100vh`, and TIMELINE_SCROLL spends all of it.
-  // Raising plumeExit to 2.0 lengthened the sweep from ~2.55 to ~3.0 viewport
-  // widths; 500vh gives it 400vh of scroll to spend rather than 300vh, so each
-  // pixel of scroll moves the markers ~12% less than it did before. The wider
-  // marker spacing and the calmer travel come from the same change.
-  minHeight: "min-h-[500vh]",
+  // The pin range is `minHeight - 100vh`. Mobile gets a longer runway to pay
+  // for its wider marker pitch without making the sweep move faster.
+  minHeight: "min-h-[600vh] md:min-h-[520vh]",
   stickyViewportHeight: "h-[100svh]",
 } as const;
 
@@ -151,9 +153,8 @@ export const MOBILE_TIMELINE_SCRUB = 0.9;
 /**
  * The handoff into Sponsors: the plume dissolves uniformly, in place, into a
  * page background that PAGE_BG's sponsor phase is carrying to the sponsor
- * wall's own white over the same stretch (SPONSORS_PANEL_PHASE). On desktop the
- * plume is full bleed; on mobile it remains bounded and fades without ever
- * obscuring the whole viewport.
+ * wall's own white over the same stretch (SPONSORS_PANEL_PHASE). The plume is
+ * full bleed on every viewport so no hard edge appears during the crossfade.
  *
  * The window is set by where the wall is, not by where the sweep stops. A
  * `top-0` sticky of one viewport unpins a full viewport before its section
@@ -182,8 +183,8 @@ export const TIMELINE_EXIT_FADE = {
  *
  * Profile, left to right: pinched at Poyo's exhaust → continuously grows through
  * every year marker → reaches its maximum width near the end. That maximum is
- * full bleed on desktop and viewport-capped on mobile. The whole length is
- * densely sampled so the travelling wave continues through the far plume too.
+ * full bleed on every viewport. The whole length is densely sampled so the
+ * travelling wave continues through the far plume too.
  */
 export const TRAIL_WAVE = {
   /** Wave points spread evenly across the plume's complete visible length. */
@@ -222,6 +223,10 @@ export const TRAIL_WAVE = {
 
 export const MOBILE_TRAIL_WAVE = {
   ...TRAIL_WAVE,
+  // Mobile's wider marker spacing gives the sweep a longer exit than desktop.
+  // Keep the finite tail beyond the viewport until the exit fade is complete,
+  // so its straight polygon edge can never cut into the white handoff.
+  endX: 5400,
   // A unit is worth ~a quarter of a desktop pixel here, so the wave needs more
   // units to read as the same depth on screen.
   maxAmplitude: 32,
@@ -237,11 +242,13 @@ export const TRAIL_FLARE = {
    * Plume half-height at full flare, as a multiple of the distance from the
    * trail's centreline to the furthest viewport edge. A small amount above 1
    * keeps the wavy edges outside the frame without substantially oversizing the
-   * fuel band.
+   * fuel band. Mobile uses a slightly tighter margin while still covering the
+   * screen throughout the travelling wave.
    */
-  coverage: 1.05,
-  /** Maximum total mobile plume height as a fraction of the visible viewport. */
-  mobileMaxViewportHeight: 0.42,
+  coverage: {
+    desktop: 1.05,
+    mobile: 1.03,
+  },
   /** Extra units of mask and gradient beyond the widest the plume ever gets. */
   margin: 32,
 } as const;
