@@ -93,8 +93,7 @@
         "quote": "Coming soon.",
         "imageUrl": "/officers/poyo.webp"
       }
-    ],
-    "description": "Crafting the visual identity and story of HackUTD — from social campaigns to brand design, they make sure the world knows we exist."
+    ]
   },
   {
     "id": "tech",
@@ -174,8 +173,7 @@
         "quote": "live life, love life",
         "imageUrl": "/officers/technology/SREEVASAN_.webp"
       }
-    ],
-    "description": "Building the platform that powers HackUTD — registration, infrastructure, and every line of code that keeps 1,000+ hackers online."
+    ]
   },
   {
     "id": "industry",
@@ -239,8 +237,7 @@
         "quote": "Coming soon.",
         "imageUrl": "/officers/industry/NANDINI_PAIDESETTY.webp"
       }
-    ],
-    "description": "The bridge between HackUTD and the companies that believe in what we build. They turn cold outreach into lasting partnerships."
+    ]
   },
   {
     "id": "experience",
@@ -312,8 +309,7 @@
         "quote": "Coming soon.",
         "imageUrl": "/officers/experience/ADHYA_WAIKAR.webp"
       }
-    ],
-    "description": "Turning 24 hours into an unforgettable experience — from the moment hackers walk in to the moment they leave inspired."
+    ]
   },
   {
     "id": "logistics",
@@ -369,8 +365,7 @@
         "quote": "Coming soon.",
         "imageUrl": "/officers/logistics/AAYUSHI_.webp"
       }
-    ],
-    "description": "The backbone of the event. They handle the details nobody sees so that everything everyone does see runs flawlessly."
+    ]
   },
   {
     "id": "finance",
@@ -401,7 +396,6 @@
         "quote": "At the end of the day it's night",
         "imageUrl": "/officers/finance/ANUSH_GUDAPURI.webp"
       }
-    ],
-    "description": "Keeping HackUTD financially sound — from budget planning to vendor payments, they make sure every dollar serves a purpose."
+    ]
   }
 ]

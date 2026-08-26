@@ -18,7 +18,6 @@ import {
   HERO_SKYLINE,
   HERO_SKYLINE_MASK,
   HERO_SKYLINE_STROKE_FILTER,
-  HERO_STARS,
   HERO_WHITEOUT,
   MOBILE_SCRUB,
 } from "./sceneConfig";
@@ -28,7 +27,6 @@ configureScrollTrigger();
 
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
-  const starsLayerRef = useRef<HTMLDivElement>(null);
   const cometBackgroundLayerRef = useRef<HTMLDivElement>(null);
   const skyLayerRef = useRef<HTMLDivElement>(null);
   const skylineLayerRef = useRef<HTMLDivElement>(null);
@@ -40,7 +38,6 @@ export default function Hero() {
   useGSAP(
     () => {
       const section = sectionRef.current;
-      const starsLayer = starsLayerRef.current;
       const cometBackgroundLayer = cometBackgroundLayerRef.current;
       const skyLayer = skyLayerRef.current;
       const skylineLayer = skylineLayerRef.current;
@@ -69,7 +66,6 @@ export default function Hero() {
       const restingLayers = [
         skyLayer,
         skylineLayer,
-        starsLayer,
         cometLayer,
       ].filter((el): el is HTMLDivElement => el !== null);
 
@@ -195,32 +191,6 @@ export default function Hero() {
             </filter>
           </defs>
         </svg>
-
-        <div
-          ref={starsLayerRef}
-          aria-hidden="true"
-          className="absolute inset-0 z-1"
-        >
-          {HERO_STARS.map((star) => {
-            const style = {
-              top: `${star.top}%`,
-              left: `${star.left}%`,
-              width: `${star.size}px`,
-              height: `${star.size}px`,
-              opacity: star.opacity,
-              animationDuration: `${star.duration}s`,
-              animationDelay: `${star.delay}s`,
-            } satisfies CSSProperties;
-
-            return (
-              <span
-                key={star.id}
-                className="hero-star absolute bg-(--color-amber)"
-                style={style}
-              />
-            );
-          })}
-        </div>
 
         <div
           ref={cometBackgroundLayerRef}

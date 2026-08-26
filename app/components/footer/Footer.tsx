@@ -12,9 +12,17 @@ const links: FooterLink[] = [
   { label: "Instagram", href: "https://www.instagram.com/hackutd/" },
   { label: "Twitter", href: "https://x.com/hackutd" },
   { label: "LinkedIn", href: "https://www.linkedin.com/company/hackutd/" },
-  { label: "TikTok", href: "https://www.tiktok.com/@hackutd" },
+  { label: "YouTube", href: "https://www.youtube.com/@realhackutd" },
   { label: "GitHub", href: "https://github.com/hackutd" },
   { label: "Contact", href: "mailto:hello@hackutd.co" },
+];
+
+const resourceLinks: FooterLink[] = [
+  { label: "HackUTD Guide", href: "https://guide.hackutd.co/" },
+  {
+    label: "MLH Code of Conduct",
+    href: "https://github.com/MLH/mlh-policies/blob/main/code-of-conduct.md",
+  },
 ];
 
 type FooterProps = ComponentPropsWithoutRef<"footer"> & {
@@ -135,6 +143,24 @@ const Footer = forwardRef<HTMLElement, FooterProps>(function Footer(
           </a>{" "}
           &middot; Made with &lt;3
         </p>
+
+        <nav
+          aria-label="HackUTD resources"
+          className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2"
+        >
+          {resourceLinks.map((link) => (
+            <a
+              key={link.label}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative inline-block pb-1 text-[0.6875rem] font-light uppercase tracking-[0.08em] text-white/75 transition-colors duration-300 hover:text-white sm:text-xs [text-shadow:0_1px_8px_rgba(0,0,0,0.5)]"
+            >
+              <span>{link.label}</span>
+              <span className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-white transition-transform duration-300 group-hover:scale-x-100" />
+            </a>
+          ))}
+        </nav>
       </div>
     </footer>
   );

@@ -14,10 +14,6 @@ export type RibbonWaveOptions = Readonly<{
   phase: number;
 }>;
 
-export function buildStarPoints(outer: number, inner: number) {
-  return `0,${-outer} ${inner},${-inner} ${outer},0 ${inner},${inner} 0,${outer} ${-inner},${inner} ${-outer},0 ${-inner},${-inner}`;
-}
-
 export function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }

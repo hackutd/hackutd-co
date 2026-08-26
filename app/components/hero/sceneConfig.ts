@@ -1,15 +1,5 @@
 import type { CSSProperties } from "react";
 
-export type HeroStar = {
-  id: number;
-  size: number;
-  top: number;
-  left: number;
-  opacity: number;
-  duration: number;
-  delay: number;
-};
-
 export const HERO_SCENE_SCROLL = {
   start: "top top",
   end: "65% bottom",
@@ -384,32 +374,7 @@ export const COMET_TUNING = {
     width: 1,
     opacity: 0.9,
   },
-  star: {
-    outer: 14,
-    inner: 3,
-  },
 } as const;
 
 export const MOBILE_SCRUB = 0.6;
 export const MOBILE_RIBBON_SAMPLES = 80;
-
-function createHeroStars(count: number): HeroStar[] {
-  let seed = 27;
-
-  const next = () => {
-    seed = (seed * 48271) % 2147483647;
-    return seed / 2147483647;
-  };
-
-  return Array.from({ length: count }, (_, index) => ({
-    id: index,
-    size: 6 + next() * 5.6,
-    top: 8 + next() * 56,
-    left: 4 + next() * 92,
-    opacity: 0.35 + next() * 0.5,
-    duration: 2.6 + next() * 3.8,
-    delay: next() * 4,
-  }));
-}
-
-export const HERO_STARS = createHeroStars(28);

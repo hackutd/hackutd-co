@@ -145,3 +145,124 @@ export const NAVBAR_LIGHT_THRESHOLD = 0.5;
  * down a wall the theme doesn't reach.
  */
 export const NAVBAR_PANEL_THRESHOLD = 0.5;
+
+export type AmbientStar = Readonly<{
+  id: number;
+  top: number;
+  left: number;
+  size: number;
+  opacity: number;
+  dimOpacity: number;
+  duration: number;
+  delay: number;
+  hideOnMobile: boolean;
+}>;
+
+export type ShootingStarRoute = Readonly<{
+  wait: number;
+  startLeft: number;
+  startTop: number;
+  travelX: number;
+  travelY: number;
+  duration: number;
+}>;
+
+export const STAR_FIELD_TUNING = {
+  count: 24,
+  seed: 137,
+  top: { min: 6, range: 88 },
+  left: { min: 3, range: 94 },
+  size: { min: 5.5, range: 5.5 },
+  opacity: { min: 0.32, range: 0.46 },
+  duration: { min: 3.6, range: 3.2 },
+} as const;
+
+function roundStarValue(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
+function createAmbientStars(): AmbientStar[] {
+  let seed = STAR_FIELD_TUNING.seed;
+
+  const next = () => {
+    seed = (seed * 48271) % 2147483647;
+    return seed / 2147483647;
+  };
+
+  return Array.from({ length: STAR_FIELD_TUNING.count }, (_, index) => {
+    const duration =
+      STAR_FIELD_TUNING.duration.min +
+      next() * STAR_FIELD_TUNING.duration.range;
+    const opacity =
+      STAR_FIELD_TUNING.opacity.min +
+      next() * STAR_FIELD_TUNING.opacity.range;
+
+    return {
+      id: index,
+      top: roundStarValue(
+        STAR_FIELD_TUNING.top.min + next() * STAR_FIELD_TUNING.top.range,
+      ),
+      left: roundStarValue(
+        STAR_FIELD_TUNING.left.min + next() * STAR_FIELD_TUNING.left.range,
+      ),
+      size: roundStarValue(
+        STAR_FIELD_TUNING.size.min + next() * STAR_FIELD_TUNING.size.range,
+      ),
+      opacity: roundStarValue(opacity),
+      dimOpacity: roundStarValue(opacity * 0.45),
+      duration: roundStarValue(duration),
+      delay: roundStarValue(-next() * duration),
+      hideOnMobile: index % 2 === 1,
+    };
+  });
+}
+
+/** Stable across server and client renders; no stars jump after hydration. */
+export const STAR_FIELD_STARS = createAmbientStars();
+
+/**
+ * One shooting-star element follows these routes in sequence. The varied gaps
+ * make the cycle feel occasional without runtime randomness or React updates.
+ */
+export const SHOOTING_STAR_ROUTES: readonly ShootingStarRoute[] = [
+  {
+    wait: 8,
+    startLeft: -8,
+    startTop: 12,
+    travelX: 50,
+    travelY: 27,
+    duration: 0.95,
+  },
+  {
+    wait: 15,
+    startLeft: 42,
+    startTop: -8,
+    travelX: 50,
+    travelY: 27,
+    duration: 1.1,
+  },
+  {
+    wait: 18,
+    startLeft: -10,
+    startTop: 46,
+    travelX: 42,
+    travelY: 23,
+    duration: 0.9,
+  },
+  {
+    wait: 12,
+    startLeft: 68,
+    startTop: -8,
+    travelX: 40,
+    travelY: 22,
+    duration: 0.85,
+  },
+  {
+    wait: 21,
+    startLeft: 12,
+    startTop: -8,
+    travelX: 45,
+    travelY: 25,
+    duration: 1,
+  },
+] as const;

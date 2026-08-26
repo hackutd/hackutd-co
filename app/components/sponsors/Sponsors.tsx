@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, lazy, Suspense, useState } from "react";
+import { useRef, useEffect, lazy, Suspense } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -32,8 +32,6 @@ export default function Sponsors() {
   const dragVelocity = useRef(0);
 
   const reducedMotion = usePrefersReducedMotion();
-
-  const [hasNudged, setHasNudged] = useState(false);
 
   // ── Drag-to-rotate on tower container ─────────────────────
   useEffect(() => {
@@ -190,14 +188,13 @@ export default function Sponsors() {
     };
   }, [reducedMotion]);
 
-  // ── GSAP: scroll entrance, shared logo/globe progress ─────
-  const { contextSafe } = useGSAP(() => {
+  // ── GSAP: section entrance, shared logo/globe progress ────
+  useGSAP(() => {
     const section = sectionRef.current;
     const header = headerRef.current;
     const scene = sceneRef.current;
     const towerWrap = towerWrapRef.current;
     const logosTrack = logosTrackRef.current;
-    const logos = logosRef.current;
     if (reducedMotion || !section || !scene || !towerWrap) return;
 
     // The wall's first frame is its heading, and it arrives while the timeline's
@@ -286,59 +283,12 @@ export default function Sponsors() {
       });
     });
 
-    // Sponsor logos stagger in
-    if (logos) {
-      const cards = logos.querySelectorAll(".sponsor-card");
-      gsap.fromTo(
-        cards,
-        { y: 40, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 0.5,
-          stagger: 0.04,
-          ease: "power2.out",
-          // Hand the transform back to CSS once the card has landed, so the
-          // hover rules aren't outranked by GSAP's leftover inline style.
-          clearProps: "transform",
-          scrollTrigger: {
-            trigger: logos,
-            start: "top 85%",
-            toggleActions: "play none none none",
-          },
-        },
-      );
-    }
-
     return () => media.revert();
   }, {
     scope: sectionRef,
     dependencies: [reducedMotion],
     revertOnUpdate: true,
   });
-
-  // ── Nudge animation on hover ──────────────────────────────
-  const handleMouseEnter = () => {
-    contextSafe(() => {
-      if (
-        reducedMotion ||
-        !logosRef.current ||
-        hasNudged ||
-        // Only trigger nudge if the device has a cursor (hover support)
-        !window.matchMedia("(hover: hover)").matches
-      )
-        return;
-
-      setHasNudged(true);
-      gsap.to(logosRef.current, {
-        y: -15,
-        duration: 0.5,
-        yoyo: true,
-        repeat: 1,
-        ease: "sine.inOut",
-      });
-    })();
-  };
 
   const towerH = "max(100vh, 1000px)";
 
@@ -356,10 +306,10 @@ export default function Sponsors() {
           <div className="flex items-end justify-between">
             <h2 className="text-4xl font-bold md:text-5xl">Our Sponsors</h2>
             <a
-              href="mailto:sponsors@hackutd.co"
+              href="mailto:hackutdindustry@acmutd.co"
               className="group relative pb-1 text-sm text-muted transition-colors hover:text-foreground"
             >
-              <span>sponsors@hackutd.co</span>
+              <span>hackutdindustry@acmutd.co</span>
               <span className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-linear-to-r from-purple to-pink transition-transform duration-300 group-hover:scale-x-100" />
             </a>
           </div>
@@ -419,10 +369,10 @@ export default function Sponsors() {
         <div ref={headerRef} className="flex items-end justify-between">
           <h2 className="text-4xl font-bold md:text-5xl">Our Sponsors</h2>
           <a
-            href="mailto:sponsors@hackutd.co"
+            href="mailto:hackutdindustry@acmutd.co"
             className="group relative pb-1 text-sm text-muted transition-colors hover:text-foreground"
           >
-            <span>sponsors@hackutd.co</span>
+            <span>hackutdindustry@acmutd.co</span>
             <span className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-linear-to-r from-purple to-pink transition-transform duration-300 group-hover:scale-x-100" />
           </a>
         </div>
@@ -434,7 +384,6 @@ export default function Sponsors() {
           {/* Sponsor logos grid - Left side */}
           <div
             className="relative z-10 order-2 w-full lg:sticky lg:top-0 lg:order-1 lg:h-screen lg:w-[48%] lg:overflow-hidden"
-            onMouseEnter={handleMouseEnter}
           >
             <style dangerouslySetInnerHTML={{ __html: `
               /* ── Sponsor tiles ──────────────────────────────────────
@@ -525,7 +474,7 @@ export default function Sponsors() {
                 opacity: 0;
                 background: radial-gradient(
                   150px circle at var(--mx) var(--my),
-                  rgba(108, 23, 254, 0.12),
+                  rgba(108, 23, 254, 0.18),
                   rgba(108, 23, 254, 0) 70%
                 );
                 transition: opacity 0.35s ease var(--hold);
