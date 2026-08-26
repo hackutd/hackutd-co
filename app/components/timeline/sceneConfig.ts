@@ -189,7 +189,10 @@ export const TRAIL_WAVE = {
   numPoints: 200,
   startX: 202,
   centerY: 179,
-  halfWidthMin: 50,     // wider opening at the rocket nozzle
+  // Width of the plume where it leaves the nozzle. Set against the *visible*
+  // band rather than on its own: the band is this plus the wave's amplitude, so
+  // the shallower wave has to be paid back here for the opening to read wider.
+  halfWidthMin: 78,
   /** Exponent above 1 keeps early growth controlled without creating a plateau. */
   growthPower: 1.15,
   /** The continuously growing profile reaches full viewport coverage here. */
@@ -199,7 +202,7 @@ export const TRAIL_WAVE = {
    * so the travelling wave never turns into a straight polygon edge.
    */
   endX: 4200,
-  maxAmplitude: 40,
+  maxAmplitude: 26,         // crest-to-trough is twice this; a shallow roll
   amplitudeRampLength: 360, // keeps the wave pinned cleanly to the nozzle
   wavelength: 480,          // just under three complete waves per viewport
   // Seconds for one crest to travel one wavelength. The plume reads as a slow
@@ -211,7 +214,9 @@ export const TRAIL_WAVE = {
 
 export const MOBILE_TRAIL_WAVE = {
   ...TRAIL_WAVE,
-  maxAmplitude: 50,
+  // A unit is worth ~a quarter of a desktop pixel here, so the wave needs more
+  // units to read as the same depth on screen.
+  maxAmplitude: 32,
 } as const;
 
 /**
