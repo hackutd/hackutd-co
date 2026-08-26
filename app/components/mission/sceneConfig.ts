@@ -93,7 +93,7 @@ export const MISSION_STATEMENT_BLUR = {
 
 /**
  * Marks key words in the statement copy: a run between a pair of these receives
- * bold emphasis while staying in the same sans-serif face as the rest of the
+ * semibold emphasis while staying in the same sans-serif face as the rest of the
  * Mission section. A pair may span several words and may open or close mid-word.
  *
  * Markers have to be balanced. An odd count flips the emphasis for the rest of
@@ -105,7 +105,7 @@ export const MISSION_KEY_WORD_DELIMITER = "*";
  * Applied to the marked runs. Keep the explicit sans class here so future
  * typography changes elsewhere cannot reintroduce a serif into Mission copy.
  */
-export const MISSION_KEY_WORD_CLASS = "font-sans font-bold";
+export const MISSION_KEY_WORD_CLASS = "font-sans font-semibold";
 
 /**
  * Space above each hard-broken block of the statement (a newline in the copy).

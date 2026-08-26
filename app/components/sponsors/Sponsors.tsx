@@ -356,10 +356,10 @@ export default function Sponsors() {
           <div className="flex items-end justify-between">
             <h2 className="text-4xl font-bold md:text-5xl">Our Sponsors</h2>
             <a
-              href="mailto:sponsors@hackutd.co"
+              href="mailto:hackutdindustry@acmutd.co"
               className="group relative pb-1 text-sm text-muted transition-colors hover:text-foreground"
             >
-              <span>sponsors@hackutd.co</span>
+              <span>hackutdindustry@acmutd.co</span>
               <span className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-linear-to-r from-purple to-pink transition-transform duration-300 group-hover:scale-x-100" />
             </a>
           </div>
@@ -419,10 +419,10 @@ export default function Sponsors() {
         <div ref={headerRef} className="flex items-end justify-between">
           <h2 className="text-4xl font-bold md:text-5xl">Our Sponsors</h2>
           <a
-            href="mailto:sponsors@hackutd.co"
+            href="mailto:hackutdindustry@acmutd.co"
             className="group relative pb-1 text-sm text-muted transition-colors hover:text-foreground"
           >
-            <span>sponsors@hackutd.co</span>
+            <span>hackutdindustry@acmutd.co</span>
             <span className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-linear-to-r from-purple to-pink transition-transform duration-300 group-hover:scale-x-100" />
           </a>
         </div>
@@ -525,7 +525,7 @@ export default function Sponsors() {
                 opacity: 0;
                 background: radial-gradient(
                   150px circle at var(--mx) var(--my),
-                  rgba(108, 23, 254, 0.12),
+                  rgba(108, 23, 254, 0.18),
                   rgba(108, 23, 254, 0) 70%
                 );
                 transition: opacity 0.35s ease var(--hold);

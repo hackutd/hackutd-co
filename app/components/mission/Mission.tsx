@@ -33,7 +33,7 @@ configureScrollTrigger();
  * last word comes sharp; past that, the copy has to get shorter.
  */
 const MISSION_STATEMENT_CLASS_NAME =
-  "relative w-full text-center font-sans text-[1.75rem] font-normal leading-[1.1] text-(--color-surface-foreground) sm:text-[2.25rem] md:text-[3rem] lg:text-[3.75rem]";
+  "relative w-full text-center font-sans text-[1.75rem] font-normal leading-[1.2] text-(--color-surface-foreground) sm:text-[2.25rem] md:text-[3rem] lg:text-[3.75rem]";
 
 const MISSION_ANCHOR = (
   <span
