@@ -4,6 +4,7 @@ import { Suspense, useRef, useMemo, useEffect, useState } from "react";
 import { Canvas, useFrame, useThree, useLoader } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import { useNearViewport } from "@/app/hooks/useNearViewport";
 
 const MODEL_PATH = "/models/sponsor-globe-flat-4.glb";
 const AUTO_ROTATION_SPEED = 0.3;
@@ -508,6 +509,12 @@ export default function ReunionTower({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
 
+  // The canvas is unmounted entirely while it is far from the viewport: a
+  // paused WebGL canvas still holds its context, geometry, and every sponsor
+  // texture in GPU memory. The wide margin remounts it early enough that the
+  // scene is rebuilt (from the browser's HTTP cache) before it scrolls in.
+  const isNearViewport = useNearViewport(wrapperRef, "200%");
+
   // Render frames only while the tower is on screen
   useEffect(() => {
     const wrapper = wrapperRef.current;
@@ -522,39 +529,41 @@ export default function ReunionTower({
 
   return (
     <div ref={wrapperRef} className="h-full w-full">
-      <Canvas
-        dpr={[1, 1.5]}
-        gl={{
-          antialias: true,
-          alpha: true,
-          powerPreference: "high-performance",
-          stencil: false,
-          depth: true,
-        }}
-        camera={{ position: [0, 125, 175], fov: 55, near: 0.1, far: 2000 }}
-        style={{
-          touchAction: "pan-y",
-          maskImage: "linear-gradient(to bottom, black 90%, transparent 100%)",
-          WebkitMaskImage:
-            "linear-gradient(to bottom, black 90%, transparent 100%)",
-        }}
-        frameloop={inView ? "always" : "never"}
-      >
-        {/* The model carries its own flat gray colors and drawn edges, so a
-            single flat ambient light is all it needs — directional lights and
-            an Environment probe would shade the uniform gray unevenly. */}
-        <ambientLight intensity={3.5} />
-
-        <Suspense fallback={null}>
-          <TowerModel
-            scrollProgressRef={scrollProgressRef}
-            dragOffsetRef={dragOffsetRef}
-            sponsors={sponsors}
-          />
-        </Suspense>
-
-        <CameraRig scrollProgressRef={scrollProgressRef} />
-      </Canvas>
+      {isNearViewport && (
+        <Canvas
+          dpr={[1, 1.5]}
+          gl={{
+            antialias: true,
+            alpha: true,
+            powerPreference: "high-performance",
+            stencil: false,
+            depth: true,
+          }}
+          camera={{ position: [0, 125, 175], fov: 55, near: 0.1, far: 2000 }}
+          style={{
+            touchAction: "pan-y",
+            maskImage: "linear-gradient(to bottom, black 90%, transparent 100%)",
+            WebkitMaskImage:
+              "linear-gradient(to bottom, black 90%, transparent 100%)",
+          }}
+          frameloop={inView ? "always" : "never"}
+        >
+          {/* The model carries its own flat gray colors and drawn edges, so a
+              single flat ambient light is all it needs — directional lights and
+              an Environment probe would shade the uniform gray unevenly. */}
+          <ambientLight intensity={3.5} />
+  
+          <Suspense fallback={null}>
+            <TowerModel
+              scrollProgressRef={scrollProgressRef}
+              dragOffsetRef={dragOffsetRef}
+              sponsors={sponsors}
+            />
+          </Suspense>
+  
+          <CameraRig scrollProgressRef={scrollProgressRef} />
+        </Canvas>
+      )}
     </div>
   );
 }
