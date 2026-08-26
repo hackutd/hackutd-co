@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useId, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -12,6 +12,7 @@ import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import {
   CARD_POPOVER,
+  MARKER_WAVE_FOLLOW,
   MOBILE_TIMELINE_SCRUB,
   MOBILE_TRAIL_WAVE,
   ROCKET_ART,
@@ -60,29 +61,91 @@ export default function RocketTrailAnimation() {
   // Individual refs for each marker <g> so GSAP can wave them in sync with the trail
   const markerRefs = useRef<(SVGGElement | null)[]>([]);
 
-  // Hovered marker index + anchor position (px, relative to the clip box)
-  const [hoveredCard, setHoveredCard] = useState<{
-    index: number;
-    left: number;
-    top: number;
-  } | null>(null);
+  // Which marker is hovered. The card's position is written straight to the DOM
+  // by the ticker below rather than kept in state, so tracking a moving marker
+  // costs no re-renders.
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const hideTimer = useRef<number | null>(null);
 
-  const showCard = useCallback((index: number, target: SVGGElement) => {
-    const clip = clipRef.current;
-    if (!clip) return;
-    const clipRect = clip.getBoundingClientRect();
-    const rect = target.getBoundingClientRect();
-    const halfCard = CARD_POPOVER.width / 2;
-    const left = gsap.utils.clamp(
-      halfCard + CARD_POPOVER.edgeMargin,
-      clipRect.width - halfCard - CARD_POPOVER.edgeMargin,
-      rect.left + rect.width / 2 - clipRect.left,
-    );
-    const top = Math.max(CARD_POPOVER.topMargin, rect.top - clipRect.top - CARD_POPOVER.gap);
-    setHoveredCard({ index, left, top });
+  const cardHeight =
+    CARD_POPOVER.width / CARD_POPOVER.imageAspect + CARD_POPOVER.captionHeight;
+
+  // Anchor the card to a marker's current on-screen box: above it by preference,
+  // flipped below when there is no room, then clamped inside the clip box. The
+  // clip is overflow-hidden, so anything outside it is simply cut off.
+  const positionCard = useCallback(
+    (index: number) => {
+      const clip = clipRef.current;
+      const marker = markerRefs.current[index];
+      const card = cardRef.current;
+      if (!clip || !marker || !card) return;
+
+      const clipRect = clip.getBoundingClientRect();
+      const rect = marker.getBoundingClientRect();
+      const half = CARD_POPOVER.width / 2;
+
+      const left = gsap.utils.clamp(
+        half + CARD_POPOVER.edgeMargin,
+        Math.max(
+          half + CARD_POPOVER.edgeMargin,
+          clipRect.width - half - CARD_POPOVER.edgeMargin,
+        ),
+        rect.left + rect.width / 2 - clipRect.left,
+      );
+
+      const above = rect.top - clipRect.top - CARD_POPOVER.gap - cardHeight;
+      const below = rect.bottom - clipRect.top + CARD_POPOVER.gap;
+      const top = gsap.utils.clamp(
+        CARD_POPOVER.edgeMargin,
+        Math.max(
+          CARD_POPOVER.edgeMargin,
+          clipRect.height - cardHeight - CARD_POPOVER.edgeMargin,
+        ),
+        above >= CARD_POPOVER.edgeMargin ? above : below,
+      );
+
+      gsap.set(card, { x: left, y: top, xPercent: -50 });
+    },
+    [cardHeight],
+  );
+
+  const showCard = useCallback((index: number) => {
+    if (hideTimer.current !== null) {
+      clearTimeout(hideTimer.current);
+      hideTimer.current = null;
+    }
+    setHoveredIndex(index);
   }, []);
 
-  const hideCard = useCallback(() => setHoveredCard(null), []);
+  // Deferred rather than immediate: a marker drifting out from under a pointer
+  // that never moved would otherwise tear the card down, and re-entering a frame
+  // later would build it again — which reads as flicker. Coming back cancels
+  // this before it fires, so nothing is seen.
+  const hideCard = useCallback(() => {
+    if (hideTimer.current !== null) clearTimeout(hideTimer.current);
+    hideTimer.current = window.setTimeout(() => {
+      hideTimer.current = null;
+      setHoveredIndex(null);
+    }, CARD_POPOVER.hideDelay);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (hideTimer.current !== null) clearTimeout(hideTimer.current);
+    },
+    [],
+  );
+
+  // Keep the card glued to its marker the whole time it is shown — the marker is
+  // still riding the wave, and the scrubbed sweep is still carrying it left.
+  useLayoutEffect(() => {
+    if (hoveredIndex === null) return;
+    const follow = () => positionCard(hoveredIndex);
+    follow();
+    gsap.ticker.add(follow);
+    return () => gsap.ticker.remove(follow);
+  }, [hoveredIndex, positionCard]);
 
   const isMobile = useIsMobile();
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -226,7 +289,10 @@ export default function RocketTrailAnimation() {
           const el = markerRefs.current[i];
           if (el) {
             gsap.set(el, {
-              y: marker.y + markerYOffset + offsetAt(marker.x),
+              y:
+                marker.y +
+                markerYOffset +
+                offsetAt(marker.x) * MARKER_WAVE_FOLLOW,
             });
           }
         });
@@ -303,7 +369,7 @@ export default function RocketTrailAnimation() {
   const nameFontSize = isMobile ? 18 : 9;
   const nameLetterSpacing = isMobile ? 2.0 : 1.5;
 
-  const hoveredMarker = hoveredCard ? YEAR_MARKERS[hoveredCard.index] : null;
+  const hoveredMarker = hoveredIndex === null ? null : YEAR_MARKERS[hoveredIndex];
 
   // Mask and gradient bounds have to contain the whole plume — which now runs
   // more than two viewports past the SVG's right edge and past its top and
@@ -416,8 +482,28 @@ export default function RocketTrailAnimation() {
               // ref lets GSAP set translate(marker.x, marker.y) and then wave the y
               // children use group-relative coords (origin = marker center)
               const labelBaseY = marker.imageHeight / 2 + yearFontSize * 1.2;
+              // One padded, invisible hit area covering the artwork and both
+              // labels. Hovering is then a question of being near the marker
+              // rather than exactly over its glyphs, so the few units it still
+              // drifts can't drop the hover. Sitting inside the link, it doubles
+              // as a click target.
+              const nameWidth =
+                marker.name.length * (nameFontSize * 0.58 + nameLetterSpacing);
+              const hitWidth =
+                Math.max(marker.imageWidth, nameWidth) + CARD_POPOVER.hitPadX * 2;
+              const hitTop = -marker.imageHeight / 2 - CARD_POPOVER.hitPadY;
+              const hitBottom =
+                labelBaseY + nameFontSize * 1.6 + CARD_POPOVER.hitPadY;
               const inner = (
                 <>
+                  <rect
+                    x={-hitWidth / 2}
+                    y={hitTop}
+                    width={hitWidth}
+                    height={hitBottom - hitTop}
+                    fill="transparent"
+                    style={{ pointerEvents: "all" }}
+                  />
                   <image
                     href={marker.image}
                     x={-marker.imageWidth / 2}
@@ -458,7 +544,7 @@ export default function RocketTrailAnimation() {
                   key={`${marker.year}-${marker.name}`}
                   ref={el => { markerRefs.current[i] = el; }}
                   style={{ pointerEvents: "auto" }}
-                  onPointerEnter={(event) => showCard(i, event.currentTarget)}
+                  onPointerEnter={() => showCard(i)}
                   onPointerLeave={hideCard}
                 >
                   {marker.href ? (
@@ -479,10 +565,11 @@ export default function RocketTrailAnimation() {
       </div>
 
       {/* Hover card: legacy recap image for the hovered hackathon */}
-      {hoveredCard && hoveredMarker && (
+      {hoveredMarker && (
         <div
-          className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full"
-          style={{ left: hoveredCard.left, top: hoveredCard.top, width: CARD_POPOVER.width }}
+          ref={cardRef}
+          className="pointer-events-none absolute top-0 left-0 z-20"
+          style={{ width: CARD_POPOVER.width }}
         >
           <div className="overflow-hidden rounded-2xl border border-foreground/12 bg-background/95 shadow-[0_24px_64px_rgba(0,0,0,0.6)] backdrop-blur-md">
             <Image

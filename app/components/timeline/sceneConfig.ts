@@ -27,10 +27,16 @@ export const ROCKET_SWEEP = {
   /**
    * How far past its own left edge the assembly keeps travelling, as a multiple
    * of the SVG's layout width. A little over 1 clears Poyo and every marker;
-   * 1.55 also carries the delayed flare fully across the viewport for the
-   * Sponsors handoff without spending almost two extra widths offscreen.
+   * beyond that it also carries the delayed flare across the viewport for the
+   * Sponsors handoff.
+   *
+   * 2.0 is set by the marker roster rather than by the flare: fourteen
+   * hackathons spaced far enough apart to read individually reach x≈2595, and a
+   * marker only clears the left edge if x < 1371 * plumeExit. The extra travel
+   * is paid for by a matching increase in TIMELINE_LAYOUT.minHeight, so the
+   * sweep still moves *slower* per unit of scroll than it did at 1.55.
    */
-  plumeExit: 1.55,
+  plumeExit: 2.0,
 } as const;
 
 export type YearMarker = {
@@ -56,22 +62,28 @@ export type YearMarker = {
 
 export const YEAR_MARKERS: YearMarker[] = [
   // Listed newest to oldest, laid out left-to-right across the trail.
-  // Spaced 123 units apart from x=450, so the last marker (x=2049) still clears
-  // the left edge before the sweep parks (the limit is ~1371 * ROCKET_SWEEP.plumeExit).
+  // Spaced 165 units apart from x=450 — roughly eight markers per viewport
+  // width, so each one is read on its own rather than as part of a clump. At
+  // that pitch no image or label overlaps its neighbour at either the desktop
+  // or the (much larger, in SVG units) mobile font sizes.
+  //
+  // The last marker lands at x=2595. A marker only clears the left edge before
+  // the sweep parks if x < ~1371 * ROCKET_SWEEP.plumeExit, which is why
+  // plumeExit is 2.0: at the old 1.55 the budget stopped at ~2100.
   { year: "2024", name: "RIPPLE EFFECT",      date: "Fall 2024",   x: 450,  y: 150, image: "/timeline/logos/ripple-2024.png",             imageWidth: 110, imageHeight: 25, card: "/timeline/cards/ripple-2024.png",             href: "https://ripple.hackutd.co" },
-  { year: "2023", name: "HACKUTD X",          date: "Fall 2023",   x: 573,  y: 198, image: "/hackX.png",                                  imageWidth: 64,  imageHeight: 80, card: "/timeline/cards/hackutd-x-2023.png",          href: "https://x.hackutd.co" },
-  { year: "2023", name: "AXXESS HACKATHON",   date: "Spring 2023", x: 696,  y: 146, image: "/timeline/logos/axxess-2023.png",             imageWidth: 100, imageHeight: 29, card: "/timeline/cards/axxess-2023.png",             href: "https://www.axxess.com/hackathon" },
-  { year: "2022", name: "HACKUTD IX",         date: "Fall 2022",   x: 819,  y: 198, image: "/hackIX.png",                                 imageWidth: 78,  imageHeight: 77, card: "/timeline/cards/hackutd-ix-2022.png",         href: "https://ix.hackutd.co/" },
-  { year: "2021", name: "HACKUTD VIII",       date: "Fall 2021",   x: 942,  y: 148, image: "/hackVIII.png",                               imageWidth: 68,  imageHeight: 79, card: "/timeline/cards/hackutd-viii-2021.png",       href: "https://viii.hackutd.co/" },
-  { year: "2021", name: "HACKUTD VII",        date: "Spring 2021", x: 1065, y: 200, image: "/hackVII.png",                                imageWidth: 60,  imageHeight: 80, card: "/timeline/cards/hackutd-vii-2021.png",        href: "https://vii.hackutd.co/" },
-  { year: "2020", name: "GAME JAM",           date: "Fall 2020",   x: 1188, y: 150, image: "/timeline/logos/gamejam-2020.png",            imageWidth: 84,  imageHeight: 47, card: "/timeline/cards/gamejam-2020.png",            href: "https://gamejam.hackutd.co/" },
-  { year: "2019", name: "HACKUTD VI",         date: "Fall 2019",   x: 1311, y: 198, image: "/hackVI.png",                                 imageWidth: 62,  imageHeight: 80, card: "/timeline/cards/hackutd-vi-2019.png",         href: "https://hackutd-vi.devpost.com/" },
-  { year: "2019", name: "HACKUTD 19",         date: "Spring 2019", x: 1434, y: 146, image: "/timeline/logos/hackutd-2019.png",            imageWidth: 100, imageHeight: 43, card: "/timeline/cards/hackutd-2019.png",            href: "https://hackutd2019.devpost.com/" },
-  { year: "2018", name: "HACKS FOR HUMANITY", date: "Fall 2018",   x: 1557, y: 198, image: "/timeline/logos/hacks-for-humanity-2018.png", imageWidth: 84,  imageHeight: 45, card: "/timeline/cards/hacks-for-humanity-2018.png", href: "https://hfhutd18.devpost.com/" },
-  { year: "2018", name: "HACKUTD 18",         date: "Spring 2018", x: 1680, y: 148, image: "/timeline/logos/hackutd-2018.png",            imageWidth: 104, imageHeight: 34, card: "/timeline/cards/hackutd-2018.png",            href: "https://hackutd18.devpost.com/" },
-  { year: "2017", name: "HACKUTD 17",         date: "Spring 2017", x: 1803, y: 198, image: "/timeline/logos/hackutd-2017.png",            imageWidth: 104, imageHeight: 33, card: "/timeline/cards/hackutd-2017.png",            href: "https://hackutd17.devpost.com/" },
-  { year: "2016", name: "HACKUTD 16",         date: "Spring 2016", x: 1926, y: 148, image: "/timeline/logos/hackutd-2016.png",            imageWidth: 110, imageHeight: 22, card: "/timeline/cards/hackutd-2016.png",            href: "https://hackutd16.devpost.com/" },
-  { year: "2015", name: "HACKUTD",            date: "Spring 2015", x: 2049, y: 196, image: "/timeline/logos/hackutd-2015.png",            imageWidth: 116, imageHeight: 20, card: "/timeline/cards/hackutd-2015.png",            href: "https://hackutd.devpost.com/" },
+  { year: "2023", name: "HACKUTD X",          date: "Fall 2023",   x: 615,  y: 198, image: "/hackX.png",                                  imageWidth: 64,  imageHeight: 80, card: "/timeline/cards/hackutd-x-2023.png",          href: "https://x.hackutd.co" },
+  { year: "2023", name: "AXXESS HACKATHON",   date: "Spring 2023", x: 780,  y: 146, image: "/timeline/logos/axxess-2023.png",             imageWidth: 100, imageHeight: 29, card: "/timeline/cards/axxess-2023.png",             href: "https://www.axxess.com/hackathon" },
+  { year: "2022", name: "HACKUTD IX",         date: "Fall 2022",   x: 945,  y: 198, image: "/hackIX.png",                                 imageWidth: 78,  imageHeight: 77, card: "/timeline/cards/hackutd-ix-2022.png",         href: "https://ix.hackutd.co/" },
+  { year: "2021", name: "HACKUTD VIII",       date: "Fall 2021",   x: 1110, y: 148, image: "/hackVIII.png",                               imageWidth: 68,  imageHeight: 79, card: "/timeline/cards/hackutd-viii-2021.png",       href: "https://viii.hackutd.co/" },
+  { year: "2021", name: "HACKUTD VII",        date: "Spring 2021", x: 1275, y: 200, image: "/hackVII.png",                                imageWidth: 60,  imageHeight: 80, card: "/timeline/cards/hackutd-vii-2021.png",        href: "https://vii.hackutd.co/" },
+  { year: "2020", name: "GAME JAM",           date: "Fall 2020",   x: 1440, y: 150, image: "/timeline/logos/gamejam-2020.png",            imageWidth: 84,  imageHeight: 47, card: "/timeline/cards/gamejam-2020.png",            href: "https://gamejam.hackutd.co/" },
+  { year: "2019", name: "HACKUTD VI",         date: "Fall 2019",   x: 1605, y: 198, image: "/hackVI.png",                                 imageWidth: 62,  imageHeight: 80, card: "/timeline/cards/hackutd-vi-2019.png",         href: "https://hackutd-vi.devpost.com/" },
+  { year: "2019", name: "HACKUTD 19",         date: "Spring 2019", x: 1770, y: 146, image: "/timeline/logos/hackutd-2019.png",            imageWidth: 100, imageHeight: 43, card: "/timeline/cards/hackutd-2019.png",            href: "https://hackutd2019.devpost.com/" },
+  { year: "2018", name: "HACKS FOR HUMANITY", date: "Fall 2018",   x: 1935, y: 198, image: "/timeline/logos/hacks-for-humanity-2018.png", imageWidth: 84,  imageHeight: 45, card: "/timeline/cards/hacks-for-humanity-2018.png", href: "https://hfhutd18.devpost.com/" },
+  { year: "2018", name: "HACKUTD 18",         date: "Spring 2018", x: 2100, y: 148, image: "/timeline/logos/hackutd-2018.png",            imageWidth: 104, imageHeight: 34, card: "/timeline/cards/hackutd-2018.png",            href: "https://hackutd18.devpost.com/" },
+  { year: "2017", name: "HACKUTD 17",         date: "Spring 2017", x: 2265, y: 198, image: "/timeline/logos/hackutd-2017.png",            imageWidth: 104, imageHeight: 33, card: "/timeline/cards/hackutd-2017.png",            href: "https://hackutd17.devpost.com/" },
+  { year: "2016", name: "HACKUTD 16",         date: "Spring 2016", x: 2430, y: 148, image: "/timeline/logos/hackutd-2016.png",            imageWidth: 110, imageHeight: 22, card: "/timeline/cards/hackutd-2016.png",            href: "https://hackutd16.devpost.com/" },
+  { year: "2015", name: "HACKUTD",            date: "Spring 2015", x: 2595, y: 196, image: "/timeline/logos/hackutd-2015.png",            imageWidth: 116, imageHeight: 20, card: "/timeline/cards/hackutd-2015.png",            href: "https://hackutd.devpost.com/" },
 ];
 
 // Hover card that previews the legacy recap image above a marker (px values)
@@ -79,8 +91,36 @@ export const CARD_POPOVER = {
   width: 320,
   gap: 14,
   edgeMargin: 12,
-  topMargin: 8,
+  /** Recap images are 1035x561; the name/date caption under them adds ~44px. */
+  imageAspect: 1035 / 561,
+  captionHeight: 44,
+  /**
+   * Grace period before a card is torn down. The markers are never completely
+   * still — they ride the plume's wave and the scrubbed sweep — so a pointer
+   * held perfectly still can still fall outside a marker for a frame or two.
+   * Without a delay that reads as the card flickering on and off; with one, the
+   * pointer coming straight back cancels the teardown and nothing is seen.
+   */
+  hideDelay: 180,
+  /**
+   * Invisible padding around each marker's artwork and labels, in SVG units,
+   * that also counts as hovering it. A marker drifting by a few units under a
+   * stationary cursor stays inside its own hit area instead of slipping out.
+   */
+  hitPadX: 18,
+  hitPadY: 12,
 } as const;
+
+/**
+ * How much of the plume's wave the year markers actually follow.
+ *
+ * At 1 they tracked the fuel exactly — but the wave repeats forever, so at
+ * desktop scale that is ~84px of continuous vertical travel, about a marker's
+ * own height, with no scrolling involved at all. Markers kept sliding out from
+ * under a stationary cursor. A quarter keeps them visibly drifting with the
+ * plume they sit in while making them a target that can be hovered.
+ */
+export const MARKER_WAVE_FOLLOW = 0.25;
 
 export const TIMELINE_SCROLL = {
   start: "top top",
@@ -97,10 +137,12 @@ export const TIMELINE_LAYOUT = {
   // Give the sweep a longer runway so Poyo takes roughly one and a half
   // viewport-heights of scrolling to cross the screen on common viewports.
   //
-  // The pin range is `minHeight - 100vh`, and TIMELINE_SCROLL now spends all of
-  // it, so 400vh buys the sweep the same 300vh of scroll the old 430vh did with
-  // its 30vh park — identical pacing, 30vh less page above Sponsors.
-  minHeight: "min-h-[400vh]",
+  // The pin range is `minHeight - 100vh`, and TIMELINE_SCROLL spends all of it.
+  // Raising plumeExit to 2.0 lengthened the sweep from ~2.55 to ~3.0 viewport
+  // widths; 500vh gives it 400vh of scroll to spend rather than 300vh, so each
+  // pixel of scroll moves the markers ~12% less than it did before. The wider
+  // marker spacing and the calmer travel come from the same change.
+  minHeight: "min-h-[500vh]",
   stickyViewportHeight: "h-[100svh]",
 } as const;
 
