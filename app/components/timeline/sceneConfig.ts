@@ -202,7 +202,11 @@ export const TRAIL_WAVE = {
   maxAmplitude: 40,
   amplitudeRampLength: 360, // keeps the wave pinned cleanly to the nozzle
   wavelength: 480,          // just under three complete waves per viewport
-  duration: 2.4,            // seconds for one crest to travel one wavelength
+  // Seconds for one crest to travel one wavelength. The plume reads as a slow
+  // drift rather than a ripple, so a crest takes ~13s to cross a viewport. This
+  // is also the marker bob's phase driver, so slowing it settles the markers
+  // further on top of MARKER_WAVE_FOLLOW.
+  duration: 4.5,
 } as const;
 
 export const MOBILE_TRAIL_WAVE = {
