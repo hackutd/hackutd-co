@@ -59,7 +59,7 @@ export default function Footer() {
 
   return (
     <div
-      className="relative bg-transparent text-surface-foreground motion-reduce:bg-surface"
+      className="relative bg-surface text-surface-foreground"
       data-section-gradient="footer"
       data-navbar-theme="light"
       data-sponsor-panel

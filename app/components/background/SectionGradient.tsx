@@ -22,17 +22,19 @@ const LABEL_DATA_ATTR = "data-section-gradient-label";
 export default function SectionGradient() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const artworkRef = useRef<HTMLDivElement>(null);
+  const pullLayerRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
 
   useGSAP(
     () => {
       const wrapper = wrapperRef.current;
       const artwork = artworkRef.current;
+      const pullLayer = pullLayerRef.current;
       const scrollRoot = document.querySelector<HTMLElement>(
         `[${SCROLL_ROOT_ATTR}]`,
       );
 
-      if (!wrapper || !artwork || !scrollRoot) {
+      if (!wrapper || !artwork || !pullLayer || !scrollRoot) {
         return;
       }
 
@@ -101,21 +103,8 @@ export default function SectionGradient() {
           onLeaveBack: () => setArtworkVisibility(false),
         });
 
-        if (endSection) {
-          ScrollTrigger.create({
-            trigger: endSection,
-            start: "top bottom",
-            onEnter: () => setArtworkVisibility(false),
-            onLeaveBack: () => setArtworkVisibility(true),
-          });
-        }
-
-        const footerHasEntered = endSection
-          ? endSection.getBoundingClientRect().top <= window.innerHeight
-          : false;
         setArtworkVisibility(
-          missionSection.getBoundingClientRect().top < window.innerHeight &&
-            !footerHasEntered,
+          missionSection.getBoundingClientRect().top < window.innerHeight,
         );
         return;
       }
@@ -176,18 +165,23 @@ export default function SectionGradient() {
       );
 
       if (endSection) {
+        // Keep the final Sponsors artwork intact. As the footer boundary rises
+        // through the viewport, move this inner layer by the same distance;
+        // the footer's opaque surface then cleanly covers everything beneath
+        // its border instead of making the artwork dissolve in place.
         gsap.fromTo(
-          artwork,
-          { autoAlpha: 1 },
+          pullLayer,
+          { y: 0 },
           {
-            autoAlpha: 0,
+            y: () => -window.innerHeight,
             ease: "none",
             immediateRender: false,
             scrollTrigger: {
               trigger: endSection,
-              start: SECTION_GRADIENT_MOTION.hideStart,
-              end: SECTION_GRADIENT_MOTION.hideEnd,
-              scrub: SECTION_GRADIENT_MOTION.hideScrub,
+              start: SECTION_GRADIENT_MOTION.pullStart,
+              end: SECTION_GRADIENT_MOTION.pullEnd,
+              scrub: SECTION_GRADIENT_MOTION.pullScrub,
+              invalidateOnRefresh: true,
             },
           },
         );
@@ -206,7 +200,10 @@ export default function SectionGradient() {
           scrollTrigger: {
             trigger: scrollRoot,
             start: "top top",
-            end: "bottom bottom",
+            endTrigger: endSection ?? scrollRoot,
+            end: endSection
+              ? SECTION_GRADIENT_MOTION.pullStart
+              : "bottom bottom",
             scrub: SECTION_GRADIENT_MOTION.parallaxScrub,
           },
         },
@@ -229,42 +226,52 @@ export default function SectionGradient() {
         }}
       >
         <div
-          className="absolute inset-0 scale-[1.04] blur-[32px]"
+          ref={pullLayerRef}
+          className="absolute inset-0"
           style={{
-            backgroundImage: [
-              "radial-gradient(ellipse 42% 27% at 39% 98%, rgba(255, 216, 48, 1) 0%, rgba(255, 176, 29, 0.82) 49%, transparent 95%)",
-              "radial-gradient(ellipse 43% 35% at 17% 88%, rgba(62, 111, 255, 0.84) 0%, rgba(108, 23, 254, 0.56) 48%, transparent 95%)",
-              "radial-gradient(ellipse 40% 36% at 14% 87%, rgba(255, 211, 47, 0.98) 0%, rgba(255, 154, 25, 0.82) 48%, transparent 94%)",
-              "radial-gradient(ellipse 44% 35% at 42% 97%, rgba(255, 119, 23, 0.96) 0%, rgba(255, 76, 31, 0.68) 52%, transparent 94%)",
-              "radial-gradient(ellipse 42% 45% at 30% 61%, rgba(255, 0, 78, 0.95) 0%, rgba(243, 22, 103, 0.7) 50%, transparent 95%)",
-              "radial-gradient(ellipse 40% 36% at 54% 73%, rgba(190, 0, 91, 0.9) 0%, rgba(243, 22, 103, 0.58) 52%, transparent 94%)",
-              "radial-gradient(ellipse 38% 33% at 73% 89%, rgba(243, 22, 103, 0.88) 0%, rgba(255, 63, 113, 0.5) 50%, transparent 94%)",
-              "radial-gradient(ellipse 47% 34% at 70% 62%, rgba(108, 23, 254, 0.82) 0%, rgba(74, 84, 255, 0.52) 53%, transparent 95%)",
-              "radial-gradient(ellipse 40% 31% at 87% 80%, rgba(67, 112, 255, 0.74) 0%, rgba(108, 23, 254, 0.32) 52%, transparent 94%)",
-              "radial-gradient(ellipse 34% 25% at 55% 57%, rgba(244, 244, 255, 0.54) 0%, rgba(150, 181, 255, 0.24) 50%, transparent 92%)",
-              "radial-gradient(ellipse 145% 50% at 34% 110%, rgba(255, 194, 35, 0.95) 0%, rgba(255, 119, 25, 0.82) 34%, rgba(243, 22, 103, 0.6) 59%, rgba(108, 23, 254, 0.22) 78%, transparent 96%)",
-              "radial-gradient(ellipse 106% 91% at 3% 108%, rgba(255, 122, 27, 0.9) 0%, rgba(243, 22, 103, 0.7) 40%, rgba(108, 23, 254, 0.4) 63%, transparent 86%)",
-            ].join(", "),
-            maskImage:
-              "radial-gradient(ellipse 88% 92% at 0% 100%, #000 0%, rgba(0, 0, 0, 0.96) 42%, rgba(0, 0, 0, 0.68) 62%, rgba(0, 0, 0, 0.18) 78%, transparent 92%)",
-            WebkitMaskImage:
-              "radial-gradient(ellipse 88% 92% at 0% 100%, #000 0%, rgba(0, 0, 0, 0.96) 42%, rgba(0, 0, 0, 0.68) 62%, rgba(0, 0, 0, 0.18) 78%, transparent 92%)",
+            willChange: prefersReducedMotion ? "auto" : "transform",
           }}
-        />
+        >
+          <div
+            className="absolute inset-0 scale-[1.04] blur-[32px]"
+            style={{
+              backgroundImage: [
+                "radial-gradient(ellipse 42% 27% at 39% 98%, rgba(255, 216, 48, 1) 0%, rgba(255, 176, 29, 0.82) 49%, transparent 95%)",
+                "radial-gradient(ellipse 43% 35% at 17% 88%, rgba(62, 111, 255, 0.84) 0%, rgba(108, 23, 254, 0.56) 48%, transparent 95%)",
+                "radial-gradient(ellipse 40% 36% at 14% 87%, rgba(255, 211, 47, 0.98) 0%, rgba(255, 154, 25, 0.82) 48%, transparent 94%)",
+                "radial-gradient(ellipse 44% 35% at 42% 97%, rgba(255, 119, 23, 0.96) 0%, rgba(255, 76, 31, 0.68) 52%, transparent 94%)",
+                "radial-gradient(ellipse 42% 45% at 30% 61%, rgba(255, 0, 78, 0.95) 0%, rgba(243, 22, 103, 0.7) 50%, transparent 95%)",
+                "radial-gradient(ellipse 40% 36% at 54% 73%, rgba(190, 0, 91, 0.9) 0%, rgba(243, 22, 103, 0.58) 52%, transparent 94%)",
+                "radial-gradient(ellipse 38% 33% at 73% 89%, rgba(243, 22, 103, 0.88) 0%, rgba(255, 63, 113, 0.5) 50%, transparent 94%)",
+                "radial-gradient(ellipse 47% 34% at 70% 62%, rgba(108, 23, 254, 0.82) 0%, rgba(74, 84, 255, 0.52) 53%, transparent 95%)",
+                "radial-gradient(ellipse 40% 31% at 87% 80%, rgba(67, 112, 255, 0.74) 0%, rgba(108, 23, 254, 0.32) 52%, transparent 94%)",
+                "radial-gradient(ellipse 34% 25% at 55% 57%, rgba(244, 244, 255, 0.54) 0%, rgba(150, 181, 255, 0.24) 50%, transparent 92%)",
+                "radial-gradient(ellipse 145% 50% at 34% 110%, rgba(255, 194, 35, 0.95) 0%, rgba(255, 119, 25, 0.82) 34%, rgba(243, 22, 103, 0.6) 59%, rgba(108, 23, 254, 0.22) 78%, transparent 96%)",
+                "radial-gradient(ellipse 106% 91% at 3% 108%, rgba(255, 122, 27, 0.9) 0%, rgba(243, 22, 103, 0.7) 40%, rgba(108, 23, 254, 0.4) 63%, transparent 86%)",
+              ].join(", "),
+              maskImage:
+                "radial-gradient(ellipse 88% 92% at 0% 100%, #000 0%, rgba(0, 0, 0, 0.96) 42%, rgba(0, 0, 0, 0.68) 62%, rgba(0, 0, 0, 0.18) 78%, transparent 92%)",
+              WebkitMaskImage:
+                "radial-gradient(ellipse 88% 92% at 0% 100%, #000 0%, rgba(0, 0, 0, 0.96) 42%, rgba(0, 0, 0, 0.68) 62%, rgba(0, 0, 0, 0.18) 78%, transparent 92%)",
+            }}
+          />
 
-        <div className="absolute bottom-[12%] left-[9%]">
-          {SECTION_GRADIENT_SECTIONS.map(({ id, label }, index) => (
-            <span
-              key={id}
-              {...{ [LABEL_DATA_ATTR]: id }}
-              className={`absolute bottom-0 left-0 whitespace-nowrap select-none text-[clamp(4rem,10vw,12rem)] font-black leading-none tracking-[-0.08em] text-white/25 blur-[5px] mix-blend-soft-light ${index === 0 ? "visible opacity-100" : "invisible opacity-0"}`}
-              style={{
-                willChange: prefersReducedMotion ? "auto" : "transform, opacity",
-              }}
-            >
-              {label}
-            </span>
-          ))}
+          <div className="absolute bottom-[12%] left-[9%]">
+            {SECTION_GRADIENT_SECTIONS.map(({ id, label }, index) => (
+              <span
+                key={id}
+                {...{ [LABEL_DATA_ATTR]: id }}
+                className={`absolute bottom-0 left-0 whitespace-nowrap select-none text-[clamp(4rem,10vw,12rem)] font-black leading-none tracking-[-0.08em] text-white/25 blur-[5px] mix-blend-soft-light ${index === 0 ? "visible opacity-100" : "invisible opacity-0"}`}
+                style={{
+                  willChange: prefersReducedMotion
+                    ? "auto"
+                    : "transform, opacity",
+                }}
+              >
+                {label}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     </div>
