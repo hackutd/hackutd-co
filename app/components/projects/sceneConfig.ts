@@ -5,6 +5,11 @@ export const PROJECTS_LAYOUT = {
 } as const;
 
 export const PROJECT_ART = {
+  "HackUTD 2026": {
+    accent: "#ffd400",
+    imageClassName: "w-[min(44%,220px)]",
+    imageTreatmentClassName: "",
+  },
   Harp: {
     accent: "#ffa21f",
     imageClassName: "w-[min(24%,120px)]",
