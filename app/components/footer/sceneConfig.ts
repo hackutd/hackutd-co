@@ -32,3 +32,18 @@ export const FOOTER_ORBITAL_WAVE = {
   start: "top bottom",
   end: "bottom bottom",
 } as const;
+
+/**
+ * Footer gradient framing. The footer is a wide, short band, so the vignette
+ * stays low — a strong one would darken the left and right ends into black
+ * bars rather than reading as depth.
+ */
+export const FOOTER_GRADIENT = {
+  zoom: 0.5,
+  offsetX: 0.08,
+  offsetY: -0.02,
+  axisAngle: 26,
+  axisSpan: 3.4,
+  vignette: 0.18,
+  brightness: 1.12,
+} as const;

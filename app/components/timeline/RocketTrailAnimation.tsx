@@ -5,7 +5,7 @@ import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
-import BrandShaderBackground from "@/app/components/background/BrandShaderBackground";
+import BrandGradientBackground from "@/app/components/background/BrandGradientBackground";
 import BrandSvgGradient from "@/app/components/background/BrandSvgGradient";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { useNearViewport } from "@/app/hooks/useNearViewport";
@@ -507,7 +507,12 @@ export default function RocketTrailAnimation() {
                     transformOrigin: "0 0",
                   }}
                 >
-                  {shaderActive && <BrandShaderBackground lazyLoad={false} />}
+                  {shaderActive && (
+                    <BrandGradientBackground
+                      lazyLoad={false}
+                      tuning={TRAIL_GRADIENT.tuning}
+                    />
+                  )}
                 </div>
               </foreignObject>
             )}

@@ -1,7 +1,8 @@
 "use client";
 
 import { forwardRef, type ComponentPropsWithoutRef } from "react";
-import BrandShaderBackground from "@/app/components/background/BrandShaderBackground";
+import BrandGradientBackground from "@/app/components/background/BrandGradientBackground";
+import { FOOTER_GRADIENT } from "./sceneConfig";
 
 type FooterLink = {
   label: string;
@@ -57,22 +58,16 @@ const Footer = forwardRef<HTMLElement, FooterProps>(function Footer(
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 overflow-hidden opacity-95 [container-type:size]"
+        className="pointer-events-none absolute inset-0 overflow-hidden opacity-95"
       >
+        {/* The gradient is aspect-correct in screen space, so it fills the
+            footer box directly — the old square canvas cropped by a container
+            query existed only to keep the 3D sphere from distorting. */}
         {shaderMount !== "off" && (
-          <BrandShaderBackground
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 scale-[1.5]"
-            style={{
-              width: "max(100cqw, 100cqh)",
-              height: "max(100cqw, 100cqh)",
-            }}
+          <BrandGradientBackground
+            className="absolute inset-0"
             lazyLoad={shaderMount === "lazy"}
-            shaderProps={{
-              cDistance: 5.4,
-              cameraZoom: 15,
-              positionX: 0.08,
-              positionY: -0.02,
-            }}
+            tuning={FOOTER_GRADIENT}
           />
         )}
       </div>

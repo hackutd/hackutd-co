@@ -262,4 +262,14 @@ export const TRAIL_FLARE = {
  */
 export const TRAIL_GRADIENT = {
   render: { width: 1600, height: 900 },
+  /**
+   * The trail mask already shapes the plume, so the gradient carries no
+   * vignette of its own — an edge falloff here would read as a dark rim
+   * inside the flame.
+   */
+  tuning: {
+    zoom: 2.1,
+    vignette: 0,
+    brightness: 1.24,
+  },
 } as const;
