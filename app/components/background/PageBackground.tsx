@@ -12,6 +12,7 @@ import {
   type NavbarTheme,
 } from "../navbar/navbarThemeOverride";
 import {
+  MOBILE_PAGE_BG_PANEL_PHASES,
   NAVBAR_LIGHT_THRESHOLD,
   NAVBAR_PANEL_THRESHOLD,
   PAGE_BG_PANEL_PHASES,
@@ -159,7 +160,12 @@ export default function PageBackground() {
       };
 
       createPhases(PAGE_BG_PHASES, phases);
-      createPhases(PAGE_BG_PANEL_PHASES, panelPhases);
+      // Phones land the panel color earlier, staying ahead of the timeline's
+      // earlier plume dissolve there (MOBILE_SPONSORS_PANEL_PHASE).
+      createPhases(
+        isMobile ? MOBILE_PAGE_BG_PANEL_PHASES : PAGE_BG_PANEL_PHASES,
+        panelPhases,
+      );
 
       function update() {
         const value = resolve(phases);

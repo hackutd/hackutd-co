@@ -210,11 +210,35 @@ export const SPONSORS_PANEL_PHASE = {
 } as const satisfies PageBgPhase;
 
 /**
+ * The same crossfade, moved up the page to stay ahead of the phone's earlier
+ * plume dissolve (MOBILE_TIMELINE_EXIT_FADE).
+ *
+ * The pairing is the whole point of this phase and it has to survive the shift:
+ * the plume must always dissolve *onto* the wall's white, never reveal a page
+ * still travelling towards it. In the light theme the layer beneath is
+ * near-black and the wall's ink is near-black too, so a plume that clears first
+ * would leave the sponsor logos briefly unreadable on the page's own dark
+ * surface. Ending at `top 78%` keeps the landing where it has always been
+ * relative to the dissolve — a beat before it — and the start moves by the same
+ * amount so the window stays the length it was and `power3.in` still holds the
+ * visible part of the crossfade off the tail of the rocket sweep.
+ */
+export const MOBILE_SPONSORS_PANEL_PHASE = {
+  ...SPONSORS_PANEL_PHASE,
+  start: "top 120%",
+  end: "top 78%",
+} as const satisfies PageBgPhase;
+
+/**
  * Phases for the panel layer, evaluated exactly like PAGE_BG_PHASES but
  * written to the layer stacked above it.
  */
 export const PAGE_BG_PANEL_PHASES: readonly PageBgPhase[] = [
   SPONSORS_PANEL_PHASE,
+] as const;
+
+export const MOBILE_PAGE_BG_PANEL_PHASES: readonly PageBgPhase[] = [
+  MOBILE_SPONSORS_PANEL_PHASE,
 ] as const;
 
 /** Seconds for the light layer to catch up to the computed value (scrub feel) */

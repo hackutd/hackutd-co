@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import {
@@ -11,7 +12,11 @@ import {
   TIMELINE_SECTION_DATA_ATTR,
 } from "../background/sceneConfig";
 import RocketTrailAnimation from "./RocketTrailAnimation";
-import { TIMELINE_EXIT_FADE, TIMELINE_LAYOUT } from "./sceneConfig";
+import {
+  MOBILE_TIMELINE_EXIT_FADE,
+  TIMELINE_EXIT_FADE,
+  TIMELINE_LAYOUT,
+} from "./sceneConfig";
 
 configureScrollTrigger();
 
@@ -19,6 +24,7 @@ export default function Timeline() {
   const sectionRef = useRef<HTMLElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const isMobile = useIsMobile();
   const prefersReducedMotion = usePrefersReducedMotion();
 
   useGSAP(
@@ -64,19 +70,31 @@ export default function Timeline() {
         );
 
       // Dissolve the parked fuel plume into the page background — the
-      // crossfade that carries the scene into Sponsors.
+      // crossfade that carries the scene into Sponsors. Phones run the earlier
+      // window so the plume is gone before the first sponsor logos cross the
+      // fold (see MOBILE_TIMELINE_EXIT_FADE).
+      const exitFade = isMobile
+        ? MOBILE_TIMELINE_EXIT_FADE
+        : TIMELINE_EXIT_FADE;
+
       gsap.to(sticky, {
         autoAlpha: 0,
-        ease: TIMELINE_EXIT_FADE.ease,
+        ease: exitFade.ease,
         scrollTrigger: {
           trigger: section,
-          start: TIMELINE_EXIT_FADE.start,
-          end: TIMELINE_EXIT_FADE.end,
-          scrub: TIMELINE_EXIT_FADE.scrub,
+          start: exitFade.start,
+          end: exitFade.end,
+          scrub: exitFade.scrub,
         },
       });
     },
-    { scope: sectionRef, dependencies: [prefersReducedMotion] },
+    {
+      scope: sectionRef,
+      dependencies: [isMobile, prefersReducedMotion],
+      // The exit window is picked per breakpoint, so crossing one has to tear
+      // the old triggers down rather than stack a second dissolve on top.
+      revertOnUpdate: true,
+    },
   );
 
   return (

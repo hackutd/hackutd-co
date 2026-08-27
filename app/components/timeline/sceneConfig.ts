@@ -192,6 +192,33 @@ export const TIMELINE_EXIT_FADE = {
 } as const;
 
 /**
+ * The same dissolve, run a half viewport earlier on phones.
+ *
+ * The window above is anchored in `innerHeight`, but the overlap it is sized
+ * against — the wall's `-mt-[50vh]` — is not. On a phone `vh` is the *large*
+ * viewport (address bar hidden) while `innerHeight` is whatever it was at the
+ * last refresh, and `ignoreMobileResize` deliberately keeps it there while the
+ * bar slides. The wall therefore sits up to a bar's height higher in the frame
+ * than the desktop numbers assume, and the sponsor logos — Google, NVIDIA and
+ * the rest of the first rows — are already well inside the viewport while the
+ * plume is still a third opaque behind them.
+ *
+ * Landing at `bottom 130%` instead puts the plume at zero with only the wall's
+ * heading on screen, a beat before the first logo row crosses the fold. The
+ * window opens correspondingly earlier so the dissolve still reads as a fade
+ * rather than a cut, and 130% is as early as it can land: the last year marker
+ * clears the left edge on that same frame (mobile's marker pitch is 1.45x, so
+ * its sweep is only just finished by then). The shorter scrub keeps a fling
+ * from carrying a lit plume past the point the tween has already reached.
+ */
+export const MOBILE_TIMELINE_EXIT_FADE = {
+  ...TIMELINE_EXIT_FADE,
+  start: "bottom 175%",
+  end: "bottom 130%",
+  scrub: 0.2,
+} as const;
+
+/**
  * The fuel plume, described in absolute SVG units rather than a normalised
  * 0→1 position along the trail, so lengthening the tail can never reshape the
  * jet at the nozzle.

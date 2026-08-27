@@ -141,8 +141,10 @@ export default function Hero() {
         gsap.set(heroText, { autoAlpha: 1 });
       }
 
+      // The copy is present from the first paint — no entrance. Its only
+      // animation is the scroll-driven exit below.
       if (heroTextCharacters.length > 0) {
-        const exitTween = gsap.fromTo(
+        gsap.fromTo(
           heroTextCharacters,
           {
             autoAlpha: 1,
@@ -166,29 +168,6 @@ export default function Hero() {
             },
           },
         );
-
-        // Only run the entrance when the page is above the exit range. This
-        // avoids an entrance tween fighting the scroll state after a reload or
-        // breakpoint change farther down the page.
-        if (!exitTween.scrollTrigger || exitTween.scrollTrigger.progress === 0) {
-          gsap.fromTo(
-            heroTextCharacters,
-            {
-              autoAlpha: 0,
-              filter: `blur(${HERO_TEXT_EFFECT.reveal.blur}px) brightness(0%)`,
-              y: 0,
-            },
-            {
-              autoAlpha: 1,
-              filter: "blur(0px) brightness(100%)",
-              y: 0,
-              duration: HERO_TEXT_EFFECT.reveal.duration,
-              stagger: HERO_TEXT_EFFECT.reveal.stagger,
-              ease: HERO_TEXT_EFFECT.reveal.ease,
-              overwrite: "auto",
-            },
-          );
-        }
       }
 
       if (cometBackgroundLayer) {

@@ -41,14 +41,8 @@ export const HERO_COPY = {
   headline: "Build something worth showing up for",
 } as const;
 
-/** Per-character reveal and scroll exit for the Hero copy. */
+/** Per-character scroll exit for the Hero copy. */
 export const HERO_TEXT_EFFECT = {
-  reveal: {
-    blur: 10,
-    duration: 0.6,
-    stagger: 0.015,
-    ease: "power2.out",
-  },
   exit: {
     start: WHITEOUT_SCROLL.start,
     end: "84% bottom",
