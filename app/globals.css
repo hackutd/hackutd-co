@@ -22,7 +22,6 @@
 
   /* Font */
   --font-sans: var(--font-satoshi);
-  --font-serif: var(--font-petrona);
 }
 
 /* Both themes are declared as attribute selectors so any subtree can opt into
@@ -36,10 +35,16 @@
   --theme-muted: #a3a3a3;
   --theme-surface: #f2f2f2;
   --theme-surface-foreground: #1a1a1a;
+  /* Secondary ink for a section riding the surface — the muted step, measured
+     against that surface rather than against the page background. */
+  --theme-surface-muted: #5f5f5f;
   --theme-card: #171717;
-  /* One step off the background so the panel stays readable as a distinct
-     sheet against the page it's about to reveal. */
+  /* One step off the color the curtain is about to reveal, so the panel stays
+     readable as a distinct sheet against it. Which of the three is used
+     depends on what the reader is looking at when the swap starts — see the
+     curtain-backdrop block below. */
   --theme-curtain: #262626;
+  --theme-curtain-surface: #e2e2e2;
   /* Inversion amount for logo art drawn as a flat black glyph, so it reads as
      foreground against whichever palette its subtree is on. */
   --logo-invert: 1;
@@ -49,6 +54,8 @@
      theme: the wall is pinned to this color in both (see the sponsor block at
      the foot of this file), and the light theme inherits it untouched. */
   --sponsor-panel: #ffffff;
+  /* The wall is pinned in both themes, so the curtain step off it is too. */
+  --theme-curtain-panel: #ededed;
 }
 
 [data-theme="light"] {
@@ -57,9 +64,47 @@
   --theme-muted: #5f5f5f;
   --theme-surface: #1a1a1a;
   --theme-surface-foreground: #ffffff;
+  --theme-surface-muted: #a3a3a3;
   --theme-card: #ffffff;
   --theme-curtain: #e2e2e2;
+  --theme-curtain-surface: #262626;
   --logo-invert: 0;
+}
+
+/* Which color the curtain is a step off.
+
+   The page is not one flat color from top to bottom: the background crosses to
+   the lit surface partway down and on to the sponsor wall's white below that,
+   and a swap made down there reveals that color rather than the page
+   background. A curtain painted off the background would then land nowhere
+   near what it hands the reader back — dark grey lifting off a white wall.
+   The curtain tags itself with whichever of the three it is covering (see
+   ThemeCurtain), and these pick up the matching step.
+
+   Declared after both theme blocks: the curtain wears `data-theme` for the
+   incoming palette at the same time, and these are equal-specificity attribute
+   selectors, so source order is what decides the winner. */
+[data-curtain-backdrop="surface"] {
+  --theme-curtain: var(--theme-curtain-surface);
+}
+
+[data-curtain-backdrop="panel"] {
+  --theme-curtain: var(--theme-curtain-panel);
+}
+
+/* A section that sits on the lit surface rather than on the page background —
+   the mission statement's neighbours, which the hero's whiteout hands the page
+   to and which keep it until the palette returns further down.
+
+   Pointing the ink tokens at their surface counterparts, rather than hardcoding
+   colours on each child, means `text-foreground`, `text-muted` and the borders
+   derived from them keep working exactly as written — they just resolve against
+   the surface the section is actually on. Because both sides are theme tokens,
+   the swap holds in both themes: the dark theme's lit surface takes near-black
+   ink, and the light theme's dark surface takes white. */
+[data-surface-ink] {
+  --theme-foreground: var(--theme-surface-foreground);
+  --theme-muted: var(--theme-surface-muted);
 }
 
 html[data-mission-scrollbar] {
@@ -97,6 +142,23 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background-color: color-mix(in srgb, var(--color-foreground) 45%, transparent);
+}
+
+/* ── Custom cursor ──────────────────────────────────────────────────────────
+   The site draws its own pointer (app/components/cursor/SiteCursor.tsx), so
+   the native one is hidden — but only while that component is mounted and
+   actually drawing a replacement, which is what the attribute on <html>
+   marks. It is never set on a device without a fine pointer, so a touch
+   reader is never left aiming at nothing.
+
+   `!important` is what beats the `cursor-pointer` utilities scattered through
+   the JSX. Those classes still matter: the cursor component reads them to
+   decide when to sharpen into an arrowhead. They just must not paint a native
+   hand on top of the drawn one. */
+
+html[data-site-cursor],
+html[data-site-cursor] * {
+  cursor: none !important;
 }
 
 @keyframes site-star-twinkle {

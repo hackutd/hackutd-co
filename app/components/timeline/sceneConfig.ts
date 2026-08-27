@@ -95,14 +95,29 @@ export const MARKER_SPACING = {
   mobileScale: 1.45,
 } as const;
 
-// Hover card that previews the legacy recap image above a marker (px values)
+// Hover card that previews the legacy recap image beside the pointer (px values)
 export const CARD_POPOVER = {
   width: 320,
-  gap: 14,
+  /** Clearance kept between the pointer and the nearest edge of the card. */
+  gap: 18,
   edgeMargin: 12,
-  /** Recap images are 1035x561; the name/date caption under them adds ~44px. */
+  /**
+   * Recap images are 1035x561; the name/date caption under them adds ~44px.
+   * The card is square-cornered, so every recap image has to be a fully opaque
+   * rectangle: the transparent rounded corners they ship with from the legacy
+   * site have been flattened into the artwork, and a card added later needs the
+   * same treatment or its corners will show the shell through.
+   */
   imageAspect: 1035 / 561,
   captionHeight: 44,
+  /**
+   * The card chases the pointer instead of snapping to it. A short catch-up
+   * tween keeps it reading as attached to the cursor rather than welded to it,
+   * and it smooths over the coarse granularity of pointermove itself.
+   */
+  follow: { duration: 0.3, ease: "power3" },
+  /** The card's own arrival, played once as it appears under the pointer. */
+  reveal: { duration: 0.22, ease: "power2.out", scaleFrom: 0.94 },
   /**
    * Grace period before a card is torn down. The markers are never completely
    * still — they ride the plume's wave and the scrubbed sweep — so a pointer

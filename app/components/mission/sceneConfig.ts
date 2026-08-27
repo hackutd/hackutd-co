@@ -8,11 +8,60 @@
 export const MISSION_SCRUB = 0.35;
 export const MISSION_MOBILE_SCRUB = 0.3;
 
+/** Directors card blocks use the same inward fade as the About section. */
+export const DIRECTORS_ENTER_REVEAL = {
+  start: "top 88%",
+  distance: 44,
+  duration: 0.85,
+  ease: "power2.out",
+  toggleActions: "play none none reverse",
+} as const;
+
 export const MISSION_LAYOUT = {
   sectionPadding: "px-8 py-32 sm:px-10 md:py-40 lg:px-12",
   sectionMinHeight: "min-h-screen",
   statementOffset: "-mt-[50svh] pt-[8svh] md:-mt-[56vh] md:pt-[10vh]",
   statementWrapMinHeight: "min-h-[88svh] md:min-h-[92vh]",
+} as const;
+
+/**
+ * Mission statement — sticky word reveal, arriving already centred.
+ *
+ * The first 92% of the scroll range starts each word in reading order. Every
+ * word gets an overlapping 8% window to brighten from its resting ink to full
+ * ink, and the short numeric scrub removes wheel/touch stepping without adding
+ * a long catch-up delay after the reader stops.
+ *
+ * `pullUp` is what makes the statement *arrive* rather than be scrolled to.
+ * The hero's sticky viewport is exactly one screen tall, so it releases one
+ * screen before the hero section ends; without the pull, the statement then has
+ * to travel that whole screen from the bottom edge before it pins, and the
+ * reader spends a viewport of scroll on a blank page watching it climb. Pulling
+ * the section up by exactly that screen puts its top at the scroll position the
+ * hero lets go at: the stage pins on the same frame, so the statement is
+ * centred and ready to read the moment the hero is done, and every scroll after
+ * that goes into the reveal itself.
+ *
+ * The value has to stay equal to HERO_LAYOUT.stickyViewportHeight — it is the
+ * height of the viewport the hero pins, not a spacing taste.
+ *
+ * `arrivalStart`/`arrivalEnd` pay for the overlap the pull creates. The section
+ * now sits over the hero's last screen, so it fades up over the final stretch
+ * before the pin, landing at full strength exactly as it settles — early enough
+ * to read as the statement arriving, late enough that the hero has finished
+ * whiting out and nothing of the statement is ever drawn over the comet.
+ */
+export const MISSION_WORD_REVEAL = {
+  kicker: null,
+  restOpacity: 0.15,
+  revealSpan: 0.92,
+  wordWindow: 0.08,
+  scrollHeight: "420svh",
+  scrub: 0.55,
+  /** Must match HERO_LAYOUT.stickyViewportHeight */
+  pullUp: "-mt-[100svh] md:-mt-[100vh]",
+  arrivalStart: "top 20%",
+  arrivalEnd: "top top",
 } as const;
 
 /**
@@ -93,7 +142,7 @@ export const MISSION_STATEMENT_BLUR = {
 
 /**
  * Marks key words in the statement copy: a run between a pair of these receives
- * bold emphasis while staying in the same sans-serif face as the rest of the
+ * semibold emphasis while staying in the same sans-serif face as the rest of the
  * Mission section. A pair may span several words and may open or close mid-word.
  *
  * Markers have to be balanced. An odd count flips the emphasis for the rest of
@@ -105,7 +154,7 @@ export const MISSION_KEY_WORD_DELIMITER = "*";
  * Applied to the marked runs. Keep the explicit sans class here so future
  * typography changes elsewhere cannot reintroduce a serif into Mission copy.
  */
-export const MISSION_KEY_WORD_CLASS = "font-sans font-bold";
+export const MISSION_KEY_WORD_CLASS = "font-sans font-semibold";
 
 /**
  * Space above each hard-broken block of the statement (a newline in the copy).
@@ -166,29 +215,17 @@ export const MISSION_BLUR_COST = {
   stepPx: 0.5,
 } as const;
 
-/** Directors section pins at viewport top, content fades in, then unpins */
-export const DIRECTORS_PIN = {
-  scrub: MISSION_SCRUB,
-  start: "top top",
-  end: "+=500",
-  initialYPercent: 12,
-} as const;
-
 /**
- * Directors card — the photo overhangs the card's top edge. Every offset is a
- * percentage of the card width (percentage margins/padding always resolve
- * against the containing block's width), so the whole composition scales as one
- * unit at any breakpoint.
+ * Inverted cursor over the statement — a white disc that difference-blends
+ * with the page under it, so the words it crosses punch through inverted while
+ * the reader drags it across the copy.
+ *
+ * Diameter is the whole dial, and it decides what the effect reads as: under
+ * about one line of leading it is just a fat pointer, and only once it clears
+ * a line does it read as a lens with words inside it. 120px is a shade under
+ * two lines at the 3.75rem desktop scale — large enough to always hold a word
+ * or two, small enough that the statement is never mostly inverted.
  */
-export const DIRECTORS_CARD = {
-  /** Card width, also clamped by viewport height so the pinned card never overflows */
-  width: "w-full max-w-[min(42rem,78vh)]",
-  /** 16:9 photo, slightly narrower than the card */
-  photo: "w-[86%] aspect-[16/9] rounded-2xl",
-  /** Photo is 86% of a card that never exceeds 42rem — cap the served width there */
-  photoSizes: "(max-width: 640px) 86vw, 580px",
-  /** Pulls the card up under the photo, leaving ~8% of the card width exposed above it */
-  overlap: "-mt-[40%]",
-  /** Top padding clears the overlapped photo plus breathing room before the label */
-  padding: "pt-[47%] px-8 pb-16 sm:px-12 md:pb-20",
+export const MISSION_STATEMENT_CURSOR = {
+  size: 120,
 } as const;
