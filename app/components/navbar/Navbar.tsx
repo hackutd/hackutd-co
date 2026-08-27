@@ -42,7 +42,7 @@ const PANEL_PALETTE = {
 const NAV_LINKS = [
   { href: "#mission", label: "MISSION" },
   { href: "#about", label: "ABOUT" },
-  { href: "#team", label: "COMMUNITY" },
+  { href: "#team", label: "THE TEAM" },
   { href: "#sponsors", label: "PAST SPONSORS" },
 ];
 

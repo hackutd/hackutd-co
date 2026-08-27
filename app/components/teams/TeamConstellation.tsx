@@ -118,6 +118,9 @@ export function TeamConstellation({
           const linkedInUrl = /^https?:\/\//i.test(rawLinkedInUrl)
             ? rawLinkedInUrl
             : "";
+          // Touch layouts (centerTooltip) open the fullscreen card only for members
+          // without a LinkedIn link — otherwise a tap just follows the link.
+          const linkOnly = centerTooltip && Boolean(linkedInUrl);
           const isActive =
             activeNode?.teamId === layout.team.id &&
             activeNode.personId === node.person.id;
@@ -191,7 +194,7 @@ export function TeamConstellation({
                 }
                 onMouseLeave={interactive && !centerTooltip ? scheduleTooltipClose : undefined}
                 onFocus={
-                  interactive
+                  interactive && !linkOnly
                     ? (event) => {
                         const rect = event.currentTarget.getBoundingClientRect();
                         openNode(layout.team.id, node.person.id, {
