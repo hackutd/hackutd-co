@@ -26,9 +26,9 @@ function documentTop(element: HTMLElement) {
  * The page's scroll sections, in document order.
  *
  * The in-flow children of the scroll root are exactly those sections. Fixed
- * children — the navbar, the theme curtain, the revealed footer — sit outside
- * the scroll story, and their rects are viewport-relative, so they would not
- * yield a meaningful document offset.
+ * children — the navbar, the theme curtain — sit outside the scroll story, and
+ * their rects are viewport-relative, so they would not yield a meaningful
+ * document offset.
  */
 function readSections(): HTMLElement[] {
   const root = document.querySelector<HTMLElement>(`[${SCROLL_ROOT_ATTR}]`);

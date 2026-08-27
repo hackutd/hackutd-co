@@ -19,24 +19,45 @@ const MASK_PATH = "M0-11h25a1 1 0 0017 13v30H0Z";
  * color variables (see globals.css) and persists across visits; an inline
  * script in the root layout applies it before first paint.
  *
+ * It goes inert over the pinned sponsor panel — see `isDisabled`.
+ *
  * The icon morphs between a dotted sun and a crescent moon: the disc grows,
  * the ring of dots shrinks away, and a masking shape slides in to bite the
  * crescent out.
  *
- * `theme` is the *target* theme, not the applied one. The curtain doesn't flip
- * the page until it has covered it, and the button stays visible above the
- * curtain the whole time — driving the morph off the applied theme would leave
- * the button sitting dead for the length of the drop before it reacted.
+ * Which of the two it settles on is set by the backdrop rather than by the
+ * theme — sun over a dark one, moon over a light one — so the same morph plays
+ * for a scroll that carries the bar onto the lit surface as for a click.
+ *
+ * The navbar resolves that backdrop against the *target* theme, not the applied
+ * one. The curtain doesn't flip the page until it has covered it, and the
+ * button stays visible above the curtain the whole time — driving the morph off
+ * the applied theme would leave the button sitting dead for the length of the
+ * drop before it reacted.
  */
 export default function ThemeToggle({
   theme,
   onToggle,
   isLightNavbar,
+  isLightBackground,
+  isDisabled,
   colorTransition,
 }: {
   theme: SiteTheme;
   onToggle: () => void;
   isLightNavbar: boolean;
+  /**
+   * Whether the color actually behind the bar is a light one. The navbar phase
+   * alone doesn't answer that: its light phase rides the surface color, and the
+   * surface is dark under the light site theme.
+   */
+  isLightBackground: boolean;
+  /**
+   * Set where a swap would change nothing the reader can see — over the pinned
+   * sponsor panel. The button stays in place and keeps its contrast, it just
+   * stops offering the click.
+   */
+  isDisabled: boolean;
   /** Supplied by the navbar so the button snaps and cross-fades with the bar. */
   colorTransition: string;
 }) {
@@ -49,6 +70,10 @@ export default function ThemeToggle({
 
   const next: SiteTheme = theme === "dark" ? "light" : "dark";
   const isDark = theme === "dark";
+  // The two agree at the top of the page — the dark hero shows a sun — but the
+  // background crosses to the lit surface and on to the sponsor wall further
+  // down, and the icon follows the background rather than the theme.
+  const showMoon = isLightBackground;
 
   // useId can contain characters that aren't valid in a url(#…) reference, so
   // keep only the part that is. Two toggles are mounted at once on mobile, and
@@ -57,8 +82,8 @@ export default function ThemeToggle({
 
   useGSAP(
     () => {
-      // The markup renders the sun, so the first pass just snaps to the
-      // current theme instead of animating into it.
+      // The markup renders the sun, so the first pass just snaps to whichever
+      // icon the backdrop calls for instead of animating into it.
       const duration =
         hasRendered.current && !prefersReducedMotion
           ? THEME_TOGGLE_ICON.duration
@@ -66,26 +91,35 @@ export default function ThemeToggle({
       hasRendered.current = true;
 
       const ease = THEME_TOGGLE_ICON.ease;
+      // A click can't arrive mid-morph — the theme request is dropped until the
+      // curtain settles — but a scroll can: the reader only has to hover the
+      // edge where the background crosses over. Each new morph takes sole
+      // ownership of its target so a reversal picks up from wherever the last
+      // one had got to, instead of two tweens writing the same property.
+      const overwrite = true;
 
       gsap.to(maskRef.current, {
-        x: isDark ? THEME_TOGGLE_ICON.maskOffset.x : 0,
-        y: isDark ? THEME_TOGGLE_ICON.maskOffset.y : 0,
+        x: showMoon ? THEME_TOGGLE_ICON.maskOffset.x : 0,
+        y: showMoon ? THEME_TOGGLE_ICON.maskOffset.y : 0,
         duration,
         ease,
+        overwrite,
       });
       gsap.to(discRef.current, {
-        scale: isDark ? THEME_TOGGLE_ICON.discScale : 1,
+        scale: showMoon ? THEME_TOGGLE_ICON.discScale : 1,
         duration,
         ease,
+        overwrite,
       });
       gsap.to(raysRef.current, {
-        scale: isDark ? THEME_TOGGLE_ICON.rayScale : 1,
-        opacity: isDark ? 0 : 1,
+        scale: showMoon ? THEME_TOGGLE_ICON.rayScale : 1,
+        opacity: showMoon ? 0 : 1,
         duration,
         ease,
+        overwrite,
       });
     },
-    { dependencies: [isDark, prefersReducedMotion], scope: buttonRef },
+    { dependencies: [showMoon, prefersReducedMotion], scope: buttonRef },
   );
 
   return (
@@ -94,8 +128,9 @@ export default function ThemeToggle({
       type="button"
       aria-label={`Switch to ${next} mode`}
       aria-pressed={isDark}
+      disabled={isDisabled}
       onClick={onToggle}
-      className={`flex h-8 w-8 cursor-pointer items-center justify-center rounded-full active:scale-95 ${colorTransition} ${
+      className={`flex h-8 w-8 cursor-pointer items-center justify-center rounded-full active:scale-95 disabled:cursor-default disabled:hover:bg-transparent ${colorTransition} ${
         isLightNavbar
           ? "text-(--theme-surface-foreground) hover:bg-(--theme-surface-foreground)/10"
           : "text-(--theme-foreground) hover:bg-(--theme-foreground)/10"

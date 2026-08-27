@@ -3,7 +3,7 @@
 // from sceneConfig.ts. On mobile, page scroll drives a snapping horizontal track that
 // centers one constellation at a time.
 // On desktop, a sticky viewport with a scroll-driven horizontal track shows all teams.
-// Node hover/tap opens a member tooltip; reduced-motion gets a static snap-scroll fallback.
+// Node hover/tap opens a member tooltip; reduced-motion gets a static fallback.
 
 "use client";
 
@@ -11,6 +11,10 @@ import { useEffect, useRef, useState } from "react";
 import { useIsAndroid } from "@/app/hooks/useIsAndroid";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
+import {
+  SECTION_GRADIENT_DATA_ATTR,
+  SECTION_GRADIENT_LABEL_DATA_ATTR,
+} from "@/app/components/background/sceneConfig";
 import {
   ORDERED_OFFICER_TEAMS,
   resolveConstellationLayout,
@@ -20,6 +24,7 @@ import {
   getDesktopConstellationBox,
   type ConstellationBox,
   TEAM_CLUSTER_BOX,
+  TEAM_GRADIENT_LABEL_OVERRIDES,
   TEAMS_COPY,
   TEAMS_LAYOUT,
   TEAMS_SCROLL,
@@ -66,7 +71,6 @@ export default function Teams() {
     TEAM_CLUSTER_BOX.desktop,
   );
   const [mobileBox, setMobileBox] = useState<ConstellationBox>(TEAM_CLUSTER_BOX.mobile);
-  const [activeTeamId, setActiveTeamId] = useState<string | null>(null);
   const [activeNode, setActiveNode] = useState<ActiveNodeState>(null);
 
   useEffect(() => {
@@ -168,19 +172,13 @@ export default function Teams() {
         1,
       );
 
-      const slotWidth = track.scrollWidth / ORDERED_OFFICER_TEAMS.length;
       const nextIndex = clamp(
         Math.round(progress * (ORDERED_OFFICER_TEAMS.length - 1)),
         0,
         ORDERED_OFFICER_TEAMS.length - 1,
       );
 
-      // Snap to center the active constellation in the viewport
-      targetX = clamp(
-        nextIndex * slotWidth + slotWidth / 2 - window.innerWidth / 2,
-        0,
-        maxTranslate,
-      );
+      targetX = progress * maxTranslate;
 
       if (nextIndex !== activeTeamIndexRef.current) {
         activeTeamIndexRef.current = nextIndex;
@@ -272,6 +270,7 @@ export default function Teams() {
         );
         if (nextIndex !== activeTeamIndexRef.current) {
           activeTeamIndexRef.current = nextIndex;
+          setDisplayedTeamIndex(nextIndex);
         }
       }
 
@@ -335,6 +334,62 @@ export default function Teams() {
   }, [desktopBox.height, desktopBox.width, isMobile, prefersReducedMotion]);
 
   useEffect(() => {
+    if (!isMobile || !prefersReducedMotion) {
+      return;
+    }
+
+    const track = mobileTrackRef.current;
+
+    if (!track) {
+      return;
+    }
+
+    let frame = 0;
+
+    const updateDisplayedTeam = () => {
+      frame = 0;
+      const viewportCenter = track.scrollLeft + track.clientWidth / 2;
+      let closestIndex = 0;
+      let closestDistance = Number.POSITIVE_INFINITY;
+
+      Array.from(track.children).forEach((child, index) => {
+        const card = child as HTMLElement;
+        const cardCenter = card.offsetLeft + card.offsetWidth / 2;
+        const distance = Math.abs(cardCenter - viewportCenter);
+
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestIndex = index;
+        }
+      });
+
+      if (closestIndex !== activeTeamIndexRef.current) {
+        activeTeamIndexRef.current = closestIndex;
+        setDisplayedTeamIndex(closestIndex);
+      }
+    };
+
+    const queueUpdate = () => {
+      if (frame === 0) {
+        frame = window.requestAnimationFrame(updateDisplayedTeam);
+      }
+    };
+
+    track.addEventListener("scroll", queueUpdate, { passive: true });
+    window.addEventListener("resize", queueUpdate);
+    queueUpdate();
+
+    return () => {
+      if (frame !== 0) {
+        window.cancelAnimationFrame(frame);
+      }
+
+      track.removeEventListener("scroll", queueUpdate);
+      window.removeEventListener("resize", queueUpdate);
+    };
+  }, [isMobile, prefersReducedMotion]);
+
+  useEffect(() => {
     return () => {
       if (tooltipCloseTimeoutRef.current !== null) {
         window.clearTimeout(tooltipCloseTimeoutRef.current);
@@ -355,47 +410,60 @@ export default function Teams() {
     clearTooltipClose();
     tooltipCloseTimeoutRef.current = window.setTimeout(() => {
       setActiveNode(null);
-      setActiveTeamId(null);
       tooltipCloseTimeoutRef.current = null;
     }, TEAMS_SCROLL.tooltipCloseDelayMs);
   };
 
-  const openNode = (teamId: string, personId: string) => {
+  const openNode = (
+    teamId: string,
+    personId: string,
+    pointer: NonNullable<ActiveNodeState>["pointer"],
+  ) => {
     clearTooltipClose();
-    setActiveTeamId(teamId);
-    setActiveNode({ teamId, personId });
+    setActiveNode({ teamId, personId, pointer });
   };
 
   const desktopLayouts = buildLayouts(ORDERED_OFFICER_TEAMS, desktopBox);
   const mobileLayouts = buildLayouts(ORDERED_OFFICER_TEAMS, mobileBox);
+  const displayedTeam =
+    ORDERED_OFFICER_TEAMS[displayedTeamIndex] ?? ORDERED_OFFICER_TEAMS[0];
+  const sectionGradientAttributes = {
+    [SECTION_GRADIENT_DATA_ATTR]: "teams",
+    [SECTION_GRADIENT_LABEL_DATA_ATTR]:
+      TEAM_GRADIENT_LABEL_OVERRIDES[displayedTeam.id] ?? displayedTeam.label,
+  };
 
   if (isMobile) {
     if (prefersReducedMotion) {
       return (
         <section
           id="team"
+          {...sectionGradientAttributes}
           className={`relative overflow-hidden ${TEAMS_LAYOUT.mobileSectionPadding}`}
         >
           <div className="relative mx-auto max-w-6xl">
             <h2 className={TEAMS_LAYOUT.mobileHeading}>
-              {TEAMS_COPY.heading[0]}
-              <br />
-              {TEAMS_COPY.heading[1]}
+              <span className="block text-foreground">
+                {TEAMS_COPY.heading[0]}
+              </span>
+              <span className="mt-2 block text-pink md:mt-3">
+                {TEAMS_COPY.heading[1]}
+              </span>
             </h2>
-            <div className="mt-10 flex snap-x snap-mandatory overflow-x-auto pb-6">
+            <div
+              ref={mobileTrackRef}
+              className="mt-10 flex overflow-x-auto pb-6"
+            >
               {mobileLayouts.map((layout) => (
                 <TeamConstellation
                   key={layout.team.id}
                   layout={layout}
                   box={mobileBox}
-                  activeTeamId={activeTeamId}
-                  setActiveTeamId={setActiveTeamId}
                   activeNode={activeNode}
                   openNode={openNode}
                   clearTooltipClose={clearTooltipClose}
                   scheduleTooltipClose={scheduleTooltipClose}
                   interactive
-                  showCaption
                   centerTooltip
                 />
               ))}
@@ -409,6 +477,7 @@ export default function Teams() {
       <section
         id="team"
         ref={mobileSectionRef}
+        {...sectionGradientAttributes}
         className="relative"
         style={{ minHeight: `${100 + ORDERED_OFFICER_TEAMS.length * 22}vh` }}
       >
@@ -420,9 +489,12 @@ export default function Teams() {
               style={{ maxHeight: isAndroid ? "52%" : "50%" }}
             >
               <h2 className={TEAMS_LAYOUT.mobileHeading}>
-                {TEAMS_COPY.heading[0]}
-                <br />
-                {TEAMS_COPY.heading[1]}
+                <span className="block text-foreground">
+                  {TEAMS_COPY.heading[0]}
+                </span>
+                <span className="mt-2 block text-pink md:mt-3">
+                  {TEAMS_COPY.heading[1]}
+                </span>
               </h2>
             </div>
 
@@ -438,14 +510,11 @@ export default function Teams() {
                     key={layout.team.id}
                     layout={layout}
                     box={mobileBox}
-                    activeTeamId={activeTeamId}
-                    setActiveTeamId={setActiveTeamId}
                     activeNode={activeNode}
                     openNode={openNode}
                     clearTooltipClose={clearTooltipClose}
                     scheduleTooltipClose={scheduleTooltipClose}
                     interactive
-                    showCaption
                     centerTooltip
                   />
                 ))}
@@ -474,13 +543,17 @@ export default function Teams() {
     return (
       <section
         id="team"
+        {...sectionGradientAttributes}
         className={`relative overflow-hidden ${TEAMS_LAYOUT.mobileSectionPadding} md:px-8 md:py-32`}
       >
         <div className="relative mx-auto max-w-7xl">
           <h2 className={TEAMS_LAYOUT.mobileHeading}>
-            {TEAMS_COPY.heading[0]}
-            <br />
-            {TEAMS_COPY.heading[1]}
+            <span className="block text-foreground">
+              {TEAMS_COPY.heading[0]}
+            </span>
+            <span className="mt-2 block text-pink md:mt-3">
+              {TEAMS_COPY.heading[1]}
+            </span>
           </h2>
 
           <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -492,8 +565,6 @@ export default function Teams() {
                 <TeamConstellation
                   layout={layout}
                   box={desktopBox}
-                  activeTeamId={layout.team.id}
-                  setActiveTeamId={setActiveTeamId}
                   activeNode={activeNode}
                   openNode={openNode}
                   clearTooltipClose={clearTooltipClose}
@@ -512,15 +583,19 @@ export default function Teams() {
     <section
       id="team"
       ref={sectionRef}
+      {...sectionGradientAttributes}
       className={`relative ${TEAMS_LAYOUT.desktopSectionMinHeight}`}
     >
       <div className={`sticky top-0 overflow-visible ${TEAMS_LAYOUT.desktopViewportHeight}`}>
         <div className={TEAMS_LAYOUT.desktopContainer}>
           <div className={`relative z-30 ${TEAMS_LAYOUT.introWidth}`}>
             <h2 className={TEAMS_LAYOUT.desktopHeading}>
-              {TEAMS_COPY.heading[0]}
-              <br />
-              {TEAMS_COPY.heading[1]}
+              <span className="block text-foreground">
+                {TEAMS_COPY.heading[0]}
+              </span>
+              <span className="mt-2 block text-pink md:mt-3">
+                {TEAMS_COPY.heading[1]}
+              </span>
             </h2>
           </div>
 
@@ -528,7 +603,6 @@ export default function Teams() {
             ref={trackViewportRef}
             className={`z-0 ${TEAMS_LAYOUT.desktopTrackViewport}`}
           >
-            <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-32 bg-gradient-to-r from-background via-background/96 to-transparent" />
             <div
               ref={trackRef}
               className="flex w-max items-start will-change-transform"
@@ -550,8 +624,6 @@ export default function Teams() {
                   <TeamConstellation
                     layout={layout}
                     box={desktopBox}
-                    activeTeamId={activeTeamId}
-                    setActiveTeamId={setActiveTeamId}
                     activeNode={activeNode}
                     openNode={openNode}
                     clearTooltipClose={clearTooltipClose}

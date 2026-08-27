@@ -34,19 +34,33 @@ export const HERO_LAYOUT = {
 
 export const HERO_COPY = {
   /**
-   * Kicker above the headline. Set in Petrona (the serif token), contrasting
-   * with the Satoshi headline so the two lines read as separate voices.
+   * Kicker above the headline. Its italic treatment separates it from the
+   * headline while keeping the site's Satoshi typography consistent.
    */
   eyebrow: "North America’s Largest 24 hour Hackathon",
-  headline: "Building something worth showing up for.",
+  headline: "Build something worth showing up for",
+} as const;
+
+/** Per-character reveal and scroll exit for the Hero copy. */
+export const HERO_TEXT_EFFECT = {
+  reveal: {
+    blur: 10,
+    duration: 0.6,
+    stagger: 0.015,
+    ease: "power2.out",
+  },
+  exit: {
+    start: WHITEOUT_SCROLL.start,
+    end: "84% bottom",
+    blur: 10,
+    y: -30,
+    duration: 0.6,
+    stagger: 0.015,
+    ease: "power1.in",
+  },
 } as const;
 
 export const HERO_WHITEOUT = {
-  text: {
-    start: WHITEOUT_SCROLL.start,
-    end: "78% bottom",
-    ease: "power1.in",
-  },
   overlay: {
     start: "70% bottom",
     end: WHITEOUT_SCROLL.end,

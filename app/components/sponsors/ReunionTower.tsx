@@ -1,9 +1,10 @@
 "use client";
 
 import { Suspense, useRef, useMemo, useEffect, useState } from "react";
-import { Canvas, useFrame, useThree, useLoader } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import { useNearViewport } from "@/app/hooks/useNearViewport";
 
 const MODEL_PATH = "/models/sponsor-globe-flat-4.glb";
 const AUTO_ROTATION_SPEED = 0.3;
@@ -131,8 +132,8 @@ function useWhiteDiscardMaterial(texture: THREE.Texture) {
 const SVG_RASTER_SIZE = 512; // px — enough for crisp logos on the tower
 
 // 1x1 transparent PNG. Substituted for any logo URL that fails to load so a
-// single broken asset can't reject the whole useLoader batch and crash the
-// page (the alphaTest in the logo material makes it render as invisible).
+// single broken asset can't take the whole batch down with it (the alphaTest
+// in the logo material makes it render as invisible).
 const PLACEHOLDER_TEXTURE_URL =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
 
@@ -225,6 +226,109 @@ function usePatchedSvgUrls(urls: string[]): string[] | null {
   return patchedUrls;
 }
 
+// ── Capped logo textures ────────────────────────────────────
+// Sponsor logos ship at their source resolution — up to 2000px on the long
+// edge — but on the tower each is drawn on an arc roughly 200px wide. Handed
+// to the GPU untouched, three.js rounds them up to the next power of two for
+// mipmapping, so a 1029x1200 PNG becomes a 2048x2048 texture: ~22MB for a logo
+// the size of a postage stamp. Drawing each through a canvas first and capping
+// the long edge takes the whole set from ~151MB to ~14MB, with no visible
+// difference at the size they are actually rendered.
+const MAX_LOGO_TEX = 256;
+
+// Keyed by source URL and never evicted, standing in for the global cache
+// useLoader used to provide: the canvas unmounts and remounts every time the
+// tower leaves and re-enters its viewport margin, and re-decoding every logo
+// on each pass would cost more than holding the textures does.
+const cappedTextureCache = new Map<string, Promise<THREE.Texture>>();
+
+/** A 1x1 transparent texture — alphaTest in the logo material hides it. */
+function blankTexture(): THREE.Texture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1;
+  canvas.height = 1;
+  return new THREE.CanvasTexture(canvas);
+}
+
+function loadCappedTexture(url: string): Promise<THREE.Texture> {
+  const cached = cappedTextureCache.get(url);
+  if (cached) {
+    return cached;
+  }
+
+  const pending = new Promise<THREE.Texture>((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+
+    img.onload = () => {
+      const longEdge = Math.max(img.width, img.height);
+      if (!longEdge) {
+        resolve(blankTexture());
+        return;
+      }
+
+      const scale = Math.min(1, MAX_LOGO_TEX / longEdge);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(img.width * scale));
+      canvas.height = Math.max(1, Math.round(img.height * scale));
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(blankTexture());
+        return;
+      }
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      // colorSpace is deliberately left at the Texture default (NoColorSpace),
+      // which is what TextureLoader produced before — the brightness and
+      // saturation constants in useWhiteDiscardMaterial are tuned against it.
+      texture.anisotropy = 4;
+      resolve(texture);
+    };
+
+    img.onerror = () => {
+      console.warn("[sponsor logo] Failed to decode, hiding logo:", url);
+      resolve(blankTexture());
+    };
+
+    img.src = url;
+  });
+
+  cappedTextureCache.set(url, pending);
+  return pending;
+}
+
+/**
+ * Loads every logo through loadCappedTexture, preserving URL order so slot
+ * indices still line up with the sponsor list. Null until the set is complete.
+ */
+function useCappedTextures(urls: string[] | null): THREE.Texture[] | null {
+  const [textures, setTextures] = useState<THREE.Texture[] | null>(null);
+  const urlKey = urls?.join("|") ?? "";
+
+  useEffect(() => {
+    if (!urls) {
+      setTextures(null);
+      return;
+    }
+
+    let cancelled = false;
+    Promise.all(urls.map(loadCappedTexture)).then((loaded) => {
+      if (!cancelled) {
+        setTextures(loaded);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlKey]);
+
+  return textures;
+}
+
 // ── Single sponsor logo ─────────────────────────────────────
 function SponsorLogo({
   placement,
@@ -238,11 +342,15 @@ function SponsorLogo({
   totalSponsors: number;
 }) {
   const [sponsorIdx, setSponsorIdx] = useState(placement.initialSponsorIndex);
-  const texture = textures[sponsorIdx];
+  // The slot index is driven by revolution count, which can briefly outrun a
+  // shrinking sponsor list; fall back rather than indexing off the end.
+  const texture = textures[sponsorIdx] ?? textures[0];
 
   const arcGeo = useMemo(() => {
-    const img = texture.image as HTMLImageElement | undefined;
-    const aspect = img ? img.width / img.height : 1;
+    // Canvas-backed now rather than an <img>, so read the size structurally —
+    // HTMLCanvasElement carries width/height just as HTMLImageElement does.
+    const img = texture.image as { width: number; height: number } | undefined;
+    const aspect = img && img.height ? img.width / img.height : 1;
 
     let h = MIN_LOGO_DISPLAY_HEIGHT;
     let w = h * aspect;
@@ -371,11 +479,7 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
   // While patching/validation is in progress, load placeholders instead of the
   // raw URLs — an unvalidated URL that 404s would reject the whole batch and
   // take down the page.
-  const pendingUrls = useMemo(
-    () => logoUrls.map(() => PLACEHOLDER_TEXTURE_URL),
-    [logoUrls],
-  );
-  const textures = useLoader(THREE.TextureLoader, safeLogoUrls ?? pendingUrls);
+  const textures = useCappedTextures(safeLogoUrls);
 
   // Static layout of slots
   const placements = useMemo(() => generateSlots(), []);
@@ -422,18 +526,16 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
         rotation={[0, Math.PI + THREE.MathUtils.degToRad(10), 0]}
       />
       <group ref={sponsorGroupRef} position={[2.3, 0, 0]}>
-        {placements.map((placement, i) => {
-          return (
-            <Suspense key={`slot-${i}`} fallback={null}>
-              <SponsorLogo 
-                placement={placement} 
-                textures={Array.isArray(textures) ? textures : [textures]} 
-                groupRotationRef={smoothRotation}
-                totalSponsors={validSponsors.length}
-              />
-            </Suspense>
-          );
-        })}
+        {textures &&
+          placements.map((placement, i) => (
+            <SponsorLogo
+              key={`slot-${i}`}
+              placement={placement}
+              textures={textures}
+              groupRotationRef={smoothRotation}
+              totalSponsors={validSponsors.length}
+            />
+          ))}
       </group>
     </group>
   );
@@ -508,6 +610,12 @@ export default function ReunionTower({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
 
+  // The canvas is unmounted entirely while it is far from the viewport: a
+  // paused WebGL canvas still holds its context, geometry, and every sponsor
+  // texture in GPU memory. The wide margin remounts it early enough that the
+  // scene is rebuilt (from the browser's HTTP cache) before it scrolls in.
+  const isNearViewport = useNearViewport(wrapperRef, "200%");
+
   // Render frames only while the tower is on screen
   useEffect(() => {
     const wrapper = wrapperRef.current;
@@ -522,39 +630,41 @@ export default function ReunionTower({
 
   return (
     <div ref={wrapperRef} className="h-full w-full">
-      <Canvas
-        dpr={[1, 1.5]}
-        gl={{
-          antialias: true,
-          alpha: true,
-          powerPreference: "high-performance",
-          stencil: false,
-          depth: true,
-        }}
-        camera={{ position: [0, 125, 175], fov: 55, near: 0.1, far: 2000 }}
-        style={{
-          touchAction: "pan-y",
-          maskImage: "linear-gradient(to bottom, black 90%, transparent 100%)",
-          WebkitMaskImage:
-            "linear-gradient(to bottom, black 90%, transparent 100%)",
-        }}
-        frameloop={inView ? "always" : "never"}
-      >
-        {/* The model carries its own flat gray colors and drawn edges, so a
-            single flat ambient light is all it needs — directional lights and
-            an Environment probe would shade the uniform gray unevenly. */}
-        <ambientLight intensity={3.5} />
-
-        <Suspense fallback={null}>
-          <TowerModel
-            scrollProgressRef={scrollProgressRef}
-            dragOffsetRef={dragOffsetRef}
-            sponsors={sponsors}
-          />
-        </Suspense>
-
-        <CameraRig scrollProgressRef={scrollProgressRef} />
-      </Canvas>
+      {isNearViewport && (
+        <Canvas
+          dpr={[1, 1.5]}
+          gl={{
+            antialias: true,
+            alpha: true,
+            powerPreference: "high-performance",
+            stencil: false,
+            depth: true,
+          }}
+          camera={{ position: [0, 125, 175], fov: 55, near: 0.1, far: 2000 }}
+          style={{
+            touchAction: "pan-y",
+            maskImage: "linear-gradient(to bottom, black 90%, transparent 100%)",
+            WebkitMaskImage:
+              "linear-gradient(to bottom, black 90%, transparent 100%)",
+          }}
+          frameloop={inView ? "always" : "never"}
+        >
+          {/* The model carries its own flat gray colors and drawn edges, so a
+              single flat ambient light is all it needs — directional lights and
+              an Environment probe would shade the uniform gray unevenly. */}
+          <ambientLight intensity={3.5} />
+  
+          <Suspense fallback={null}>
+            <TowerModel
+              scrollProgressRef={scrollProgressRef}
+              dragOffsetRef={dragOffsetRef}
+              sponsors={sponsors}
+            />
+          </Suspense>
+  
+          <CameraRig scrollProgressRef={scrollProgressRef} />
+        </Canvas>
+      )}
     </div>
   );
 }

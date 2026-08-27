@@ -13,57 +13,32 @@ import { NodeTooltip, getInitials } from "./NodeTooltip";
 export type ActiveNodeState = {
   teamId: string;
   personId: string;
+  pointer: { x: number; y: number };
 } | null;
-
-function getOfficerCountLabel(officerCount: number) {
-  return `${officerCount} OFFICERS`;
-}
-
-function getTeamOpacity(activeTeamId: string | null, teamId: string) {
-  if (!activeTeamId || activeTeamId === teamId) return 1;
-  return 0.25;
-}
-
-function getTooltipPlacement(nodeX: number, nodeY: number, box: ConstellationBox) {
-  let horizontal = "left-1/2 -translate-x-1/2";
-
-  if (nodeX < box.width * 0.18) {
-    horizontal = "left-0 translate-x-0";
-  } else if (nodeX > box.width * 0.82) {
-    horizontal = "right-0 translate-x-0";
-  }
-
-  const vertical = nodeY < box.height * 0.34 ? "top-full mt-4" : "bottom-full mb-4";
-  return `${vertical} ${horizontal}`;
-}
 
 export function TeamConstellation({
   layout,
   box,
-  activeTeamId,
-  setActiveTeamId,
   activeNode,
   openNode,
   clearTooltipClose,
   scheduleTooltipClose,
   interactive,
-  showCaption = true,
   centerTooltip = false,
 }: {
   layout: ResolvedConstellationLayout;
   box: ConstellationBox;
-  activeTeamId: string | null;
-  setActiveTeamId: (teamId: string | null) => void;
   activeNode: ActiveNodeState;
-  openNode: (teamId: string, personId: string) => void;
+  openNode: (
+    teamId: string,
+    personId: string,
+    pointer: { x: number; y: number },
+  ) => void;
   clearTooltipClose: () => void;
   scheduleTooltipClose: () => void;
   interactive: boolean;
-  showCaption?: boolean;
   centerTooltip?: boolean;
 }) {
-  const teamOpacity = getTeamOpacity(activeTeamId, layout.team.id);
-  const officerCountLabel = getOfficerCountLabel(layout.nodes.length);
   const graphBounds = layout.nodes.reduce(
     (bounds, node) => {
       const radius = (node.isLead ? box.leadNodeSize : box.nodeSize) / 2 + 6;
@@ -104,15 +79,10 @@ export function TeamConstellation({
 
   return (
     <article
-      className="relative flex shrink-0 flex-col items-center transition-opacity duration-300"
-      style={{ opacity: teamOpacity, width: `${box.width}px` }}
+      className="relative flex shrink-0 flex-col items-center"
+      style={{ width: `${box.width}px` }}
       onMouseEnter={
-        interactive && !centerTooltip
-          ? () => {
-              clearTooltipClose();
-              setActiveTeamId(layout.team.id);
-            }
-          : undefined
+        interactive && !centerTooltip ? clearTooltipClose : undefined
       }
       onMouseLeave={interactive && !centerTooltip ? scheduleTooltipClose : undefined}
     >
@@ -136,8 +106,7 @@ export function TeamConstellation({
                 x2={trimmedEdge.x2}
                 y2={trimmedEdge.y2}
                 stroke="currentColor"
-                strokeOpacity="0.16"
-                strokeWidth="4"
+                strokeWidth="1"
                 strokeLinecap="round"
               />
             );
@@ -145,10 +114,13 @@ export function TeamConstellation({
         </svg>
 
         {shiftedNodes.map((node) => {
+          const rawLinkedInUrl = node.person.linkedinUrl.trim();
+          const linkedInUrl = /^https?:\/\//i.test(rawLinkedInUrl)
+            ? rawLinkedInUrl
+            : "";
           const isActive =
             activeNode?.teamId === layout.team.id &&
             activeNode.personId === node.person.id;
-          const tooltipPlacement = getTooltipPlacement(node.shiftedX, node.renderY, box);
           const nodePositionStyle: CSSProperties = {
             left: `${node.shiftedX}px`,
             top: `${node.renderY}px`,
@@ -174,38 +146,59 @@ export function TeamConstellation({
               {isActive ? (
                 <NodeTooltip
                   person={node.person}
-                  placement={tooltipPlacement}
-                  teamId={layout.team.id}
-                  clearTooltipClose={clearTooltipClose}
-                  setActiveTeamId={setActiveTeamId}
+                  initialPointer={activeNode.pointer}
                   scheduleTooltipClose={scheduleTooltipClose}
                   centered={centerTooltip}
                 />
               ) : null}
 
-              <button
-                type="button"
-                aria-label={`${node.person.name}, ${node.person.role}`}
+              <a
+                href={linkedInUrl || undefined}
+                target={linkedInUrl ? "_blank" : undefined}
+                rel={linkedInUrl ? "noreferrer" : undefined}
+                role={linkedInUrl ? undefined : "button"}
+                tabIndex={0}
+                aria-label={
+                  linkedInUrl
+                    ? `Open ${node.person.name}'s LinkedIn profile`
+                    : `${node.person.name}, ${node.person.role}`
+                }
                 className={`relative flex items-center justify-center overflow-hidden rounded-full border transition-[transform,box-shadow,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
                   node.isLead
                     ? "constellation-lead border-[3px] border-pink bg-(--color-card) text-foreground/56 hover:scale-[1.04]"
                     : "border-[3px] border-foreground/12 bg-(--color-card) text-foreground/32 hover:scale-[1.07]"
                 }`}
                 style={nodeButtonStyle}
-                onClick={
-                  interactive
-                    ? () => openNode(layout.team.id, node.person.id)
-                    : undefined
-                }
+                onClick={(event) => {
+                  if (!interactive || linkedInUrl) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  openNode(layout.team.id, node.person.id, {
+                    x: event.clientX,
+                    y: event.clientY,
+                  });
+                }}
                 onMouseEnter={
                   interactive && !centerTooltip
-                    ? () => openNode(layout.team.id, node.person.id)
+                    ? (event) =>
+                        openNode(layout.team.id, node.person.id, {
+                          x: event.clientX,
+                          y: event.clientY,
+                        })
                     : undefined
                 }
                 onMouseLeave={interactive && !centerTooltip ? scheduleTooltipClose : undefined}
                 onFocus={
                   interactive
-                    ? () => openNode(layout.team.id, node.person.id)
+                    ? (event) => {
+                        const rect = event.currentTarget.getBoundingClientRect();
+                        openNode(layout.team.id, node.person.id, {
+                          x: rect.left + rect.width / 2,
+                          y: rect.top + rect.height / 2,
+                        });
+                      }
                     : undefined
                 }
                 onBlur={interactive && !centerTooltip ? scheduleTooltipClose : undefined}
@@ -226,25 +219,12 @@ export function TeamConstellation({
                     {getInitials(node.person.name)}
                   </span>
                 )}
-              </button>
+              </a>
             </div>
           );
         })}
       </div>
 
-      {showCaption ? (
-        <div className="mt-6 w-[15rem] text-left">
-          <p className="text-[0.72rem] uppercase tracking-[0.18em] text-foreground/30">
-            {layout.template.name}
-          </p>
-          <h3 className="text-3xl font-medium tracking-[-0.03em] text-foreground">
-            {layout.team.label}
-          </h3>
-          <p className="mt-2 text-[0.78rem] uppercase tracking-[0.1em] text-foreground/34">
-            {officerCountLabel}
-          </p>
-        </div>
-      ) : null}
     </article>
   );
 }
