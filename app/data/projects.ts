@@ -12,6 +12,15 @@ export type Project = {
 
 export const projects: Project[] = [
   {
+    name: "HackUTD 2026",
+    label: "Fall 2026",
+    description: "Texas' largest 24-hour hackathon returns.",
+    link: "https://zeroday.hackutd.co/",
+    image: "/projects/zero_day.png",
+    imageWidth: 781,
+    imageHeight: 307,
+  },
+  {
     name: "Harp",
     label: "Applications",
     description: "Hacker Applications & Review Platform.",
