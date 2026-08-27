@@ -315,7 +315,7 @@ export default function Hero() {
         >
           <p
             aria-label={HERO_COPY.eyebrow}
-            className="mb-2 font-serif text-base font-normal italic sm:text-lg md:mb-3 md:text-xl"
+            className="mb-2 font-sans text-base font-normal italic sm:text-lg md:mb-3 md:text-xl"
           >
             {renderHeroText(HERO_COPY.eyebrow)}
           </p>

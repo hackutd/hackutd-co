@@ -17,6 +17,8 @@ export const ABOUT_EXIT_DATA_ATTR = "data-bg-about-exit";
 export const TIMELINE_SECTION_DATA_ATTR = "data-bg-timeline-section";
 export const SPONSORS_SECTION_DATA_ATTR = "data-bg-sponsors-section";
 export const SECTION_GRADIENT_DATA_ATTR = "data-section-gradient";
+export const SECTION_GRADIENT_LABEL_DATA_ATTR =
+  "data-section-gradient-active-label";
 export const SECTION_GRADIENT_END_ID = "footer";
 
 /**
@@ -52,6 +54,14 @@ export const SECTION_GRADIENT_MOTION = {
   transitionEnd: "top 42%",
   transitionScrub: 0.45,
   labelTravelPercent: 22,
+  /**
+   * When a scroll jump moves a label's target opacity by more than this in a
+   * single update — a navbar anchor, Home/End, a fast fling — it snaps to the
+   * new value instead of easing. Without it the catch-up from transitionScrub
+   * is visible as several words crossfading over each other at once.
+   */
+  labelSnapDelta: 0.34,
+  dynamicLabelDuration: 0.36,
   parallaxScrub: 0.8,
   parallax: {
     fromXPercent: -1,
@@ -264,7 +274,7 @@ export const STAR_FIELD_TUNING = {
   seed: 137,
   top: { min: 6, range: 88 },
   left: { min: 3, range: 94 },
-  size: { min: 6.5, range: 6.5 },
+  size: { min: 9, range: 9 },
   opacity: { min: 0.32, range: 0.46 },
   duration: { min: 3.6, range: 3.2 },
 } as const;

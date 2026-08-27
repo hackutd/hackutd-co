@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect, lazy, Suspense } from "react";
+import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -10,6 +11,18 @@ import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 
 const ReunionTower = lazy(() => import("./ReunionTower"));
+
+/**
+ * Both sponsor grids draw the logo at `max-h-12` — 48px tall — so the widest a
+ * logo ever gets is roughly the width of its grid cell. Pinning `sizes` keeps
+ * next/image on the small variants: without it the srcset is built from the
+ * intrinsic width, and a 1600px-wide logo pulls a 1600px (or, on a retina
+ * display, a 3840px) file for a 48px slot.
+ */
+const LOGO_SIZES = "160px";
+
+/** SVG logos are already vector — there is nothing for the optimizer to do. */
+const isVector = (logo: string) => logo.toLowerCase().endsWith(".svg");
 
 configureScrollTrigger();
 
@@ -330,10 +343,14 @@ export default function Sponsors() {
                 rel="noopener noreferrer"
                 className="flex items-center justify-center p-4 transition-opacity hover:opacity-75"
               >
-                <img
-                  src={s.logo || ""}
+                <Image
+                  src={s.logo}
                   alt={s.name}
-                  className="max-h-12 max-w-full object-contain"
+                  width={s.width}
+                  height={s.height}
+                  sizes={LOGO_SIZES}
+                  unoptimized={isVector(s.logo)}
+                  className="max-h-12 w-auto max-w-full object-contain"
                 />
               </a>
             ))}
@@ -578,12 +595,16 @@ export default function Sponsors() {
                       rel="noopener noreferrer"
                       className="sponsor-card flex h-full items-center justify-center border border-surface-foreground/10 p-4"
                     >
-                      <img
-                        src={s.logo || ""}
+                      <Image
+                        src={s.logo}
                         alt={s.name}
-                        className="max-h-10 max-w-full object-contain md:max-h-12"
+                        width={s.width}
+                        height={s.height}
+                        sizes={LOGO_SIZES}
+                        unoptimized={isVector(s.logo)}
                         loading="lazy"
                         draggable={false}
+                        className="max-h-10 w-auto max-w-full object-contain md:max-h-12"
                       />
                     </a>
                   </div>

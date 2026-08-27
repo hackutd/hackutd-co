@@ -254,6 +254,62 @@ const SPONSORS_MAP = {
 };
 
 /**
+ * Intrinsic pixel dimensions of every logo file, so the sponsor grids can render
+ * through next/image instead of a raw <img>. Without a real aspect ratio the
+ * grid either distorts the logo or downloads a 4K variant for a 48px-tall slot.
+ *
+ * Read straight off the files' own headers (PNG IHDR, JPEG SOF, WebP VP8L, and
+ * the SVG width/height or viewBox). Regenerate after adding or replacing a logo:
+ *
+ *   node scripts/sponsor-logo-dimensions.mjs
+ */
+const LOGO_DIMENSIONS: Record<string, { width: number; height: number }> = {
+  "/sponsors/axxess.png": { width: 1200, height: 545 },
+  "/sponsors/CBRE.png": { width: 1200, height: 422 },
+  "/sponsors/cognizant.png": { width: 168, height: 50 },
+  "/sponsors/eog.png": { width: 1200, height: 536 },
+  "/sponsors/nmc2_dark.webp": { width: 1080, height: 1080 },
+  "/sponsors/rc.png": { width: 501, height: 109 },
+  "/sponsors/scale.png": { width: 187, height: 60 },
+  "/sponsors/sg.png": { width: 300, height: 300 },
+  "/sponsors/svg/benq.png": { width: 606, height: 332 },
+  "/sponsors/svg/capital_one.svg": { width: 363, height: 130 },
+  "/sponsors/svg/CoreLogic.png": { width: 1600, height: 279 },
+  "/sponsors/svg/facebook.svg": { width: 431, height: 83 },
+  "/sponsors/svg/FannieMae_dark.svg": { width: 812, height: 159 },
+  "/sponsors/svg/Fidelity_dark.svg": { width: 2500, height: 549 },
+  "/sponsors/svg/Frontier.png": { width: 1029, height: 1200 },
+  "/sponsors/svg/Geico.png": { width: 1629, height: 640 },
+  "/sponsors/svg/goldman_sachs.svg": { width: 169, height: 169 },
+  "/sponsors/svg/google.svg": { width: 379, height: 128 },
+  "/sponsors/svg/Incogni_dark.png": { width: 925, height: 426 },
+  "/sponsors/svg/Infosys.png": { width: 1080, height: 1080 },
+  "/sponsors/svg/jpmorgan_chase.svg": { width: 805, height: 101 },
+  "/sponsors/svg/l3.svg": { width: 168, height: 36 },
+  "/sponsors/svg/mlh.svg": { width: 284, height: 119 },
+  "/sponsors/svg/MME.jpeg": { width: 302, height: 165 },
+  "/sponsors/svg/NordPass_dark.png": { width: 2000, height: 425 },
+  "/sponsors/svg/NordVPN_dark.svg": { width: 142, height: 32 },
+  "/sponsors/svg/nvidia_dark.svg": { width: 1701, height: 324 },
+  "/sponsors/svg/pinata.png": { width: 581, height: 851 },
+  "/sponsors/svg/PNC.png": { width: 650, height: 200 },
+  "/sponsors/svg/PRHI.png": { width: 1600, height: 823 },
+  "/sponsors/svg/SnapAR.png": { width: 564, height: 138 },
+  "/sponsors/svg/SnapGhost_dark.svg": { width: 800, height: 800 },
+  "/sponsors/svg/standout_stickers.svg": { width: 600, height: 600 },
+  "/sponsors/svg/statefarm.svg": { width: 657, height: 91 },
+  "/sponsors/svg/sticker_mule.svg": { width: 512, height: 71 },
+  "/sponsors/svg/ti.svg": { width: 744, height: 275 },
+  "/sponsors/svg/tmobile.svg": { width: 130, height: 130 },
+  "/sponsors/svg/veolia.png": { width: 1280, height: 320 },
+  "/sponsors/toyota.png": { width: 471, height: 117 },
+  "/sponsors/utd_department_cs.png": { width: 1374, height: 428 },
+};
+
+/** Nominal 2:1 for a logo added without a regenerated dimension entry. */
+const FALLBACK_LOGO_DIMENSIONS = { width: 240, height: 120 };
+
+/**
  * Exported as an array for components like the 3D globe that need to iterate over all sponsors.
  * Maps internal 'img' and 'link' to 'logo' and 'url' to match component expectations.
  */
@@ -261,6 +317,7 @@ export const SPONSORS = Object.values(SPONSORS_MAP).map((s) => ({
   ...s,
   logo: s.img,
   url: s.link,
+  ...(LOGO_DIMENSIONS[s.img] ?? FALLBACK_LOGO_DIMENSIONS),
 }));
 
 // Keep the map as the default export for potential key-based lookups

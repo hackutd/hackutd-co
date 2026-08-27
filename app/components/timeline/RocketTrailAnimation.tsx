@@ -472,7 +472,7 @@ export default function RocketTrailAnimation() {
       >
         <svg
           viewBox={`0 0 ${TRAIL_VIEWBOX.width} ${TRAIL_VIEWBOX.height}`}
-          className="w-screen text-surface-foreground"
+          className="w-screen text-white"
           style={{ height: "auto", minWidth: isMobile ? "300px" : "900px", overflow: "visible" }}
           aria-hidden="true"
           xmlns="http://www.w3.org/2000/svg"

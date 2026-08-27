@@ -5,6 +5,7 @@ import {
   useEffect,
   useSyncExternalStore,
   type CSSProperties,
+  type MouseEvent,
 } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -70,12 +71,23 @@ export default function Navbar() {
   // inside the wall's subtree and can't inherit the pin the way the wall's own
   // children do.
   const isPanelTheme = theme === "panel";
+  // Nothing under the bar changes when the theme swaps here: the sponsor wall
+  // is pinned to one color in both themes because the artwork on it is, and
+  // the footer carries that same panel forward. Offering the click there sends
+  // a curtain across a section that ends up exactly as it started, which reads
+  // as the control being broken rather than as a theme having changed. The
+  // page above still swaps — the reader just has to scroll back to it to ask.
+  const isThemeLocked = isPanelTheme;
   const isLightTheme = theme !== "dark";
-  // The white/black logo assets track the actual underlying color: the
-  // "light" navbar phase sits on the surface color, which is dark when the
-  // user picks the light site theme. Over the pinned panel the color behind
-  // the bar is white in both themes, so the black logo is the only right one.
-  const showBlackLogo =
+  // The actual color behind the bar, which the navbar phase alone doesn't give:
+  // the "light" phase sits on the surface color, and that is dark when the user
+  // picks the light site theme. Over the pinned panel the color behind the bar
+  // is white in both themes.
+  //
+  // Both the logo asset and the sun/moon icon hang off this rather than off the
+  // theme — the black logo and the moon are the ones that read on a light
+  // backdrop, whichever theme the page happens to be wearing.
+  const isLightBackground =
     isPanelTheme || isLightTheme !== (targetTheme === "light");
 
   // Cross-fading mid-swap would put the bar through a washed-out blend right
@@ -92,6 +104,55 @@ export default function Navbar() {
   const toggleSiteTheme = () => {
     const next: SiteTheme = targetTheme === "dark" ? "light" : "dark";
     requestSiteTheme(next);
+  };
+
+  /**
+   * Puts the reader back at the hero.
+   *
+   * The site is a single page, so the logo is a scroll-to-top control wearing
+   * a link's clothes — and Next's router will not do that job. Its scroll pass
+   * only fires for a navigation that actually changes something: from "/" to
+   * "/" the tree is identical, nothing new mounts, and the click is swallowed
+   * with the page left wherever it was. The reader only ever sees it work
+   * after a section link has put a hash in the URL, which is why it looks
+   * intermittent. Worse, on that hash-to-"/" path the router carries the old
+   * fragment forward when the new URL has none, so an unconsumed "#mission"
+   * can pull the page back down to the mission instead of the top.
+   *
+   * Driving the scroll here settles both. The href stays for middle-click,
+   * cmd-click and crawlers, so only an unmodified left click is intercepted.
+   */
+  const scrollToTop = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    setIsOpen(false);
+    // The overlay locks the body while it is open and the effect below does
+    // not unlock it until after this commit, so clear it inline — otherwise a
+    // tap on the logo with the mobile menu open scrolls a frozen page.
+    document.body.style.overflow = "";
+    // Instant, to match the plain anchor jumps the section links do.
+    window.scrollTo(0, 0);
+
+    // Drop the section hash so a reload starts at the top too, and so the
+    // router has no stale fragment to reuse. replaceState rather than a push:
+    // the click is a jump within one page, not a place to go back to.
+    if (window.location.hash) {
+      window.history.replaceState(
+        window.history.state,
+        "",
+        window.location.pathname + window.location.search,
+      );
+    }
   };
 
   useEffect(() => {
@@ -115,7 +176,7 @@ export default function Navbar() {
             : "bg-(--theme-background)/60"
         }`}
       />
-      <Link href="/" className="flex items-center">
+      <Link href="/" onClick={scrollToTop} className="flex items-center">
         <span className="relative block h-6 w-33.5 md:h-8 md:w-44.5">
           <Image
             src="/brand/white-hackutd-logo.svg"
@@ -123,7 +184,7 @@ export default function Navbar() {
             width={2048}
             height={585}
             className={`absolute inset-0 h-6 w-auto md:h-8 ${opacityTransition} ${
-              showBlackLogo ? "opacity-0" : "opacity-100"
+              isLightBackground ? "opacity-0" : "opacity-100"
             }`}
             priority
           />
@@ -133,7 +194,7 @@ export default function Navbar() {
             width={2048}
             height={585}
             className={`absolute inset-0 h-6 w-auto md:h-8 ${opacityTransition} ${
-              showBlackLogo ? "opacity-100" : "opacity-0"
+              isLightBackground ? "opacity-100" : "opacity-0"
             }`}
             priority
           />
@@ -160,9 +221,15 @@ export default function Navbar() {
           theme={targetTheme}
           onToggle={toggleSiteTheme}
           isLightNavbar={isLightTheme}
+          isLightBackground={isLightBackground}
+          isDisabled={isThemeLocked}
           colorTransition={colorTransition}
         />
-        <FlowButton text="2026 Soon" href="https://zeroday.hackutd.co" newTab />
+        <FlowButton
+          text="HackUTD 2026"
+          href="https://zeroday.hackutd.co"
+          newTab
+        />
       </div>
 
       {/* Mobile controls */}
@@ -171,6 +238,8 @@ export default function Navbar() {
           theme={targetTheme}
           onToggle={toggleSiteTheme}
           isLightNavbar={isLightTheme}
+          isLightBackground={isLightBackground}
+          isDisabled={isThemeLocked}
           colorTransition={colorTransition}
         />
         <button
@@ -218,7 +287,7 @@ export default function Navbar() {
             </Link>
           ))}
           <FlowButton
-            text="2026 Soon"
+            text="HackUTD 2026"
             href="https://zeroday.hackutd.co"
             newTab
             onClick={() => setIsOpen(false)}

@@ -34,8 +34,8 @@ export const HERO_LAYOUT = {
 
 export const HERO_COPY = {
   /**
-   * Kicker above the headline. Set in Petrona (the serif token), contrasting
-   * with the Satoshi headline so the two lines read as separate voices.
+   * Kicker above the headline. Its italic treatment separates it from the
+   * headline while keeping the site's Satoshi typography consistent.
    */
   eyebrow: "North America’s Largest 24 hour Hackathon",
   headline: "Build something worth showing up for",

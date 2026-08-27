@@ -32,16 +32,13 @@ const MISSION_ANCHOR = (
 );
 
 function renderDirectorsPanel() {
-  const { eyebrow, quote, authors, role, photo } =
-    missionContent.directorsMessage;
+  const { eyebrow, quote, authors, photo } = missionContent.directorsMessage;
   const [firstDirector, secondDirector] = authors.split(" & ");
-  const shortenedEyebrow = eyebrow.replace(/^HackUTD 2026 —\s*/, "");
-  const roleWithoutTitle = role.replace(/^Co-Directors,\s*/, "");
 
   return (
     <TeamMemberCard
       position="left"
-      jobPosition={`${shortenedEyebrow} · ${roleWithoutTitle}`}
+      jobPosition={eyebrow}
       firstName={firstDirector}
       lastName={`& ${secondDirector}`}
       imageUrl={photo.src}

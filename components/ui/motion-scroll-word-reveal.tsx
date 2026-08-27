@@ -82,7 +82,7 @@ function splitWords(block: string, delimiter: string): WordPart[][] {
 
 type ScrollWordRevealProps = {
   text?: string;
-  kicker?: string;
+  kicker?: string | null;
   className?: string;
   children?: ReactNode;
   invertedCursor?: boolean;
@@ -271,7 +271,9 @@ export function ScrollWordReveal({
             </div>
 
             <div className="scroll-word-reveal__content">
-              <p className="scroll-word-reveal__kicker">{kicker}</p>
+              {kicker ? (
+                <p className="scroll-word-reveal__kicker">{kicker}</p>
+              ) : null}
               <h2
                 ref={headingRef}
                 id={headingId}

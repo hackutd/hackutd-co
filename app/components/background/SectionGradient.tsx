@@ -10,6 +10,7 @@ import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import {
   SECTION_GRADIENT_DATA_ATTR,
   SECTION_GRADIENT_END_ID,
+  SECTION_GRADIENT_LABEL_DATA_ATTR,
   SECTION_GRADIENT_MOTION,
   SECTION_GRADIENT_SECTIONS,
 } from "./sceneConfig";
@@ -27,7 +28,7 @@ export default function SectionGradient() {
   const prefersReducedMotion = usePrefersReducedMotion();
 
   useGSAP(
-    () => {
+    (_context, contextSafe) => {
       const wrapper = wrapperRef.current;
       const artwork = artworkRef.current;
       const pullLayer = pullLayerRef.current;
@@ -36,7 +37,14 @@ export default function SectionGradient() {
         `[${SCROLL_ROOT_ATTR}]`,
       );
 
-      if (!wrapper || !artwork || !pullLayer || !labelLayer || !scrollRoot) {
+      if (
+        !wrapper ||
+        !artwork ||
+        !pullLayer ||
+        !labelLayer ||
+        !scrollRoot ||
+        !contextSafe
+      ) {
         return;
       }
 
@@ -67,6 +75,108 @@ export default function SectionGradient() {
 
       const labels = entries.map(({ label }) => label);
       const visibleLayers = [artwork, labelLayer];
+      const dynamicTransitions = new Map<
+        HTMLElement,
+        { incomingLabel: HTMLElement; timeline: gsap.core.Timeline }
+      >();
+      const finishDynamicTransition = (label: HTMLElement) => {
+        const transition = dynamicTransitions.get(label);
+
+        if (!transition) {
+          return;
+        }
+
+        transition.timeline.progress(1).kill();
+        transition.incomingLabel.remove();
+        dynamicTransitions.delete(label);
+      };
+      const syncDynamicLabel = contextSafe(
+        (entry: (typeof entries)[number], animate: boolean) => {
+          const dynamicLabel = entry.section.getAttribute(
+            SECTION_GRADIENT_LABEL_DATA_ATTR,
+          );
+
+          if (!dynamicLabel || dynamicLabel === entry.label.textContent) {
+            return;
+          }
+
+          finishDynamicTransition(entry.label);
+
+          if (!animate) {
+            entry.label.textContent = dynamicLabel;
+            return;
+          }
+
+          const incomingLabel = entry.label.cloneNode(true) as HTMLElement;
+          incomingLabel.removeAttribute(LABEL_DATA_ATTR);
+          incomingLabel.setAttribute("aria-hidden", "true");
+          incomingLabel.textContent = dynamicLabel;
+          labelLayer.appendChild(incomingLabel);
+
+          const { dynamicLabelDuration, labelTravelPercent } =
+            SECTION_GRADIENT_MOTION;
+          gsap.set(incomingLabel, {
+            autoAlpha: 0,
+            yPercent: labelTravelPercent,
+          });
+
+          const timeline = gsap
+            .timeline({
+              defaults: {
+                duration: dynamicLabelDuration,
+                ease: "none",
+              },
+            })
+            .to(
+              entry.label,
+              { autoAlpha: 0, yPercent: -labelTravelPercent },
+              0,
+            )
+            .to(incomingLabel, { autoAlpha: 1, yPercent: 0 }, 0)
+            .add(() => {
+              entry.label.textContent = dynamicLabel;
+            })
+            .set(entry.label, { autoAlpha: 1, yPercent: 0 })
+            .add(() => {
+              incomingLabel.remove();
+              dynamicTransitions.delete(entry.label);
+              // The .set above forced this label visible so the swap could
+              // finish on screen. Whether it *should* be visible is the
+              // resolver's call — a section can change its label while it is
+              // nowhere near the reading line.
+              updateLabels();
+            });
+
+          dynamicTransitions.set(entry.label, { incomingLabel, timeline });
+        },
+      );
+      const labelObserver = new MutationObserver((mutations) => {
+        mutations.forEach(({ target }) => {
+          const entry = entries.find(({ section }) => section === target);
+
+          if (entry) {
+            syncDynamicLabel(entry, !prefersReducedMotion);
+          }
+        });
+      });
+
+      entries.forEach((entry) => {
+        syncDynamicLabel(entry, false);
+        labelObserver.observe(entry.section, {
+          attributes: true,
+          attributeFilter: [SECTION_GRADIENT_LABEL_DATA_ATTR],
+        });
+      });
+
+      const cleanUpDynamicLabels = () => {
+        labelObserver.disconnect();
+        dynamicTransitions.forEach(({ incomingLabel, timeline }) => {
+          timeline.kill();
+          incomingLabel.remove();
+        });
+        dynamicTransitions.clear();
+      };
+
       gsap.set(labels, { autoAlpha: 0, yPercent: 0 });
       gsap.set(entries[0].label, { autoAlpha: 1 });
       gsap.set(visibleLayers, { autoAlpha: 0 });
@@ -109,48 +219,142 @@ export default function SectionGradient() {
         setArtworkVisibility(
           missionSection.getBoundingClientRect().top < window.innerHeight,
         );
-        return;
+        return cleanUpDynamicLabels;
       }
 
-      const { labelTravelPercent } = SECTION_GRADIENT_MOTION;
+      const { labelTravelPercent, labelSnapDelta } = SECTION_GRADIENT_MOTION;
 
-      entries.slice(1).forEach(({ section, label }, index) => {
-        const previousLabel = entries[index].label;
+      /**
+       * Labels are resolved from scroll position, not chained together.
+       *
+       * Each label used to be written by two independent scrubbed timelines —
+       * one fading it in as the incoming word, one fading it out as the
+       * outgoing one. That holds while scrolling, because the ranges are
+       * crossed one at a time and in page order. It breaks on a jump: a navbar
+       * anchor is an instant scroll, so it crosses every transition range in a
+       * single frame, all six timelines then ease toward their new progress at
+       * once (transitionScrub), and for that moment every word on the list is
+       * part-way through a crossfade and on screen together. Worse, once they
+       * settled the value of a shared label depended on which of its two
+       * timelines rendered last — and update order is not guaranteed to be the
+       * page order the chain assumed — so a word could stay lit on top of its
+       * successor until that boundary was scrolled through again.
+       *
+       * So the triggers no longer animate anything. Each reports progress, and
+       * one resolver derives every label's state from all of them together, the
+       * way PageBackground already resolves its layers. At most two labels can
+       * be non-zero because the resolver only ever assigns two, and a jump
+       * lands on the right answer directly instead of easing through six wrong
+       * ones on the way.
+       */
+      type LabelTransition = {
+        from: number;
+        to: number;
+        trigger: ScrollTrigger;
+      };
 
-        gsap
-          .timeline({
-            scrollTrigger: {
-              trigger: section,
-              start: SECTION_GRADIENT_MOTION.transitionStart,
-              end: SECTION_GRADIENT_MOTION.transitionEnd,
-              scrub: SECTION_GRADIENT_MOTION.transitionScrub,
-            },
-          })
-          .fromTo(
-            previousLabel,
-            { autoAlpha: 1, yPercent: 0 },
-            {
-              autoAlpha: 0,
-              yPercent: -labelTravelPercent,
-              duration: 1,
-              ease: "none",
-              immediateRender: false,
-            },
-            0,
-          )
-          .fromTo(
-            label,
-            { autoAlpha: 0, yPercent: labelTravelPercent },
-            {
-              autoAlpha: 1,
-              yPercent: 0,
-              duration: 1,
-              ease: "none",
-              immediateRender: false,
-            },
-            0,
-          );
+      /**
+       * Declared up front and filled in place: ScrollTrigger.create() refreshes
+       * synchronously, so the first trigger built calls updateLabels() before
+       * the last one exists. Reading a half-built list is fine — a transition
+       * yet to be created reports progress 0, which the resolver already
+       * handles — and the explicit call after the loop settles the real answer.
+       */
+      const transitions: LabelTransition[] = [];
+
+      const labelWriters = labels.map((label) => {
+        const easeOpacity = gsap.quickTo(label, "opacity", {
+          duration: SECTION_GRADIENT_MOTION.transitionScrub,
+          ease: "none",
+          onComplete: () => {
+            // Drop the layer once the word has actually finished leaving.
+            if (Number(gsap.getProperty(label, "opacity")) < 0.001) {
+              gsap.set(label, { visibility: "hidden" });
+            }
+          },
+        });
+        const easeTravel = gsap.quickTo(label, "yPercent", {
+          duration: SECTION_GRADIENT_MOTION.transitionScrub,
+          ease: "none",
+        });
+
+        return (alpha: number, travel: number) => {
+          if (alpha > 0) {
+            gsap.set(label, { visibility: "visible" });
+          }
+
+          const current = Number(gsap.getProperty(label, "opacity"));
+          if (Math.abs(alpha - current) >= labelSnapDelta) {
+            // One update moved this label across most of its range, so the
+            // scroll jumped rather than scrolled. Easing from here is exactly
+            // what puts several words on screen at once — land on the value.
+            gsap.set(label, {
+              opacity: alpha,
+              yPercent: travel,
+              visibility: alpha > 0 ? "visible" : "hidden",
+            });
+          }
+
+          easeOpacity(alpha);
+          easeTravel(travel);
+        };
       });
+
+      function updateLabels() {
+        // Walk in page order: the last transition that has begun owns the
+        // state. Everything before it has finished and everything after has not
+        // started, so only that one can be part-way through.
+        let activeIndex = 0;
+        let blendFrom = -1;
+        let blendProgress = 1;
+
+        for (const { from, to, trigger } of transitions) {
+          const { progress } = trigger;
+          if (progress > 0) {
+            activeIndex = to;
+            blendFrom = progress < 1 ? from : -1;
+            blendProgress = progress;
+          }
+        }
+
+        labels.forEach((label, index) => {
+          // A label mid text-swap drives itself for those few frames; that
+          // transition's tail calls back here once it lands.
+          if (dynamicTransitions.has(label)) {
+            return;
+          }
+
+          if (index === blendFrom) {
+            labelWriters[index](
+              1 - blendProgress,
+              -labelTravelPercent * blendProgress,
+            );
+          } else if (index === activeIndex) {
+            labelWriters[index](
+              blendFrom === -1 ? 1 : blendProgress,
+              blendFrom === -1 ? 0 : labelTravelPercent * (1 - blendProgress),
+            );
+          } else {
+            labelWriters[index](0, 0);
+          }
+        });
+      }
+
+      entries.slice(1).forEach(({ section }, index) => {
+        transitions.push({
+          from: index,
+          to: index + 1,
+          trigger: ScrollTrigger.create({
+            trigger: section,
+            start: SECTION_GRADIENT_MOTION.transitionStart,
+            end: SECTION_GRADIENT_MOTION.transitionEnd,
+            onUpdate: () => updateLabels(),
+            onRefresh: () => updateLabels(),
+          }),
+        });
+      });
+
+      updateLabels();
 
       gsap.fromTo(
         visibleLayers,
@@ -211,6 +415,8 @@ export default function SectionGradient() {
           },
         },
       );
+
+      return cleanUpDynamicLabels;
     },
     {
       dependencies: [prefersReducedMotion],
@@ -236,27 +442,19 @@ export default function SectionGradient() {
             willChange: prefersReducedMotion ? "auto" : "transform",
           }}
         >
+          {/* The artwork was 13 stacked radial gradients under a 30–44px blur
+              and a radial mask. Live, that is several compositor surfaces of
+              ~26MB each at DPR 2, held for the whole page — and none of it
+              animates, so it is baked to a static image instead (regenerate
+              with `node scripts/bake-section-gradient.mjs`). Heavily blurred
+              source carries no detail finer than the blur radius, so the 640px
+              bake stretches to full size with nothing visible lost. */}
           <div
-            className="absolute inset-0 scale-[1.04] blur-[clamp(20px,3vw,32px)]"
+            className="absolute inset-0 scale-[1.04] opacity-80"
             style={{
-              backgroundImage: [
-                "radial-gradient(ellipse 42% 27% at 39% 98%, rgba(255, 216, 48, 1) 0%, rgba(255, 176, 29, 0.82) 49%, transparent 95%)",
-                "radial-gradient(ellipse 43% 35% at 17% 88%, rgba(62, 111, 255, 0.84) 0%, rgba(108, 23, 254, 0.56) 48%, transparent 95%)",
-                "radial-gradient(ellipse 40% 36% at 14% 87%, rgba(255, 211, 47, 0.98) 0%, rgba(255, 154, 25, 0.82) 48%, transparent 94%)",
-                "radial-gradient(ellipse 44% 35% at 42% 97%, rgba(255, 119, 23, 0.96) 0%, rgba(255, 76, 31, 0.68) 52%, transparent 94%)",
-                "radial-gradient(ellipse 42% 45% at 30% 61%, rgba(255, 0, 78, 0.95) 0%, rgba(243, 22, 103, 0.7) 50%, transparent 95%)",
-                "radial-gradient(ellipse 40% 36% at 54% 73%, rgba(190, 0, 91, 0.9) 0%, rgba(243, 22, 103, 0.58) 52%, transparent 94%)",
-                "radial-gradient(ellipse 38% 33% at 73% 89%, rgba(243, 22, 103, 0.88) 0%, rgba(255, 63, 113, 0.5) 50%, transparent 94%)",
-                "radial-gradient(ellipse 47% 34% at 70% 62%, rgba(108, 23, 254, 0.82) 0%, rgba(74, 84, 255, 0.52) 53%, transparent 95%)",
-                "radial-gradient(ellipse 40% 31% at 87% 80%, rgba(67, 112, 255, 0.74) 0%, rgba(108, 23, 254, 0.32) 52%, transparent 94%)",
-                "radial-gradient(ellipse 34% 25% at 55% 57%, rgba(244, 244, 255, 0.54) 0%, rgba(150, 181, 255, 0.24) 50%, transparent 92%)",
-                "radial-gradient(ellipse 145% 50% at 34% 110%, rgba(255, 194, 35, 0.95) 0%, rgba(255, 119, 25, 0.82) 34%, rgba(243, 22, 103, 0.6) 59%, rgba(108, 23, 254, 0.22) 78%, transparent 96%)",
-                "radial-gradient(ellipse 106% 91% at 3% 108%, rgba(255, 122, 27, 0.9) 0%, rgba(243, 22, 103, 0.7) 40%, rgba(108, 23, 254, 0.4) 63%, transparent 86%)",
-              ].join(", "),
-              maskImage:
-                "radial-gradient(ellipse 88% 92% at 0% 100%, #000 0%, rgba(0, 0, 0, 0.96) 42%, rgba(0, 0, 0, 0.68) 62%, rgba(0, 0, 0, 0.18) 78%, transparent 92%)",
-              WebkitMaskImage:
-                "radial-gradient(ellipse 88% 92% at 0% 100%, #000 0%, rgba(0, 0, 0, 0.96) 42%, rgba(0, 0, 0, 0.68) 62%, rgba(0, 0, 0, 0.18) 78%, transparent 92%)",
+              backgroundImage: "url(/background/section-gradient.webp)",
+              backgroundSize: "100% 100%",
+              backgroundRepeat: "no-repeat",
             }}
           />
         </div>

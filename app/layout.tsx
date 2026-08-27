@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { Petrona } from "next/font/google";
 import Script from "next/script";
 import SiteCursor from "./components/cursor/SiteCursor";
 import "./globals.css";
@@ -9,13 +8,6 @@ const satoshi = localFont({
   src: "./fonts/Satoshi-Variable.woff2",
   variable: "--font-satoshi",
   weight: "300 900",
-});
-
-const petrona = Petrona({
-  subsets: ["latin"],
-  weight: "variable",
-  style: ["normal", "italic"],
-  variable: "--font-petrona",
 });
 
 export const metadata: Metadata = {
@@ -31,7 +23,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${satoshi.variable} ${petrona.variable} h-full antialiased`}
+      className={`${satoshi.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>

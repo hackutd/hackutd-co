@@ -52,7 +52,7 @@ export const MISSION_LAYOUT = {
  * whiting out and nothing of the statement is ever drawn over the comet.
  */
 export const MISSION_WORD_REVEAL = {
-  kicker: "Our mission · scroll to reveal",
+  kicker: null,
   restOpacity: 0.15,
   revealSpan: 0.92,
   wordWindow: 0.08,
