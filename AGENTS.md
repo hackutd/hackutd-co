@@ -22,6 +22,7 @@ Known pre-existing lint errors (not introduced by new work): `react-hooks/immuta
 - **Font**: Satoshi (local woff2 in `app/fonts/`, loaded via `next/font/local`, exposed as `--font-satoshi`)
 - **Design tokens**: brand palette and semantic colors defined as `@theme inline` in `app/globals.css` — not in a Tailwind config file
 - **Import alias**: `@/*` maps to project root
+- **Assets**: Images referenced from code live in `app/assets/<section>/` and are statically imported (`import art from "@/app/assets/hero/skyline.png"`), so `next/image` reads intrinsic dimensions from the file and a missing file fails the build. Never hand-write an image's width/height/aspect in code — derive it from the import (`art.width / art.height`); for CSS `url()` or SVG `<image href>` use `art.src`. `public/` is only for files that need a stable runtime URL: `models/*.glb` (Three.js loader), `Sponsorship-Packet.pdf` (shared link), and `officers/` headshots (referenced from `officer-teams.json`, which cannot import). Do not name asset files `icon.*`, `apple-icon.*`, `opengraph-image.*`, `twitter-image.*`, or `favicon.ico` inside `app/` — those are App Router metadata conventions.
 
 ## Key Patterns
 

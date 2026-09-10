@@ -1,3 +1,5 @@
+import directorsPhoto from "@/app/assets/mission/directors.jpg";
+
 export const missionContent = {
   statement:
     // A newline breaks the statement into its own spaced block, and *marked*
@@ -10,7 +12,7 @@ export const missionContent = {
       "We're the directors of HackUTD this year and are very excited for the next iteration of our event. Our team works hard all year round to make our events possible, and we can't wait to put on one more successful hackathon!",
     authors: "Veer Shah & Alan Roybal",
     photo: {
-      src: "/mission/directors.JPG",
+      src: directorsPhoto,
       alt: "Veer Shah and Alan Roybal, HackUTD 2026 co-directors",
     },
   },

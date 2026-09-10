@@ -7,6 +7,7 @@ import { useGSAP } from "@gsap/react";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { SCROLL_ROOT_ATTR } from "@/app/lib/scrollAnchor";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
+import sectionGradient from "@/app/assets/background/section-gradient.webp";
 import {
   SECTION_GRADIENT_DATA_ATTR,
   SECTION_GRADIENT_END_ID,
@@ -452,7 +453,7 @@ export default function SectionGradient() {
           <div
             className="absolute inset-0 scale-[1.04] opacity-80"
             style={{
-              backgroundImage: "url(/background/section-gradient.webp)",
+              backgroundImage: `url(${sectionGradient.src})`,
               backgroundSize: "100% 100%",
               backgroundRepeat: "no-repeat",
             }}

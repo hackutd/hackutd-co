@@ -1,4 +1,5 @@
-// NodeTooltip.tsx — Square officer card shown when a constellation node is hovered or tapped.
+// NodeTooltip.tsx — Polaroid-print officer card shown when a constellation node is hovered
+// or tapped: square photo up top, name/role/quote captioned below on white print stock.
 // Desktop cards chase the pointer like the Timeline recap card; touch layouts use a centered portal.
 
 "use client";
@@ -10,7 +11,7 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import type { OfficerMember } from "./constellationLayout";
-import { TEAM_TOOLTIP } from "./sceneConfig";
+import { TEAM_POLAROID, TEAM_TOOLTIP } from "./sceneConfig";
 
 gsap.registerPlugin(useGSAP);
 
@@ -130,7 +131,7 @@ export function NodeTooltip({
   const card = (
     <div
       ref={cardRef}
-      className={`z-50 border border-foreground/15 bg-background/95 p-3 text-left shadow-[0_24px_64px_rgba(0,0,0,0.55)] backdrop-blur-md ${
+      className={`z-50 text-left ${
         centered
           ? "relative visible pointer-events-auto opacity-100"
           : "invisible fixed left-0 top-0 pointer-events-none opacity-0"
@@ -141,38 +142,34 @@ export function NodeTooltip({
         willChange: centered ? "auto" : "transform, opacity",
       }}
     >
-      <div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-3">
-        {person.imageUrl ? (
-          <Image
-            src={person.imageUrl}
-            alt={person.name}
-            width={80}
-            height={80}
-            sizes="80px"
-            className="h-20 w-20 border border-foreground/10 object-cover"
-          />
-        ) : (
-          <div className="flex h-20 w-20 items-center justify-center border border-foreground/10 bg-foreground/6 text-base font-medium text-foreground/45">
-            {getInitials(person.name)}
-          </div>
-        )}
+      <div className={TEAM_POLAROID.print}>
+        <div className={TEAM_POLAROID.photo}>
+          {person.imageUrl ? (
+            <Image
+              src={person.imageUrl}
+              alt={person.name}
+              fill
+              sizes={`${TEAM_TOOLTIP.width}px`}
+              className="object-cover"
+            />
+          ) : (
+            <span className={TEAM_POLAROID.initials}>
+              {getInitials(person.name)}
+            </span>
+          )}
+        </div>
 
-        <div className="min-w-0">
-          <p className="text-lg font-semibold leading-tight text-foreground">
-            {person.name}
-          </p>
-          <p className="mt-1.5 text-[0.68rem] uppercase leading-relaxed tracking-[0.14em] text-foreground/48">
-            {person.role}
-          </p>
+        <div className={TEAM_POLAROID.caption}>
+          <p className={TEAM_POLAROID.name}>{person.name}</p>
+          <p className={TEAM_POLAROID.role}>{person.role}</p>
 
           {person.quote ? (
-            <p className="mt-2 border-l border-pink/55 pl-2.5 text-[0.78rem] italic leading-[1.35] text-foreground/68">
+            <p className={TEAM_POLAROID.quote}>
               &ldquo;{person.quote}&rdquo;
             </p>
           ) : null}
         </div>
       </div>
-
     </div>
   );
 

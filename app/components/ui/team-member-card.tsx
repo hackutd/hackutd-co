@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
-import Image from "next/image";
+import Image, { type ImageProps } from "next/image";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import { DIRECTORS_ENTER_REVEAL } from "@/app/components/mission/sceneConfig";
@@ -20,7 +20,7 @@ export interface TeamMemberCardProps {
   jobPosition?: string;
   firstName?: string;
   lastName?: string;
-  imageUrl?: string;
+  imageUrl: ImageProps["src"];
   imageAlt?: string;
   description?: string;
   className?: string;
@@ -36,7 +36,7 @@ export default function TeamMemberCard({
   jobPosition = "Backend Engineer",
   firstName = "Jennie",
   lastName = "Garcia",
-  imageUrl = "/mission/directors.JPG",
+  imageUrl,
   imageAlt,
   description =
     "Jennie is a skilled developer with expertise in modern web technologies and a passion for creating seamless user experiences.",

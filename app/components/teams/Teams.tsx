@@ -25,11 +25,13 @@ import {
   type ConstellationBox,
   TEAM_CLUSTER_BOX,
   TEAM_GRADIENT_LABEL_OVERRIDES,
+  TEAM_GROUP_PHOTO,
   TEAMS_COPY,
   TEAMS_LAYOUT,
   TEAMS_SCROLL,
 } from "./sceneConfig";
 import { TeamConstellation, type ActiveNodeState } from "./TeamConstellation";
+import { TeamGroupPhoto } from "./TeamGroupPhoto";
 
 function areBoxesEqual(left: ConstellationBox, right: ConstellationBox) {
   return (
@@ -450,6 +452,14 @@ export default function Teams() {
                 {TEAMS_COPY.heading[1]}
               </span>
             </h2>
+
+            <TeamGroupPhoto
+              teams={ORDERED_OFFICER_TEAMS}
+              activeIndex={displayedTeamIndex}
+              sizes={TEAM_GROUP_PHOTO.mobileSizes}
+              animate={false}
+              className={TEAM_GROUP_PHOTO.mobileWrapper}
+            />
             <div
               ref={mobileTrackRef}
               className="mt-10 flex overflow-x-auto pb-6"
@@ -496,6 +506,13 @@ export default function Teams() {
                   {TEAMS_COPY.heading[1]}
                 </span>
               </h2>
+
+              <TeamGroupPhoto
+                teams={ORDERED_OFFICER_TEAMS}
+                activeIndex={displayedTeamIndex}
+                sizes={TEAM_GROUP_PHOTO.mobileSizes}
+                className={TEAM_GROUP_PHOTO.mobileWrapper}
+              />
             </div>
 
             {/* Bottom constellation zone: takes all remaining space */}
@@ -562,6 +579,13 @@ export default function Teams() {
                 key={layout.team.id}
                 className="rounded-[28px] border border-foreground/10 bg-foreground/[0.03] p-6"
               >
+                <TeamGroupPhoto
+                  teams={[layout.team]}
+                  activeIndex={0}
+                  sizes={TEAM_GROUP_PHOTO.gridSizes}
+                  animate={false}
+                  className="mb-6 aspect-[3/2] w-full"
+                />
                 <TeamConstellation
                   layout={layout}
                   box={desktopBox}
@@ -597,6 +621,13 @@ export default function Teams() {
                 {TEAMS_COPY.heading[1]}
               </span>
             </h2>
+
+            <TeamGroupPhoto
+              teams={ORDERED_OFFICER_TEAMS}
+              activeIndex={displayedTeamIndex}
+              sizes={TEAM_GROUP_PHOTO.desktopSizes}
+              className={TEAM_GROUP_PHOTO.desktopWrapper}
+            />
           </div>
 
           <div

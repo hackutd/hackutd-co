@@ -12,8 +12,8 @@
 //
 //   node scripts/bake-section-gradient.mjs
 //
-// Writes public/background/section-gradient.png (+ .webp when cwebp exists)
-// and a side-by-side comparison at the path printed on exit.
+// Writes app/assets/background/section-gradient.webp (SectionGradient.tsx
+// imports it statically) and a full-quality PNG intermediate in the temp dir.
 
 import fs from "node:fs";
 import zlib from "node:zlib";
@@ -295,21 +295,21 @@ for (let i = 0; i < n; i += 4) {
   rgba[i + 3] = Math.round(Math.min(255, Math.max(0, a * 255)));
 }
 
-fs.mkdirSync("public/background", { recursive: true });
+const OUT_DIR = "app/assets/background";
+fs.mkdirSync(OUT_DIR, { recursive: true });
 
-// Only the WebP ships. Everything under public/ is copied into the deploy, so
-// the PNG stays in a temp dir as an intermediate for cwebp (and a handy
-// full-quality reference when tuning the artwork).
+// Only the WebP ships. The PNG stays in a temp dir as an intermediate for cwebp
+// (and a handy full-quality reference when tuning the artwork).
 const pngPath = path.join(os.tmpdir(), "section-gradient.png");
 fs.writeFileSync(pngPath, encodePng(rgba, OUT_W, OUT_H));
 console.log(`intermediate  ${pngPath}  ${OUT_W}x${OUT_H}  ${(fs.statSync(pngPath).size / 1024).toFixed(0)} KB  (sigma ${sigma.toFixed(1)}px)`);
 
-const webpPath = "public/background/section-gradient.webp";
+const webpPath = path.join(OUT_DIR, "section-gradient.webp");
 try {
   execFileSync("cwebp", ["-q", "90", "-alpha_q", "100", pngPath, "-o", webpPath], { stdio: "pipe" });
   console.log(`shipped       ${webpPath}  ${(fs.statSync(webpPath).size / 1024).toFixed(0)} KB`);
 } catch {
-  fs.copyFileSync(pngPath, "public/background/section-gradient.png");
+  fs.copyFileSync(pngPath, path.join(OUT_DIR, "section-gradient.png"));
   console.error("cwebp not found — wrote a PNG instead; point the component at it or install cwebp");
   process.exit(1);
 }

@@ -80,8 +80,6 @@ export default function Projects() {
                 href={project.link}
                 imageSrc={project.image}
                 imageAlt={`${project.name} logo`}
-                imageWidth={project.imageWidth}
-                imageHeight={project.imageHeight}
                 imageClassName={art.imageClassName}
                 imageTreatmentClassName={art.imageTreatmentClassName}
                 accent={art.accent}

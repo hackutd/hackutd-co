@@ -1,13 +1,15 @@
+import type { StaticImageData } from "next/image";
+import harp from "@/app/assets/projects/harp.png";
+import jury from "@/app/assets/projects/jury.png";
+import hackutdLogo from "@/app/assets/brand/logo.svg";
+
 export type Project = {
   name: string;
   label: string;
   description: string;
   link: string;
-  /** Path under public/ */
-  image: string;
-  /** Intrinsic pixel dimensions of the asset, so next/image can reserve the right aspect ratio */
-  imageWidth: number;
-  imageHeight: number;
+  /** Statically imported so next/image gets the intrinsic size from the file */
+  image: StaticImageData;
 };
 
 export const projects: Project[] = [
@@ -16,27 +18,21 @@ export const projects: Project[] = [
     label: "Applications",
     description: "Hacker Applications & Review Platform.",
     link: "https://github.com/hackutd/harp",
-    image: "/projects/harp.png",
-    imageWidth: 512,
-    imageHeight: 512,
+    image: harp,
   },
   {
     name: "Jury",
     label: "Judging",
     description: "A modern hackathon judging platform.",
     link: "https://github.com/hackutd/jury",
-    image: "/projects/jury.png",
-    imageWidth: 311,
-    imageHeight: 324,
+    image: jury,
   },
   {
     name: "HackUTD Docs",
     label: "Open Source",
     description: "Centralized documentation for all of our open-source software.",
     link: "https://docs.hackutd.co",
-    image: "/brand/logo.svg",
-    imageWidth: 2000,
-    imageHeight: 2000,
+    image: hackutdLogo,
   },
   {
     name: "HackUTD Guide",
@@ -44,8 +40,6 @@ export const projects: Project[] = [
     description:
       "Find guides, resources, and everything you need to know about a hackathon in one place.",
     link: "https://guide.hackutd.co",
-    image: "/brand/logo.svg",
-    imageWidth: 2000,
-    imageHeight: 2000,
+    image: hackutdLogo,
   },
 ];

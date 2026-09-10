@@ -9,6 +9,8 @@ import {
 } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import whiteLogo from "@/app/assets/brand/white-hackutd-logo.svg";
+import blackLogo from "@/app/assets/brand/black-hackutd-logo.svg";
 import FlowButton from "../ui/FlowButton";
 import useNavbarTheme from "./useNavbarTheme";
 import ThemeToggle from "./ThemeToggle";
@@ -179,20 +181,16 @@ export default function Navbar() {
       <Link href="/" onClick={scrollToTop} className="flex items-center">
         <span className="relative block h-6 w-33.5 md:h-8 md:w-44.5">
           <Image
-            src="/brand/white-hackutd-logo.svg"
+            src={whiteLogo}
             alt="HackUTD"
-            width={2048}
-            height={585}
             className={`absolute inset-0 h-6 w-auto md:h-8 ${opacityTransition} ${
               isLightBackground ? "opacity-0" : "opacity-100"
             }`}
             priority
           />
           <Image
-            src="/brand/black-hackutd-logo.svg"
+            src={blackLogo}
             alt="HackUTD"
-            width={2048}
-            height={585}
             className={`absolute inset-0 h-6 w-auto md:h-8 ${opacityTransition} ${
               isLightBackground ? "opacity-100" : "opacity-0"
             }`}

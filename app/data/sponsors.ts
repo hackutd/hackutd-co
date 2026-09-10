@@ -1,51 +1,56 @@
-// raster imports - moved to public folder
-const utd_department_cs = "/sponsors/utd_department_cs.png";
-const toyota = "/sponsors/toyota.png";
-const eog = "/sponsors/eog.png";
-const sg = "/sponsors/sg.png";
-const cbre = "/sponsors/CBRE.png";
-const rc = "/sponsors/rc.png";
-const axxess = "/sponsors/axxess.png";
-const cognizant = "/sponsors/cognizant.png";
-const scale = "/sponsors/scale.png";
+import type { StaticImageData } from "next/image";
 
-const nmc2 = "/sponsors/nmc2_dark.webp";
-// SVG imports
-// for further context, the reason these are in separate locations is because I didn't want to work on configuring
-// an SVG loader for webpack for the default import; this could be a potential future improvement
-const SVG_LOC = "/sponsors/svg";
-const nvidia = `${SVG_LOC}/nvidia_dark.svg`;
-const google = `${SVG_LOC}/google.svg`;
-const statefarm = `${SVG_LOC}/statefarm.svg`;
-const mlh = `${SVG_LOC}/mlh.svg`;
-const capital_one = `${SVG_LOC}/capital_one.svg`;
-const goldman_sachs = `${SVG_LOC}/goldman_sachs.svg`;
-const facebook = `${SVG_LOC}/facebook.svg`;
-const jpmorgan = `${SVG_LOC}/jpmorgan_chase.svg`;
-const sticker_mule = `${SVG_LOC}/sticker_mule.svg`;
-const standout_stickers = `${SVG_LOC}/standout_stickers.svg`;
-const ti = `${SVG_LOC}/ti.svg`;
-const l3 = `${SVG_LOC}/l3.svg`;
-const veolia = `${SVG_LOC}/veolia.png`;
-const CoreLogic = `${SVG_LOC}/CoreLogic.png`;
-const FannieMae = `${SVG_LOC}/FannieMae_dark.svg`;
-const Fidelity = `${SVG_LOC}/Fidelity_dark.svg`;
-const Frontier = `${SVG_LOC}/Frontier.png`;
-const Geico = `${SVG_LOC}/Geico.png`;
-const Incogni = `${SVG_LOC}/Incogni_dark.png`;
-const MME = `${SVG_LOC}/MME.jpeg`;
-const NordPass = `${SVG_LOC}/NordPass_dark.png`;
-const NordVPN = `${SVG_LOC}/NordVPN_dark.svg`;
-const PRHI = `${SVG_LOC}/PRHI.png`;
-const PNC = `${SVG_LOC}/PNC.png`;
-const benq = `${SVG_LOC}/benq.png`;
-const SNAP_AR = `${SVG_LOC}/SnapAR.png`;
-const SNAP_GHOST = `${SVG_LOC}/SnapGhost_dark.svg`;
-const INFOSYS = `${SVG_LOC}/Infosys.png`;
-const PINATA = `${SVG_LOC}/pinata.png`;
-const tmobile = `${SVG_LOC}/tmobile.svg`;
+// Static imports so next/image reads each logo's intrinsic size from the file
+// at build time; a missing or renamed file fails the build instead of 404ing.
+import utd_department_cs from "@/app/assets/sponsors/utd_department_cs.png";
+import toyota from "@/app/assets/sponsors/toyota.png";
+import eog from "@/app/assets/sponsors/eog.png";
+import sg from "@/app/assets/sponsors/sg.png";
+import cbre from "@/app/assets/sponsors/CBRE.png";
+import rc from "@/app/assets/sponsors/rc.png";
+import axxess from "@/app/assets/sponsors/axxess.png";
+import cognizant from "@/app/assets/sponsors/cognizant.png";
+import scale from "@/app/assets/sponsors/scale.png";
+import nmc2 from "@/app/assets/sponsors/nmc2_dark.webp";
+import nvidia from "@/app/assets/sponsors/nvidia_dark.svg";
+import google from "@/app/assets/sponsors/google.svg";
+import statefarm from "@/app/assets/sponsors/statefarm.svg";
+import mlh from "@/app/assets/sponsors/mlh.svg";
+import capital_one from "@/app/assets/sponsors/capital_one.svg";
+import goldman_sachs from "@/app/assets/sponsors/goldman_sachs.svg";
+import facebook from "@/app/assets/sponsors/facebook.svg";
+import jpmorgan from "@/app/assets/sponsors/jpmorgan_chase.svg";
+import sticker_mule from "@/app/assets/sponsors/sticker_mule.svg";
+import standout_stickers from "@/app/assets/sponsors/standout_stickers.svg";
+import ti from "@/app/assets/sponsors/ti.svg";
+import l3 from "@/app/assets/sponsors/l3.svg";
+import veolia from "@/app/assets/sponsors/veolia.png";
+import CoreLogic from "@/app/assets/sponsors/CoreLogic.png";
+import FannieMae from "@/app/assets/sponsors/FannieMae_dark.svg";
+import Fidelity from "@/app/assets/sponsors/Fidelity_dark.svg";
+import Frontier from "@/app/assets/sponsors/Frontier.png";
+import Geico from "@/app/assets/sponsors/Geico.png";
+import Incogni from "@/app/assets/sponsors/Incogni_dark.png";
+import MME from "@/app/assets/sponsors/MME.jpeg";
+import NordPass from "@/app/assets/sponsors/NordPass_dark.png";
+import NordVPN from "@/app/assets/sponsors/NordVPN_dark.svg";
+import PRHI from "@/app/assets/sponsors/PRHI.png";
+import PNC from "@/app/assets/sponsors/PNC.png";
+import benq from "@/app/assets/sponsors/benq.png";
+import SNAP_AR from "@/app/assets/sponsors/SnapAR.png";
+import SNAP_GHOST from "@/app/assets/sponsors/SnapGhost_dark.svg";
+import INFOSYS from "@/app/assets/sponsors/Infosys.png";
+import PINATA from "@/app/assets/sponsors/pinata.png";
+import tmobile from "@/app/assets/sponsors/tmobile.svg";
 
-const SPONSORS_MAP = {
+export type Sponsor = {
+  name: string;
+  img: StaticImageData;
+  link: string;
+  needs_white_bg?: boolean;
+};
+
+const SPONSORS_MAP: Record<string, Sponsor> = {
   // Ordered by brand recognition — headline sponsors first, community/partner logos last.
   GOOGLE: {
     name: "Google",
@@ -254,62 +259,6 @@ const SPONSORS_MAP = {
 };
 
 /**
- * Intrinsic pixel dimensions of every logo file, so the sponsor grids can render
- * through next/image instead of a raw <img>. Without a real aspect ratio the
- * grid either distorts the logo or downloads a 4K variant for a 48px-tall slot.
- *
- * Read straight off the files' own headers (PNG IHDR, JPEG SOF, WebP VP8L, and
- * the SVG width/height or viewBox). Regenerate after adding or replacing a logo:
- *
- *   node scripts/sponsor-logo-dimensions.mjs
- */
-const LOGO_DIMENSIONS: Record<string, { width: number; height: number }> = {
-  "/sponsors/axxess.png": { width: 1200, height: 545 },
-  "/sponsors/CBRE.png": { width: 1200, height: 422 },
-  "/sponsors/cognizant.png": { width: 168, height: 50 },
-  "/sponsors/eog.png": { width: 1200, height: 536 },
-  "/sponsors/nmc2_dark.webp": { width: 1080, height: 1080 },
-  "/sponsors/rc.png": { width: 501, height: 109 },
-  "/sponsors/scale.png": { width: 187, height: 60 },
-  "/sponsors/sg.png": { width: 300, height: 300 },
-  "/sponsors/svg/benq.png": { width: 606, height: 332 },
-  "/sponsors/svg/capital_one.svg": { width: 363, height: 130 },
-  "/sponsors/svg/CoreLogic.png": { width: 1600, height: 279 },
-  "/sponsors/svg/facebook.svg": { width: 431, height: 83 },
-  "/sponsors/svg/FannieMae_dark.svg": { width: 812, height: 159 },
-  "/sponsors/svg/Fidelity_dark.svg": { width: 2500, height: 549 },
-  "/sponsors/svg/Frontier.png": { width: 1029, height: 1200 },
-  "/sponsors/svg/Geico.png": { width: 1629, height: 640 },
-  "/sponsors/svg/goldman_sachs.svg": { width: 169, height: 169 },
-  "/sponsors/svg/google.svg": { width: 379, height: 128 },
-  "/sponsors/svg/Incogni_dark.png": { width: 925, height: 426 },
-  "/sponsors/svg/Infosys.png": { width: 1080, height: 1080 },
-  "/sponsors/svg/jpmorgan_chase.svg": { width: 805, height: 101 },
-  "/sponsors/svg/l3.svg": { width: 168, height: 36 },
-  "/sponsors/svg/mlh.svg": { width: 284, height: 119 },
-  "/sponsors/svg/MME.jpeg": { width: 302, height: 165 },
-  "/sponsors/svg/NordPass_dark.png": { width: 2000, height: 425 },
-  "/sponsors/svg/NordVPN_dark.svg": { width: 142, height: 32 },
-  "/sponsors/svg/nvidia_dark.svg": { width: 1701, height: 324 },
-  "/sponsors/svg/pinata.png": { width: 581, height: 851 },
-  "/sponsors/svg/PNC.png": { width: 650, height: 200 },
-  "/sponsors/svg/PRHI.png": { width: 1600, height: 823 },
-  "/sponsors/svg/SnapAR.png": { width: 564, height: 138 },
-  "/sponsors/svg/SnapGhost_dark.svg": { width: 800, height: 800 },
-  "/sponsors/svg/standout_stickers.svg": { width: 600, height: 600 },
-  "/sponsors/svg/statefarm.svg": { width: 657, height: 91 },
-  "/sponsors/svg/sticker_mule.svg": { width: 512, height: 71 },
-  "/sponsors/svg/ti.svg": { width: 744, height: 275 },
-  "/sponsors/svg/tmobile.svg": { width: 130, height: 130 },
-  "/sponsors/svg/veolia.png": { width: 1280, height: 320 },
-  "/sponsors/toyota.png": { width: 471, height: 117 },
-  "/sponsors/utd_department_cs.png": { width: 1374, height: 428 },
-};
-
-/** Nominal 2:1 for a logo added without a regenerated dimension entry. */
-const FALLBACK_LOGO_DIMENSIONS = { width: 240, height: 120 };
-
-/**
  * Exported as an array for components like the 3D globe that need to iterate over all sponsors.
  * Maps internal 'img' and 'link' to 'logo' and 'url' to match component expectations.
  */
@@ -317,7 +266,6 @@ export const SPONSORS = Object.values(SPONSORS_MAP).map((s) => ({
   ...s,
   logo: s.img,
   url: s.link,
-  ...(LOGO_DIMENSIONS[s.img] ?? FALLBACK_LOGO_DIMENSIONS),
 }));
 
 // Keep the map as the default export for potential key-based lookups

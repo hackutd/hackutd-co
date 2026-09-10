@@ -174,39 +174,24 @@ html[data-site-cursor] * {
   }
 }
 
-@keyframes constellation-lead-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-    box-shadow:
-      0 0 0 4px rgba(243, 22, 103, 0.16),
-      0 0 16px rgba(243, 22, 103, 0.42);
-  }
-
-  50% {
-    transform: scale(1.12);
-    box-shadow:
-      0 0 0 8px rgba(243, 22, 103, 0.08),
-      0 0 30px rgba(243, 22, 103, 0.68);
-  }
-}
-
 .site-star {
   box-shadow: 0 0 8px rgba(255, 162, 31, 0.45);
   transform-origin: center;
   animation: site-star-twinkle 4s ease-in-out infinite;
 }
 
+/* Team leads sit still and glow: a tight pink ring fading out through a wider
+   purple bloom. No animation, so the node's hover scale is free to take over. */
 .constellation-lead {
-  animation: constellation-lead-pulse 4.8s ease-in-out infinite;
+  box-shadow:
+    0 0 0 5px rgba(243, 22, 103, 0.14),
+    0 0 18px rgba(243, 22, 103, 0.55),
+    0 0 34px rgba(243, 22, 103, 0.28),
+    0 0 54px rgba(108, 23, 254, 0.45);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .site-star {
-    animation: none;
-  }
-
-  .constellation-lead {
     animation: none;
   }
 }

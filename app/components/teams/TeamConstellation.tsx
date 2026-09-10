@@ -129,10 +129,12 @@ export function TeamConstellation({
             top: `${node.renderY}px`,
             zIndex: isActive ? 30 : node.isLead ? 12 : 8,
           };
+          // No inline box-shadow: the lead glow lives on .constellation-lead in
+          // globals.css, and an inline value would outrank it now that the pulse
+          // animation (which used to win the cascade) is gone.
           const nodeButtonStyle: CSSProperties = {
             width: node.isLead ? `${box.leadNodeSize}px` : `${box.nodeSize}px`,
             height: node.isLead ? `${box.leadNodeSize}px` : `${box.nodeSize}px`,
-            boxShadow: node.isLead ? "0 0 0 8px rgba(243, 22, 103, 0.08)" : "none",
           };
           const nodeLabelStyle: CSSProperties = {
             fontSize: node.isLead

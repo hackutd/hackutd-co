@@ -1,17 +1,10 @@
 [
   {
     "id": "marketing",
+    "groupPhotoUrl": "/officers/team/marketing.webp",
     "label": "Marketing",
     "order": 0,
     "templateId": "cetus",
-    "lead": {
-      "id": "marketing-lead",
-      "name": "Dhivyesh Prithiviraj",
-      "role": "Marketing Lead",
-      "linkedinUrl": "https://www.linkedin.com/in/dhivyeshprithiviraj/",
-      "quote": "The most valuable asset you can never own is time. - Mark Cuban",
-      "imageUrl": "/officers/marketing/DHIVYESH_PRITHIVIRAJ.webp"
-    },
     "members": [
       {
         "id": "marketing-1",
@@ -70,22 +63,6 @@
         "imageUrl": "/officers/marketing/SHILOH_ASIR.webp"
       },
       {
-        "id": "marketing-8",
-        "name": "Ann Jayan",
-        "role": "Marketing Coordinator",
-        "linkedinUrl": "https://www.linkedin.com/in/ann-jayan/",
-        "quote": "So you're telling me a fork bombed this server?",
-        "imageUrl": "/officers/marketing/ANN_JAYAN.webp"
-      },
-      {
-        "id": "marketing-9",
-        "name": "Santiago Islas",
-        "role": "Marketing Coordinator",
-        "linkedinUrl": "",
-        "quote": "Coming soon.",
-        "imageUrl": "/officers/marketing/SANTIAGO_.webp"
-      },
-      {
         "id": "marketing-10",
         "name": "Andrea Alvidres",
         "role": "Marketing Coordinator",
@@ -97,6 +74,7 @@
   },
   {
     "id": "tech",
+    "groupPhotoUrl": "/officers/team/tech.webp",
     "label": "Tech",
     "order": 1,
     "templateId": "orion",
@@ -105,7 +83,7 @@
       "name": "Caleb Bae",
       "role": "Tech Lead",
       "linkedinUrl": "https://www.linkedin.com/in/baecal000/",
-      "quote": "Coming soon.",
+      "quote": "Apply to HackUTD 2026!",
       "imageUrl": "/officers/technology/CALEB_BAE.webp"
     },
     "members": [
@@ -142,14 +120,6 @@
         "imageUrl": "/officers/technology/JAGADEEP_KALLURI.webp"
       },
       {
-        "id": "tech-5",
-        "name": "Tharun Sevvel",
-        "role": "Tech Coordinator",
-        "linkedinUrl": "https://www.linkedin.com/in/tharun-sevvel-b15769263/",
-        "quote": "I've loved being on the HackUTD tech team so far! I've learned so much from like minded peers and I can't wait to keep growing",
-        "imageUrl": "/officers/technology/THARUN_SEVVEL.webp"
-      },
-      {
         "id": "tech-6",
         "name": "Jordan Joelson",
         "role": "Tech Coordinator",
@@ -177,6 +147,7 @@
   },
   {
     "id": "industry",
+    "groupPhotoUrl": "/officers/team/industry.webp",
     "label": "Industry",
     "order": 2,
     "templateId": "perseus",
@@ -241,6 +212,7 @@
   },
   {
     "id": "experience",
+    "groupPhotoUrl": "/officers/team/experience.webp",
     "label": "Experience",
     "order": 3,
     "templateId": "bootes",
@@ -286,14 +258,6 @@
         "imageUrl": "/officers/experience/SWAYAM_ARORA.webp"
       },
       {
-        "id": "experience-5",
-        "name": "Tien Phan",
-        "role": "Experience Coordinator",
-        "linkedinUrl": "https://www.linkedin.com/in/tien-duc-phan/",
-        "quote": "Faith in one self is what made up confidence",
-        "imageUrl": "/officers/experience/TIEN_PHAN.webp"
-      },
-      {
         "id": "experience-6",
         "name": "Soniya Jacob",
         "role": "Experience Coordinator",
@@ -313,6 +277,7 @@
   },
   {
     "id": "logistics",
+    "groupPhotoUrl": "/officers/team/logistics.webp",
     "label": "Logistics",
     "order": 4,
     "templateId": "castor",
@@ -332,14 +297,6 @@
         "linkedinUrl": "https://www.linkedin.com/in/joel-philipose",
         "quote": "So blessed it would be greedy if I sneezed",
         "imageUrl": "/officers/logistics/JOEL_PHILLIPOSE.webp"
-      },
-      {
-        "id": "logistics-2",
-        "name": "Nirmal Shah",
-        "role": "Logistics Coordinator",
-        "linkedinUrl": "https://www.linkedin.com/in/nirmal-shah1",
-        "quote": "The unexamined life is not worth living -Socrates",
-        "imageUrl": "/officers/logistics/NIRMAL_SHAH.webp"
       },
       {
         "id": "logistics-3",
@@ -369,6 +326,7 @@
   },
   {
     "id": "finance",
+    "groupPhotoUrl": "/officers/team/finance.webp",
     "label": "Finance",
     "order": 5,
     "lead": {

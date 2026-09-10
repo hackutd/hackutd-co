@@ -22,7 +22,7 @@ export type OfficerTeam = {
   order: number;
   templateId?: string;
   groupPhotoUrl?: string;
-  lead: OfficerMember;
+  lead?: OfficerMember;
   members: OfficerMember[];
 };
 
@@ -165,7 +165,7 @@ export function resolveConstellationLayout(
   padding: number,
   verticalBias = 0,
 ): ResolvedConstellationLayout {
-  const people = [team.lead, ...team.members];
+  const people = team.lead ? [team.lead, ...team.members] : team.members;
   const template = pickTemplate(team.id, people.length, team.templateId);
   const assignmentOrder = getAssignmentOrder(template);
   const selectedNodeIds = assignmentOrder.slice(
@@ -181,7 +181,7 @@ export function resolveConstellationLayout(
         people[
           selectedNodeIds.findIndex((selectedNodeId) => selectedNodeId === node.id)
         ],
-      isLead: node.id === template.leadNodeId,
+      isLead: Boolean(team.lead) && node.id === template.leadNodeId,
       isOverflow: false,
     }));
   const resolvedEdges: ConstellationEdge[] = template.edges.filter(

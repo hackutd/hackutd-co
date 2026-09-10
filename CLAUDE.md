@@ -14,6 +14,10 @@ HackUTD organization website — a single-page Next.js 16 App Router site for th
 
 No test runner is configured.
 
+## Verification
+
+Do not run the dev server, start the site, curl pages, or otherwise test changes — the user runs and tests the site themselves. Make the code changes and hand them off. Only run `npm run build` / `npm run lint` when the user explicitly asks for it.
+
 ## Architecture
 
 - **Stack**: Next.js 16, React 19, TypeScript (strict), Tailwind CSS v4, GSAP for animations
@@ -22,6 +26,7 @@ No test runner is configured.
 - **Import alias**: `@/*` maps to project root
 - **Static data**: Content for sections lives in `app/data/` (teams, events, sponsors, projects, mission)
 - **Shared hooks**: `app/hooks/useIsMobile.ts` and `app/hooks/usePrefersReducedMotion.ts`
+- **Assets**: Images referenced from code live in `app/assets/<section>/` and are statically imported (`import art from "@/app/assets/hero/skyline.png"`), so `next/image` reads intrinsic dimensions from the file and a missing file fails the build. Never hand-write an image's width/height/aspect in code — derive it from the import (`art.width / art.height`); for CSS `url()` or SVG `<image href>` use `art.src`. `public/` is only for files that need a stable runtime URL: `models/*.glb` (Three.js loader), `Sponsorship-Packet.pdf` (shared link), and `officers/` headshots (referenced from `officer-teams.json`, which cannot import). Do not name asset files `icon.*`, `apple-icon.*`, `opengraph-image.*`, `twitter-image.*`, or `favicon.ico` inside `app/` — those are App Router metadata conventions.
 
 ## Key Patterns
 

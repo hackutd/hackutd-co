@@ -1,4 +1,10 @@
 import type { CSSProperties } from "react";
+import type { StaticImageData } from "next/image";
+import skylineArt from "@/app/assets/hero/skyline.png";
+import airplaneArt from "@/app/assets/hero/dallas_airplane_transparent.png";
+import cloudLeftArt from "@/app/assets/hero/dallas_cloud_left_transparent.png";
+import cloudRightArt from "@/app/assets/hero/dallas_cloud_right_transparent.png";
+import balloonArt from "@/app/assets/hero/dallas_hot_air_balloon_transparent.png";
 
 export const HERO_SCENE_SCROLL = {
   start: "top top",
@@ -99,7 +105,7 @@ export const HERO_SKYLINE = {
  * viewport edges while staying registered with the animated sky elements. The
  * `-webkit-` pairs are kept for older Safari, matching the masked navbar seam.
  */
-const SKYLINE_ART = "url(/hero/skyline.png)";
+const SKYLINE_ART = `url(${skylineArt.src})`;
 
 /** SVG morphology filter used to delicately erode the rendered line weight. */
 export const HERO_SKYLINE_STROKE_FILTER = {
@@ -123,9 +129,11 @@ export type HeroSkyMotion = "drift-left" | "drift-right" | "cross" | "rise";
 
 export type HeroSkyElement = {
   id: string;
-  art: string;
-  /** Intrinsic width ÷ height of the trimmed artwork. */
-  aspect: number;
+  /**
+   * Trimmed artwork. Its intrinsic width ÷ height sets each element's box, so
+   * swapping the file re-proportions the element with no numbers to update.
+   */
+  art: StaticImageData;
   /** Center of the element, as a fraction of the skyline band's box. */
   fx: number;
   fy: number;
@@ -140,15 +148,9 @@ export type HeroSkyElement = {
   className?: string;
 };
 
-const CLOUD_LEFT = {
-  art: "/hero/dallas_cloud_left_transparent.png",
-  aspect: 3.4861,
-} as const;
+const CLOUD_LEFT = { art: cloudLeftArt } as const;
 
-const CLOUD_RIGHT = {
-  art: "/hero/dallas_cloud_right_transparent.png",
-  aspect: 4.1379,
-} as const;
+const CLOUD_RIGHT = { art: cloudRightArt } as const;
 
 /**
  * `fx`/`fy` are the element's center as a fraction of the skyline band. The
@@ -170,8 +172,7 @@ export const HERO_CLOUD_SCALE = 0.85;
 export const HERO_SKY_ELEMENTS: HeroSkyElement[] = [
   {
     id: "plane",
-    art: "/hero/dallas_airplane_transparent.png",
-    aspect: 3.2821,
+    art: airplaneArt,
     fx: 0.16,
     fy: 0.09,
     width: 0.285,
@@ -237,8 +238,7 @@ export const HERO_SKY_ELEMENTS: HeroSkyElement[] = [
   },
   {
     id: "balloon",
-    art: "/hero/dallas_hot_air_balloon_transparent.png",
-    aspect: 0.7143,
+    art: balloonArt,
     fx: 0.82,
     fy: -0.05,
     width: 0.13,
@@ -282,14 +282,15 @@ export const HERO_SKY_MOTION = {
  * band's `cover`.
  */
 export function heroSkyElementStyle(element: HeroSkyElement): CSSProperties {
-  const art = `url(${element.art})`;
+  const art = `url(${element.art.src})`;
+  const aspect = element.art.width / element.art.height;
   const band = `var(${HERO_SKYLINE.heightVar})`;
   const halfWidth = element.width / 2;
-  const rise = element.width / element.aspect / 2 + HERO_SKY_LIFT;
+  const rise = element.width / aspect / 2 + HERO_SKY_LIFT;
 
   return {
     width: `calc(${band} * ${element.width})`,
-    aspectRatio: `${element.aspect}`,
+    aspectRatio: `${aspect}`,
     left: `calc(${(element.fx * 100).toFixed(2)}% - ${band} * ${halfWidth})`,
     top: `calc(${(element.fy * 100).toFixed(2)}% - ${band} * ${rise.toFixed(5)} - ${element.verticalLift ?? "0px"})`,
     maskImage: art,

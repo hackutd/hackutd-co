@@ -568,7 +568,7 @@ export default function RocketTrailAnimation() {
                 flat glyph — so --logo-invert does not apply to it: inverting
                 would turn the fur black. Rendered as drawn, white in every theme. */}
             <image
-              href={ROCKET_ART.src}
+              href={ROCKET_ART.art.src}
               x={ROCKET_ART.x}
               y={ROCKET_ART.y}
               width={ROCKET_ART.width}
@@ -608,7 +608,7 @@ export default function RocketTrailAnimation() {
                     style={{ pointerEvents: "all" }}
                   />
                   <image
-                    href={marker.image}
+                    href={marker.image.src}
                     x={-imageWidth / 2}
                     y={-imageHeight / 2}
                     width={imageWidth}
@@ -683,8 +683,6 @@ export default function RocketTrailAnimation() {
             <Image
               src={hoveredMarker.card}
               alt={`${hoveredMarker.name} recap`}
-              width={1035}
-              height={561}
               sizes={`${CARD_POPOVER.width}px`}
               className="h-auto w-full"
             />

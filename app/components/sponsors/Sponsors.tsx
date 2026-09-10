@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, lazy, Suspense } from "react";
-import Image from "next/image";
+import Image, { type StaticImageData } from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -22,7 +22,7 @@ const ReunionTower = lazy(() => import("./ReunionTower"));
 const LOGO_SIZES = "160px";
 
 /** SVG logos are already vector — there is nothing for the optimizer to do. */
-const isVector = (logo: string) => logo.toLowerCase().endsWith(".svg");
+const isVector = (logo: StaticImageData) => logo.src.toLowerCase().endsWith(".svg");
 
 configureScrollTrigger();
 
@@ -346,8 +346,6 @@ export default function Sponsors() {
                 <Image
                   src={s.logo}
                   alt={s.name}
-                  width={s.width}
-                  height={s.height}
                   sizes={LOGO_SIZES}
                   unoptimized={isVector(s.logo)}
                   className="max-h-12 w-auto max-w-full object-contain"
@@ -598,8 +596,6 @@ export default function Sponsors() {
                       <Image
                         src={s.logo}
                         alt={s.name}
-                        width={s.width}
-                        height={s.height}
                         sizes={LOGO_SIZES}
                         unoptimized={isVector(s.logo)}
                         loading="lazy"

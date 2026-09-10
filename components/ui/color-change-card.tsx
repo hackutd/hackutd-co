@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import Image from "next/image";
+import Image, { type StaticImageData } from "next/image";
 import { ArrowRight } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -13,10 +13,8 @@ export type ColorChangeCardProps = {
   heading: string;
   description: string;
   href: string;
-  imageSrc: string;
+  imageSrc: StaticImageData;
   imageAlt: string;
-  imageWidth: number;
-  imageHeight: number;
   imageClassName?: string;
   imageTreatmentClassName?: string;
   accent: string;
@@ -66,8 +64,6 @@ export default function ColorChangeCard({
   href,
   imageSrc,
   imageAlt,
-  imageWidth,
-  imageHeight,
   imageClassName = "w-1/2 max-w-72",
   imageTreatmentClassName = "",
   accent,
@@ -246,8 +242,6 @@ export default function ColorChangeCard({
           <Image
             src={imageSrc}
             alt={imageAlt}
-            width={imageWidth}
-            height={imageHeight}
             className={`h-auto max-h-28 object-contain ${imageClassName} ${imageTreatmentClassName}`}
           />
         </div>

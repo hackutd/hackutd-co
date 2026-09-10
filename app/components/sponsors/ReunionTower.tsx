@@ -4,6 +4,7 @@ import { Suspense, useRef, useMemo, useEffect, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import type { StaticImageData } from "next/image";
 import { useNearViewport } from "@/app/hooks/useNearViewport";
 
 const MODEL_PATH = "/models/sponsor-globe-flat-4.glb";
@@ -43,7 +44,7 @@ interface SponsorPlacement {
 
 interface SponsorData {
   name: string;
-  logo?: string;
+  logo?: StaticImageData;
 }
 
 interface TowerSceneProps {
@@ -469,7 +470,7 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
   }, [clonedScene]);
 
   const validSponsors = useMemo(() => sponsors.filter((s) => s.logo), [sponsors]);
-  const logoUrls = useMemo(() => validSponsors.map((s) => s.logo!), [validSponsors]);
+  const logoUrls = useMemo(() => validSponsors.map((s) => s.logo!.src), [validSponsors]);
 
   // Patch any SVGs missing explicit width/height before handing URLs to TextureLoader.
   // Without this, viewBox-only SVGs rasterize to a 0x0 bitmap -> WebGL errors.
