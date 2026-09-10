@@ -45,7 +45,9 @@ export const TEAM_GROUP_PHOTO = {
   crossfade: "transition-opacity duration-[600ms] ease-out",
   desktopWrapper: "mt-24 aspect-[3/2] max-h-[34svh] w-full lg:mt-28",
   desktopSizes: "(min-width: 1024px) 400px, 320px",
-  mobileWrapper: "mt-14 aspect-[3/2] max-h-[20svh] w-[78%] max-w-[300px]",
+  // Keep the source photos' full 3:2 ratio on mobile. A viewport-height cap
+  // would flatten the frame on shorter screens and make object-cover crop heads.
+  mobileWrapper: "mt-14 aspect-[3/2] w-[78%] max-w-[300px]",
   mobileSizes: "(max-width: 767px) 78vw, 300px",
   gridSizes: "(min-width: 1280px) 360px, (min-width: 768px) 44vw, 88vw",
 } as const;
