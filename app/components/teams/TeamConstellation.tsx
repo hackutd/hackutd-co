@@ -170,7 +170,7 @@ export function TeamConstellation({
                 className={`relative flex items-center justify-center overflow-hidden rounded-full border transition-[transform,box-shadow,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
                   node.isLead
                     ? "border-[1.5px] border-pink bg-(--color-card) text-foreground/56 hover:scale-[1.04]"
-                    : "border-[1.5px] border-white bg-(--color-card) text-foreground/32 hover:scale-[1.07]"
+                    : "border-[1.5px] border-foreground bg-(--color-card) text-foreground/32 hover:scale-[1.07]"
                 }`}
                 style={nodeButtonStyle}
                 onClick={(event) => {
