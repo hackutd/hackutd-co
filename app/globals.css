@@ -180,16 +180,6 @@ html[data-site-cursor] * {
   animation: site-star-twinkle 4s ease-in-out infinite;
 }
 
-/* Team leads sit still and glow: a tight pink ring fading out through a wider
-   purple bloom. No animation, so the node's hover scale is free to take over. */
-.constellation-lead {
-  box-shadow:
-    0 0 0 5px rgba(243, 22, 103, 0.14),
-    0 0 18px rgba(243, 22, 103, 0.55),
-    0 0 34px rgba(243, 22, 103, 0.28),
-    0 0 54px rgba(108, 23, 254, 0.45);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .site-star {
     animation: none;

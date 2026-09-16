@@ -5,6 +5,14 @@
     "label": "Marketing",
     "order": 0,
     "templateId": "cetus",
+    "lead": {
+      "id": "marketing-lead",
+      "name": "Dhivyesh Prithiviraj",
+      "role": "Marketing Lead",
+      "linkedinUrl": "https://www.linkedin.com/in/dhivyeshprithiviraj/",
+      "quote": "The most valuable asset you can never own is time. - Mark Cuban",
+      "imageUrl": "/officers/marketing/DHIVYESH_PRITHIVIRAJ.webp"
+    },
     "members": [
       {
         "id": "marketing-1",

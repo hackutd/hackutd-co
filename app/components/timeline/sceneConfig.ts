@@ -1,6 +1,7 @@
 import type { StaticImageData } from "next/image";
 import poyoRocket from "@/app/assets/timeline/poyo_rocket.webp";
-import ripple2024Logo from "@/app/assets/timeline/logos/ripple-2024.png";
+import hackutd2025Logo from "@/app/assets/timeline/logos/hackutd-2025.png";
+import hackutd2024Logo from "@/app/assets/timeline/logos/hackutd-2024.png";
 import hackutdX2023Logo from "@/app/assets/timeline/logos/hackutd-x-2023.png";
 import axxess2023Logo from "@/app/assets/timeline/logos/axxess-2023.png";
 import hackutdIx2022Logo from "@/app/assets/timeline/logos/hackutd-ix-2022.png";
@@ -14,6 +15,7 @@ import hackutd2018Logo from "@/app/assets/timeline/logos/hackutd-2018.png";
 import hackutd2017Logo from "@/app/assets/timeline/logos/hackutd-2017.png";
 import hackutd2016Logo from "@/app/assets/timeline/logos/hackutd-2016.png";
 import hackutd2015Logo from "@/app/assets/timeline/logos/hackutd-2015.png";
+import hackutd2025Card from "@/app/assets/timeline/cards/hackutd-2025.png";
 import ripple2024Card from "@/app/assets/timeline/cards/ripple-2024.png";
 import hackutdX2023Card from "@/app/assets/timeline/cards/hackutd-x-2023.png";
 import axxess2023Card from "@/app/assets/timeline/cards/axxess-2023.png";
@@ -61,11 +63,14 @@ export const ROCKET_SWEEP = {
    * How far past its own left edge the assembly keeps travelling, as a multiple
    * of the SVG's layout width. The mobile exit is longer because its marker
    * pitch is substantially wider. Both values leave enough room for the final
-   * logo to clear before the Sponsors handoff.
+   * logo to clear before the Sponsors handoff — so adding a year marker means
+   * growing them by that marker's own pitch (one 165-unit step scaled by
+   * MARKER_SPACING, as a fraction of the 1371-unit viewBox), or the oldest logo
+   * is still on screen when the plume dissolves.
    */
   plumeExit: {
-    desktop: 2.15,
-    mobile: 2.75,
+    desktop: 2.3,
+    mobile: 2.95,
   },
 } as const;
 
@@ -93,20 +98,27 @@ export const YEAR_MARKERS: YearMarker[] = [
   // Listed newest to oldest, laid out left-to-right across the trail.
   // Base coordinates are spaced 165 units apart from x=450. Responsive pitch
   // multipliers below spread those coordinates further apart at render time.
-  { year: "2024", name: "RIPPLE EFFECT",      date: "Fall 2024",   x: 450,  y: 150, image: ripple2024Logo,           imageWidth: 110, imageHeight: 25, card: ripple2024Card,           href: "https://ripple.hackutd.co" },
-  { year: "2023", name: "HACKUTD X",          date: "Fall 2023",   x: 615,  y: 198, image: hackutdX2023Logo,         imageWidth: 64,  imageHeight: 80, card: hackutdX2023Card,         href: "https://x.hackutd.co" },
-  { year: "2023", name: "AXXESS HACKATHON",   date: "Spring 2023", x: 780,  y: 146, image: axxess2023Logo,           imageWidth: 100, imageHeight: 29, card: axxess2023Card,           href: "https://www.axxess.com/hackathon" },
-  { year: "2022", name: "HACKUTD IX",         date: "Fall 2022",   x: 945,  y: 198, image: hackutdIx2022Logo,        imageWidth: 78,  imageHeight: 77, card: hackutdIx2022Card,        href: "https://ix.hackutd.co/" },
-  { year: "2021", name: "HACKUTD VIII",       date: "Fall 2021",   x: 1110, y: 148, image: hackutdViii2021Logo,      imageWidth: 68,  imageHeight: 79, card: hackutdViii2021Card,      href: "https://viii.hackutd.co/" },
-  { year: "2021", name: "HACKUTD VII",        date: "Spring 2021", x: 1275, y: 200, image: hackutdVii2021Logo,       imageWidth: 60,  imageHeight: 80, card: hackutdVii2021Card,       href: "https://vii.hackutd.co/" },
-  { year: "2020", name: "GAME JAM",           date: "Fall 2020",   x: 1440, y: 150, image: gamejam2020Logo,          imageWidth: 84,  imageHeight: 47, card: gamejam2020Card,          href: "https://gamejam.hackutd.co/" },
-  { year: "2019", name: "HACKUTD VI",         date: "Fall 2019",   x: 1605, y: 198, image: hackutdVi2019Logo,        imageWidth: 62,  imageHeight: 80, card: hackutdVi2019Card,        href: "https://hackutd-vi.devpost.com/" },
-  { year: "2019", name: "HACKUTD 19",         date: "Spring 2019", x: 1770, y: 146, image: hackutd2019Logo,          imageWidth: 100, imageHeight: 43, card: hackutd2019Card,          href: "https://hackutd2019.devpost.com/" },
-  { year: "2018", name: "HACKS FOR HUMANITY", date: "Fall 2018",   x: 1935, y: 198, image: hacksForHumanity2018Logo, imageWidth: 84,  imageHeight: 45, card: hacksForHumanity2018Card, href: "https://hfhutd18.devpost.com/" },
-  { year: "2018", name: "HACKUTD 18",         date: "Spring 2018", x: 2100, y: 148, image: hackutd2018Logo,          imageWidth: 104, imageHeight: 34, card: hackutd2018Card,          href: "https://hackutd18.devpost.com/" },
-  { year: "2017", name: "HACKUTD 17",         date: "Spring 2017", x: 2265, y: 198, image: hackutd2017Logo,          imageWidth: 104, imageHeight: 33, card: hackutd2017Card,          href: "https://hackutd17.devpost.com/" },
-  { year: "2016", name: "HACKUTD 16",         date: "Spring 2016", x: 2430, y: 148, image: hackutd2016Logo,          imageWidth: 110, imageHeight: 22, card: hackutd2016Card,          href: "https://hackutd16.devpost.com/" },
-  { year: "2015", name: "HACKUTD",            date: "Spring 2015", x: 2595, y: 196, image: hackutd2015Logo,          imageWidth: 116, imageHeight: 20, card: hackutd2015Card,          href: "https://hackutd.devpost.com/" },
+  // y alternates between an upper (148) and a lower (198) row. Labels hang
+  // below the artwork, so a pair sharing a row would collide — their names are
+  // wider than one pitch on mobile. Inserting a marker therefore pushes every
+  // older one a pitch further out and flips its row. The newest one holds the
+  // anchor, where the plume is at its narrowest, so it takes the upper row: in
+  // the lower one its labels would fall past the plume's edge on short screens.
+  { year: "2025", name: "LOST IN THE PAGES",  date: "Fall 2025",   x: 450,  y: 148, image: hackutd2025Logo,          imageWidth: 70,  imageHeight: 80, card: hackutd2025Card },
+  { year: "2024", name: "RIPPLE EFFECT",      date: "Fall 2024",   x: 615,  y: 198, image: hackutd2024Logo,          imageWidth: 80 * (hackutd2024Logo.width / hackutd2024Logo.height), imageHeight: 80, card: ripple2024Card, href: "https://ripple.hackutd.co" },
+  { year: "2023", name: "HACKUTD X",          date: "Fall 2023",   x: 780,  y: 148, image: hackutdX2023Logo,         imageWidth: 64,  imageHeight: 80, card: hackutdX2023Card,         href: "https://x.hackutd.co" },
+  { year: "2023", name: "AXXESS HACKATHON",   date: "Spring 2023", x: 945,  y: 198, image: axxess2023Logo,           imageWidth: 100, imageHeight: 29, card: axxess2023Card,           href: "https://www.axxess.com/hackathon" },
+  { year: "2022", name: "HACKUTD IX",         date: "Fall 2022",   x: 1110, y: 148, image: hackutdIx2022Logo,        imageWidth: 78,  imageHeight: 77, card: hackutdIx2022Card,        href: "https://ix.hackutd.co/" },
+  { year: "2021", name: "HACKUTD VIII",       date: "Fall 2021",   x: 1275, y: 198, image: hackutdViii2021Logo,      imageWidth: 68,  imageHeight: 79, card: hackutdViii2021Card,      href: "https://viii.hackutd.co/" },
+  { year: "2021", name: "HACKUTD VII",        date: "Spring 2021", x: 1440, y: 148, image: hackutdVii2021Logo,       imageWidth: 60,  imageHeight: 80, card: hackutdVii2021Card,       href: "https://vii.hackutd.co/" },
+  { year: "2020", name: "GAME JAM",           date: "Fall 2020",   x: 1605, y: 198, image: gamejam2020Logo,          imageWidth: 84,  imageHeight: 47, card: gamejam2020Card,          href: "https://gamejam.hackutd.co/" },
+  { year: "2019", name: "HACKUTD VI",         date: "Fall 2019",   x: 1770, y: 148, image: hackutdVi2019Logo,        imageWidth: 62,  imageHeight: 80, card: hackutdVi2019Card,        href: "https://hackutd-vi.devpost.com/" },
+  { year: "2019", name: "HACKUTD 19",         date: "Spring 2019", x: 1935, y: 198, image: hackutd2019Logo,          imageWidth: 100, imageHeight: 43, card: hackutd2019Card,          href: "https://hackutd2019.devpost.com/" },
+  { year: "2018", name: "HACKS FOR HUMANITY", date: "Fall 2018",   x: 2100, y: 148, image: hacksForHumanity2018Logo, imageWidth: 84,  imageHeight: 45, card: hacksForHumanity2018Card, href: "https://hfhutd18.devpost.com/" },
+  { year: "2018", name: "HACKUTD 18",         date: "Spring 2018", x: 2265, y: 198, image: hackutd2018Logo,          imageWidth: 104, imageHeight: 34, card: hackutd2018Card,          href: "https://hackutd18.devpost.com/" },
+  { year: "2017", name: "HACKUTD 17",         date: "Spring 2017", x: 2430, y: 148, image: hackutd2017Logo,          imageWidth: 104, imageHeight: 33, card: hackutd2017Card,          href: "https://hackutd17.devpost.com/" },
+  { year: "2016", name: "HACKUTD 16",         date: "Spring 2016", x: 2595, y: 198, image: hackutd2016Logo,          imageWidth: 110, imageHeight: 22, card: hackutd2016Card,          href: "https://hackutd16.devpost.com/" },
+  { year: "2015", name: "HACKUTD",            date: "Spring 2015", x: 2760, y: 148, image: hackutd2015Logo,          imageWidth: 116, imageHeight: 20, card: hackutd2015Card,          href: "https://hackutd.devpost.com/" },
 ];
 
 /**

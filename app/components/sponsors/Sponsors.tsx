@@ -31,6 +31,7 @@ export default function Sponsors() {
   const sectionRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<HTMLDivElement>(null);
+  const towerStageRef = useRef<HTMLDivElement>(null);
   const towerWrapRef = useRef<HTMLDivElement>(null);
   const logosTrackRef = useRef<HTMLDivElement>(null);
   const logosRef = useRef<HTMLDivElement>(null);
@@ -206,6 +207,7 @@ export default function Sponsors() {
     const section = sectionRef.current;
     const header = headerRef.current;
     const scene = sceneRef.current;
+    const towerStage = towerStageRef.current;
     const towerWrap = towerWrapRef.current;
     const logosTrack = logosTrackRef.current;
     if (reducedMotion || !section || !scene || !towerWrap) return;
@@ -283,8 +285,14 @@ export default function Sponsors() {
       );
     });
     media.add("(max-width: 1023px)", () => {
+      if (!towerStage) return;
+
+      // The mobile logo wall is in normal flow above the globe. Drive the
+      // camera only while the globe's own sticky stage is active; using the
+      // full scene here lets the long two-column logo grid zoom the globe out
+      // before it has even reached the viewport.
       ScrollTrigger.create({
-        trigger: scene,
+        trigger: towerStage,
         start: "top top",
         end: "bottom bottom",
         onUpdate: (self) => {
@@ -302,8 +310,6 @@ export default function Sponsors() {
     dependencies: [reducedMotion],
     revertOnUpdate: true,
   });
-
-  const towerH = "max(100vh, 1000px)";
 
   // ── Reduced-motion fallback ────────────────────────────────
   if (reducedMotion) {
@@ -403,7 +409,7 @@ export default function Sponsors() {
 
         <div
           ref={sceneRef}
-          className="flex flex-col gap-8 lg:flex-row lg:gap-20"
+          className="flex flex-col lg:flex-row lg:gap-20"
         >
           {/* Sponsor logos grid - Right side */}
           <div
@@ -583,7 +589,7 @@ export default function Sponsors() {
             <div ref={logosTrackRef}>
               <div
                 ref={logosRef}
-                className="pancake-grid grid auto-rows-[4.75rem] grid-cols-2 gap-x-8 gap-y-8 px-4 pt-8 pr-14 pb-32 sm:grid-cols-3 md:auto-rows-[5.25rem] lg:max-w-none lg:pt-8"
+                className="pancake-grid grid auto-rows-[4.75rem] grid-cols-2 gap-x-8 gap-y-8 px-4 pt-8 pr-14 pb-8 sm:grid-cols-3 md:auto-rows-[5.25rem] lg:max-w-none lg:pt-8 lg:pb-32"
               >
                 {SPONSORS.map((s) => (
                   <div key={s.name} className="sponsor-tile h-full flex-shrink-0">
@@ -610,23 +616,22 @@ export default function Sponsors() {
           </div>
 
           {/* 3D Reunion Tower — Left side */}
-          <div className="relative order-2 h-[400vh] w-full lg:order-1 lg:w-[45%]">
+          <div
+            ref={towerStageRef}
+            className="relative order-2 -mt-[25svh] h-[200svh] w-full lg:order-1 lg:mt-0 lg:h-[400vh] lg:w-[45%]"
+          >
             <div
               ref={towerWrapRef}
-              className="sticky top-0"
+              className="sticky top-0 h-svh lg:h-[max(100vh,1000px)]"
               style={{
                 width: "100%",
-                height: "max(100vh, 1000px)",
                 cursor: "grab",
                 userSelect: "none",
               }}
             >
               <Suspense
                 fallback={
-                  <div
-                    className="flex items-center justify-center"
-                    style={{ height: towerH }}
-                  >
+                  <div className="flex h-full items-center justify-center">
                     <div className="h-8 w-8 animate-spin rounded-full border-2 border-surface-foreground/20 border-t-surface-foreground" />
                   </div>
                 }

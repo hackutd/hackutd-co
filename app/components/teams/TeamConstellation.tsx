@@ -66,8 +66,10 @@ export function TeamConstellation({
     const dx = toNode.renderX - fromNode.renderX;
     const dy = toNode.renderY - fromNode.renderY;
     const distance = Math.hypot(dx, dy) || 1;
-    const fromRadius = (fromNode.isLead ? box.leadNodeSize : box.nodeSize) / 2 + 3;
-    const toRadius = (toNode.isLead ? box.leadNodeSize : box.nodeSize) / 2 + 3;
+    // Nodes are border-box, so half the rendered size is the outer edge of the
+    // ring — trimming to exactly that lands the line flush against the outline.
+    const fromRadius = (fromNode.isLead ? box.leadNodeSize : box.nodeSize) / 2;
+    const toRadius = (toNode.isLead ? box.leadNodeSize : box.nodeSize) / 2;
 
     return {
       x1: fromNode.shiftedX + (dx / distance) * fromRadius,
@@ -129,9 +131,6 @@ export function TeamConstellation({
             top: `${node.renderY}px`,
             zIndex: isActive ? 30 : node.isLead ? 12 : 8,
           };
-          // No inline box-shadow: the lead glow lives on .constellation-lead in
-          // globals.css, and an inline value would outrank it now that the pulse
-          // animation (which used to win the cascade) is gone.
           const nodeButtonStyle: CSSProperties = {
             width: node.isLead ? `${box.leadNodeSize}px` : `${box.nodeSize}px`,
             height: node.isLead ? `${box.leadNodeSize}px` : `${box.nodeSize}px`,
@@ -170,8 +169,8 @@ export function TeamConstellation({
                 }
                 className={`relative flex items-center justify-center overflow-hidden rounded-full border transition-[transform,box-shadow,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
                   node.isLead
-                    ? "constellation-lead border-[3px] border-pink bg-(--color-card) text-foreground/56 hover:scale-[1.04]"
-                    : "border-[3px] border-foreground/12 bg-(--color-card) text-foreground/32 hover:scale-[1.07]"
+                    ? "border-[1.5px] border-pink bg-(--color-card) text-foreground/56 hover:scale-[1.04]"
+                    : "border-[1.5px] border-white bg-(--color-card) text-foreground/32 hover:scale-[1.07]"
                 }`}
                 style={nodeButtonStyle}
                 onClick={(event) => {
