@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — HackUTD",
+  title: "Privacy Policy",
+  alternates: { canonical: "/privacy" },
   description:
     "How HackUTD collects, uses, shares, and retains information from applicants and attendees.",
 };

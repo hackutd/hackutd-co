@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — HackUTD",
+  title: "Terms of Service",
+  alternates: { canonical: "/terms" },
   description:
     "The terms that apply when you create an account, apply to, or attend a HackUTD event.",
 };
