@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, lazy, Suspense } from "react";
+import { useRef, useState, useEffect, lazy, Suspense } from "react";
 import Image, { type StaticImageData } from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -46,6 +46,20 @@ export default function Sponsors() {
   const dragVelocity = useRef(0);
 
   const reducedMotion = usePrefersReducedMotion();
+
+  // The globe only exists in the lg side-by-side layout. Below lg the section
+  // is the stacked mobile flow (logo wall straight into the footer), so the
+  // stage is hidden via CSS at the same breakpoint and unmounted here so
+  // phones never fetch the model. Initial true keeps SSR/desktop first paint
+  // intact; the CSS class covers the pre-effect frame on mobile.
+  const [mountGlobe, setMountGlobe] = useState(true);
+  useEffect(() => {
+    const mql = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setMountGlobe(mql.matches);
+    sync();
+    mql.addEventListener("change", sync);
+    return () => mql.removeEventListener("change", sync);
+  }, []);
 
   // ── Drag-to-rotate on tower container ─────────────────────
   useEffect(() => {
@@ -99,7 +113,7 @@ export default function Sponsors() {
       el.removeEventListener("pointerup", up);
       el.removeEventListener("pointercancel", up);
     };
-  }, [reducedMotion]);
+  }, [reducedMotion, mountGlobe]);
 
   // ── Cursor-tracked tilt on the sponsor tiles ──────────────
   // The CSS handles the lift, the shadow swap and the stacking order on its
@@ -284,25 +298,8 @@ export default function Sponsors() {
         },
       );
     });
-    media.add("(max-width: 1023px)", () => {
-      if (!towerStage) return;
-
-      // The mobile logo wall is in normal flow above the globe. Drive the
-      // camera only while the globe's own sticky stage is active; using the
-      // full scene here lets the long two-column logo grid zoom the globe out
-      // before it has even reached the viewport.
-      ScrollTrigger.create({
-        trigger: towerStage,
-        start: "top top",
-        end: "bottom bottom",
-        onUpdate: (self) => {
-          scrollProgressRef.current = self.progress;
-        },
-        onRefresh: (self) => {
-          scrollProgressRef.current = self.progress;
-        },
-      });
-    });
+    // Below lg there is no globe stage at all — the mobile flow is the logo
+    // wall straight into the footer, so no camera driver is needed there.
 
     return () => media.revert();
   }, {
@@ -615,10 +612,11 @@ export default function Sponsors() {
             </div>
           </div>
 
-          {/* 3D Reunion Tower — Left side */}
+          {/* 3D Reunion Tower — Left side, lg+ only (mobile goes logo wall → footer) */}
+          {mountGlobe && (
           <div
             ref={towerStageRef}
-            className="relative order-2 -mt-[25svh] h-[200svh] w-full lg:order-1 lg:mt-0 lg:h-[400vh] lg:w-[45%]"
+            className="relative hidden lg:order-1 lg:block lg:h-[400vh] lg:w-[45%]"
           >
             <div
               ref={towerWrapRef}
@@ -644,6 +642,7 @@ export default function Sponsors() {
               </Suspense>
             </div>
           </div>
+          )}
         </div>
       </section>
     </div>
