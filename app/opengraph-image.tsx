@@ -57,7 +57,6 @@ export default async function OpenGraphImage() {
             padding: "72px",
             position: "relative",
             width: "100%",
-            zIndex: 1,
           }}
         >
           <div style={{ display: "flex", fontSize: 112, fontWeight: 700 }}>
