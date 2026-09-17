@@ -19,7 +19,7 @@ const satoshi = localFont({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "HackUTD — North America's Largest 24-Hour University Hackathon",
+    default: "HackUTD",
     template: "%s | HackUTD",
   },
   description: SITE_DESCRIPTION,
