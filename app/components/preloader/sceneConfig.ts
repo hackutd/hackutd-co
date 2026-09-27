@@ -13,8 +13,8 @@ export const LOGO_DRAW = {
   /** Fill fades in slightly before the stroke completes. */
   fillLeadSeconds: 0.4,
   fillSeconds: 0.6,
-  /** Stroke fades away once the fill is up. */
-  unstrokeSeconds: 0.4,
+  /** Stroke fades on the same schedule as the fill so no outline ever fattens the glyphs. */
+  unstrokeSeconds: 0.6,
   /** Draw + fades finished; the preloader may leave. */
   settleSeconds: 2.6,
 } as const;

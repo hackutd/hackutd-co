@@ -162,7 +162,7 @@ function buildLottie() {
           ty: "st",
           nm: "stroke",
           c: { a: 0, k: [...color, 1] },
-          o: tween(DRAW_TOTAL_S, DRAW_TOTAL_S + UNSTROKE_S, 100, 0),
+          o: tween(FILL_START_S, FILL_START_S + UNSTROKE_S, 100, 0),
           w: { a: 0, k: 10 },
           lc: 2,
           lj: 2,
