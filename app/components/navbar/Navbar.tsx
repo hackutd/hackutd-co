@@ -48,6 +48,14 @@ const NAV_LINKS = [
   { href: "#sponsors", label: "PAST SPONSORS" },
 ];
 
+const MENU_STAGGER_MS = 60;
+
+/** Menu items rise into place one after another; on close they just fade. */
+const menuItemMotion = (isOpen: boolean) =>
+  `transition-[opacity,transform] duration-400 ease-out motion-reduce:transition-none ${
+    isOpen ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
+  }`;
+
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const siteTheme = useSyncExternalStore(
@@ -271,19 +279,35 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Mobile overlay */}
-      {isOpen && (
-        <div className="fixed inset-0 top-13 z-40 flex flex-col items-center gap-8 bg-background/95 pt-16 text-foreground backdrop-blur-sm md:hidden">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className={`text-xl hover:opacity-70 ${colorTransition}`}
-              onClick={() => setIsOpen(false)}
-            >
-              {link.label}
-            </Link>
-          ))}
+      {/* Mobile overlay: always mounted so it can fade and the items can ease
+          in with a stagger; `inert` keeps the hidden links out of the tab order. */}
+      <div
+        inert={!isOpen}
+        className={`fixed inset-0 top-13 z-40 flex flex-col items-center gap-8 bg-background/60 pt-16 text-foreground backdrop-blur-xl backdrop-saturate-150 transition-[opacity,visibility] duration-300 ease-out motion-reduce:transition-none md:hidden ${
+          isOpen ? "visible opacity-100" : "invisible opacity-0"
+        }`}
+      >
+        {NAV_LINKS.map((link, i) => (
+          <Link
+            key={link.label}
+            href={link.href}
+            style={{
+              transitionDelay: isOpen ? `${MENU_STAGGER_MS * i}ms` : "0ms",
+            }}
+            className={`text-xl hover:opacity-70 ${menuItemMotion(isOpen)} ${colorTransition}`}
+            onClick={() => setIsOpen(false)}
+          >
+            {link.label}
+          </Link>
+        ))}
+        <div
+          style={{
+            transitionDelay: isOpen
+              ? `${MENU_STAGGER_MS * NAV_LINKS.length}ms`
+              : "0ms",
+          }}
+          className={menuItemMotion(isOpen)}
+        >
           <FlowButton
             text="HackUTD 2026"
             href="https://zeroday.hackutd.co"
@@ -291,7 +315,7 @@ export default function Navbar() {
             onClick={() => setIsOpen(false)}
           />
         </div>
-      )}
+      </div>
     </nav>
   );
 }
