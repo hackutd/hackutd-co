@@ -85,13 +85,23 @@ export const HERO_SKYLINE = {
    * keeps the whole composition in proportion at every viewport.
    */
   heightVar: "--hero-skyline-h",
-  height: "min(max(28.41vw, 170px), 45vh)",
+  /**
+   * The artwork's own aspect (0.2841) of the band width. On phones the band is
+   * wider than the viewport (`widthClass`), so the skyline draws larger and
+   * the flanks crop off either side instead of the whole city shrinking to a
+   * strip; from `md` up it spans the viewport edge to edge as before.
+   */
+  height: "min(max(calc(var(--hero-skyline-w) * 0.2841), 170px), 45vh)",
+  /** Goes on the sticky viewport with `heightVar`. */
+  widthClass: "[--hero-skyline-w:240vw] md:[--hero-skyline-w:100vw]",
   /**
    * Shared by the skyline band and the sky layer so the two boxes stay exactly
    * registered; the sky element coordinates are fractions of this box. The
-   * small bottom offset keeps the building bases off the viewport edge.
+   * small bottom offset keeps the building bases off the viewport edge. Below
+   * `md` the box is centred on the viewport and overflows it.
    */
-  layerBox: "h-[var(--hero-skyline-h)] bottom-[clamp(8px,3vh,36px)]",
+  layerBox:
+    "h-[var(--hero-skyline-h)] bottom-[clamp(8px,3vh,36px)] w-[var(--hero-skyline-w)] left-[calc(50%-var(--hero-skyline-w)/2)] md:inset-x-0 md:w-auto",
 } as const;
 
 /**

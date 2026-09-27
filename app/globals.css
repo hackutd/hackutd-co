@@ -215,3 +215,107 @@ html[data-site-cursor] * {
   --theme-foreground: #1a1a1a;
   --theme-muted: #5f5f5f;
 }
+
+/* ── Logo draw-on (preloader + brand outros) ────────────────────────────────
+   Timing mirrors app/components/preloader/sceneConfig.ts. Every path carries
+   pathLength="1", so one dasharray keyframe draws glyphs of any length; the
+   per-path `--logo-i` (0..1) staggers the start left to right.
+   scripts/brand-assets.mts slices this block into the video frame page, so
+   keep it self-contained. */
+
+:root {
+  --logo-stroke-seconds: 0.8s;
+  --logo-stagger-seconds: 1.2s;
+  --logo-draw-total: 2s;
+}
+
+.logo-draw-path {
+  stroke: currentColor;
+  stroke-width: 10;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  fill: currentColor;
+  fill-opacity: 0;
+  animation:
+    logo-draw-stroke var(--logo-stroke-seconds)
+      calc(var(--logo-stagger-seconds) * var(--logo-i))
+      cubic-bezier(0.65, 0, 0.35, 1) forwards,
+    logo-draw-fill 0.6s calc(var(--logo-draw-total) - 0.4s) ease-out forwards,
+    logo-draw-unstroke 0.6s calc(var(--logo-draw-total) - 0.4s) ease-in forwards;
+}
+
+/* Skyline outlines live in a ~3300-unit viewBox and trace pen lines a few
+   units wide: stroked finely the outline *is* the line, so it stays stroke-only
+   (a fill would flood every closed building outline). */
+.skyline-draw-path {
+  stroke-width: 2;
+  animation:
+    logo-draw-stroke var(--logo-stroke-seconds)
+      calc(var(--logo-stagger-seconds) * var(--logo-i))
+      cubic-bezier(0.65, 0, 0.35, 1) forwards,
+    logo-draw-unstroke 0.6s calc(var(--logo-draw-total) - 0.4s) ease-in forwards;
+}
+
+/* The hero's own masked artwork, cross-faded in over the finished strokes on
+   the wordmark's fill schedule so the overlay lifts onto the real skyline. */
+.skyline-original {
+  opacity: 0;
+  animation: preloader-reveal 0.6s calc(var(--logo-draw-total) - 0.4s) ease-out
+    forwards;
+}
+
+@keyframes preloader-reveal {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes logo-draw-stroke {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes logo-draw-fill {
+  to {
+    fill-opacity: 1;
+  }
+}
+
+@keyframes logo-draw-unstroke {
+  to {
+    stroke-opacity: 0;
+  }
+}
+
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  overflow: hidden;
+  place-items: center;
+  background: var(--theme-background);
+  color: var(--theme-foreground);
+  transition: opacity 0.4s ease-out;
+}
+
+.preloader[data-leaving] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-draw-path {
+    stroke: none;
+    animation: logo-draw-fill 0.4s ease-out forwards;
+  }
+
+  .skyline-draw-path {
+    display: none;
+  }
+
+  .skyline-original {
+    animation: preloader-reveal 0.4s ease-out forwards;
+  }
+}
