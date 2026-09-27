@@ -221,7 +221,6 @@ export default function Sponsors() {
     const section = sectionRef.current;
     const header = headerRef.current;
     const scene = sceneRef.current;
-    const towerStage = towerStageRef.current;
     const towerWrap = towerWrapRef.current;
     const logosTrack = logosTrackRef.current;
     if (reducedMotion || !section || !scene || !towerWrap) return;
