@@ -249,9 +249,25 @@ html[data-site-cursor] * {
    (a fill would flood every closed building outline). */
 .skyline-draw-path {
   stroke-width: 2;
-  animation: logo-draw-stroke var(--logo-stroke-seconds)
-    calc(var(--logo-stagger-seconds) * var(--logo-i))
-    cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  animation:
+    logo-draw-stroke var(--logo-stroke-seconds)
+      calc(var(--logo-stagger-seconds) * var(--logo-i))
+      cubic-bezier(0.65, 0, 0.35, 1) forwards,
+    logo-draw-unstroke 0.6s calc(var(--logo-draw-total) - 0.4s) ease-in forwards;
+}
+
+/* The hero's own masked artwork, cross-faded in over the finished strokes on
+   the wordmark's fill schedule so the overlay lifts onto the real skyline. */
+.skyline-original {
+  opacity: 0;
+  animation: preloader-reveal 0.6s calc(var(--logo-draw-total) - 0.4s) ease-out
+    forwards;
+}
+
+@keyframes preloader-reveal {
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes logo-draw-stroke {
@@ -296,8 +312,10 @@ html[data-site-cursor] * {
   }
 
   .skyline-draw-path {
-    stroke: currentColor;
-    stroke-dashoffset: 0;
-    animation: none;
+    display: none;
+  }
+
+  .skyline-original {
+    animation: preloader-reveal 0.4s ease-out forwards;
   }
 }

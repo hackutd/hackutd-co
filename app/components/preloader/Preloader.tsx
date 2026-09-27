@@ -1,14 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
-import sectionGradient from "@/app/assets/background/section-gradient.webp";
+import {
+  HERO_LAYOUT,
+  HERO_SKYLINE,
+  HERO_SKYLINE_MASK,
+  HERO_SKYLINE_STROKE_FILTER,
+} from "@/app/components/hero/sceneConfig";
 import { LogoDraw } from "./LogoDraw";
 import { SkylineDraw } from "./SkylineDraw";
 import { LOGO_DRAW, PRELOADER } from "./sceneConfig";
 
 type Phase = "drawing" | "leaving" | "done";
+
+/** Own copy of the hero's erode filter: the hero isn't in the DOM on every route. */
+const STROKE_FILTER_ID = "preloader-skyline-thin-strokes";
+
+const ORIGINAL_SKYLINE_STYLE: CSSProperties = {
+  ...HERO_SKYLINE_MASK,
+  filter: `url(#${STROKE_FILTER_ID})`,
+};
 
 /**
  * Full-screen overlay that draws the wordmark and the hero skyline once,
@@ -49,23 +62,44 @@ export function Preloader() {
       aria-busy={phase === "drawing"}
       data-leaving={phase === "leaving" ? "" : undefined}
     >
-      {/* Same baked artwork and placement as background/SectionGradient, so
-          the page's own gradient appears to already be in place when the
-          overlay lifts. */}
+      <svg aria-hidden="true" className="absolute h-0 w-0">
+        <defs>
+          <filter
+            id={STROKE_FILTER_ID}
+            x="-5%"
+            y="-5%"
+            width="110%"
+            height="110%"
+            colorInterpolationFilters="sRGB"
+          >
+            <feMorphology
+              in="SourceGraphic"
+              operator="erode"
+              radius={HERO_SKYLINE_STROKE_FILTER.radius}
+            />
+          </filter>
+        </defs>
+      </svg>
+      <LogoDraw className="relative w-[min(40vw,18rem)] -translate-y-[10vh]" />
+      {/* Mirrors the hero's sticky viewport and skyline band one for one. The
+          traced outlines draw on, then the hero's own masked artwork fades in
+          over them (`.skyline-original`) as the strokes fade out, so the
+          overlay lifts onto a pixel-identical skyline. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -left-16 h-[clamp(34rem,max(62vw,78svh),58rem)] w-[clamp(56rem,118vw,125rem)] scale-[1.04] opacity-80"
-        style={{
-          bottom: "clamp(-8rem, -15svh, -3rem)",
-          backgroundImage: `url(${sectionGradient.src})`,
-          backgroundSize: "100% 100%",
-          backgroundRepeat: "no-repeat",
-        }}
-      />
-      <LogoDraw className="relative w-[min(40vw,18rem)] -translate-y-[10vh]" />
-      {/* Same band the hero paints its skyline into, so the drawing is already
-          in place when the overlay lifts. */}
-      <SkylineDraw className="pointer-events-none absolute inset-x-0 bottom-[clamp(8px,3vh,36px)] w-full" />
+        style={
+          { [HERO_SKYLINE.heightVar]: HERO_SKYLINE.height } as CSSProperties
+        }
+        className={`pointer-events-none absolute inset-x-0 top-0 ${HERO_LAYOUT.stickyViewportHeight}`}
+      >
+        <SkylineDraw
+          className={`absolute inset-x-0 w-full ${HERO_SKYLINE.layerBox}`}
+        />
+        <div
+          style={ORIGINAL_SKYLINE_STYLE}
+          className={`skyline-original absolute inset-x-0 bg-foreground ${HERO_SKYLINE.layerBox}`}
+        />
+      </div>
     </div>
   );
 }

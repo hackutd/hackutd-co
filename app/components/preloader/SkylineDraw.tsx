@@ -3,9 +3,10 @@ import type { CSSProperties } from "react";
 import { SKYLINE_PATHS, SKYLINE_VIEWBOX } from "./skylinePaths";
 
 /**
- * The hero's Dallas skyline, stroked on left to right like the wordmark.
- * Each outline draws via `.logo-draw-path`; because the outlines trace the
- * original pen lines, the trailing fill fade lands on the hero's own artwork.
+ * The hero's Dallas skyline as traced outlines, stroked on left to right like
+ * the wordmark via `.logo-draw-path`. `preserveAspectRatio="none"` stretches
+ * it to its box exactly the way the hero's `mask-size: 100% 100%` stretches
+ * the raster, so the two register when laid over each other.
  */
 export function SkylineDraw({ className }: { className?: string }) {
   const last = SKYLINE_PATHS.length - 1;
@@ -13,6 +14,7 @@ export function SkylineDraw({ className }: { className?: string }) {
   return (
     <svg
       viewBox={SKYLINE_VIEWBOX}
+      preserveAspectRatio="none"
       className={className}
       aria-hidden
       fill="none"
