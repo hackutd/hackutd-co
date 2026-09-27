@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# hackutd.co
 
-## Getting Started
+Marketing site for [HackUTD](https://hackutd.co), the University of Texas at Dallas hackathon. Built with Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4 and GSAP, deployed on Vercel.
 
-First, run the development server:
+## Getting started
+
+Requires Node 20+.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev      # http://localhost:3000
+npm run build    # production build
+npm run lint     # eslint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Project layout
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+app/
+  layout.tsx            root layout: theme, <Preloader />, page, <SiteCursor />
+  page.tsx              single-page site, one section per component
+  globals.css           Tailwind theme tokens + keyframe animations
+  (legal)/              /privacy and /terms
+  assets/               brand SVGs, hero artwork, baked backgrounds
+  components/
+    preloader/          logo + skyline draw-on overlay shown on first load
+    hero/               sticky hero with Dallas skyline, sky elements, comet
+    navbar/, footer/    site chrome (mobile menu is a blurred overlay)
+    mission/, timeline/, projects/, sponsors/, teams/   page sections
+    background/         SectionGradient (baked artwork) and scene config
+    cursor/, theme/     custom cursor, dark/light theme
+    ui/                 shared buttons and cards
+  data/                 events, projects, sponsors, officer teams (edit here)
+  hooks/                usePrefersReducedMotion, useIsMobile, useNearViewport, ...
+brand/                  generated logo animation deliverables (Lottie, WebM, MOV, MP4)
+scripts/                asset generators (see below)
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Animation-heavy components keep their numbers in a colocated `sceneConfig.ts`. The hero and preloader share `app/components/hero/sceneConfig.ts` so the skyline the preloader draws lands exactly on the one the hero renders.
 
-## Learn More
+## Content updates
 
-To learn more about Next.js, take a look at the following resources:
+Most copy and lists live in `app/data/`:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `events.ts` — timeline
+- `projects.ts` — featured projects
+- `sponsors.ts` — sponsor tiers and logos (assets in `app/assets/`)
+- `officer-teams.json` — team members
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Preloader
 
-## Deploy on Vercel
+`app/components/preloader/Preloader.tsx` is a fixed overlay that strokes the HackUTD wordmark and the hero's Dallas skyline on with pure SVG + CSS (no Lottie runtime), cross-fades the skyline into the hero's real artwork, then fades out and unmounts after `LOGO_DRAW.settleSeconds`. It respects `prefers-reduced-motion` (static logo, short hold) and must stay before `{children}` in `app/layout.tsx`. Timing lives in `app/components/preloader/sceneConfig.ts` and is mirrored by the brand asset generator.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command                                 | Purpose                                                                                                          |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `node scripts/brand-assets.mts`         | Regenerates everything in `brand/` (Lottie JSON, alpha WebM, ProRes 4444 MOV, Reels MP4) from `logoPaths.ts`. Needs `google-chrome` and `ffmpeg`. |
+| `python3 scripts/trace-skyline.py`      | Re-traces `app/assets/hero/skyline.png` into `app/components/preloader/skylinePaths.ts`. Needs Pillow + potracer. |
+| `node scripts/bake-section-gradient.mjs` | Bakes the section gradient to `app/assets/background/section-gradient.webp`.                                     |
+
+See [`brand/README.md`](brand/README.md) for the deliverable list and animation timing.
+
+## Conventions
+
+- TypeScript, two-space indent, semicolons, double quotes; PascalCase component files.
+- Honor reduced motion for every animation.
+- Run `npm run lint` and `npm run build` before opening a PR. No test runner is configured.
+- `SiteCursor` must remain the last child of `<body>`.
