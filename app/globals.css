@@ -244,6 +244,12 @@ html[data-site-cursor] * {
     logo-draw-unstroke 0.4s var(--logo-draw-total) ease-in forwards;
 }
 
+/* Skyline outlines live in a ~3300-unit viewBox and trace pen lines a few
+   units wide, so the drawing stroke has to be much finer than the wordmark's. */
+.skyline-draw-path {
+  stroke-width: 2;
+}
+
 @keyframes logo-draw-stroke {
   to {
     stroke-dashoffset: 0;

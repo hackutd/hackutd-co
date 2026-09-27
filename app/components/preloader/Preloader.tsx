@@ -5,12 +5,14 @@ import { useEffect, useState } from "react";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import sectionGradient from "@/app/assets/background/section-gradient.webp";
 import { LogoDraw } from "./LogoDraw";
+import { SkylineDraw } from "./SkylineDraw";
 import { LOGO_DRAW, PRELOADER } from "./sceneConfig";
 
 type Phase = "drawing" | "leaving" | "done";
 
 /**
- * Full-screen overlay that draws the wordmark once, fades out and unmounts.
+ * Full-screen overlay that draws the wordmark and the hero skyline once,
+ * fades out and unmounts.
  *
  * It sits on top of the already-rendered page rather than replacing it, so
  * nothing reflows when it leaves and LCP is not held hostage by the timer.
@@ -60,7 +62,10 @@ export function Preloader() {
           backgroundRepeat: "no-repeat",
         }}
       />
-      <LogoDraw className="relative w-[min(40vw,18rem)]" />
+      <LogoDraw className="relative w-[min(40vw,18rem)] -translate-y-[10vh]" />
+      {/* Same band the hero paints its skyline into, so the drawing is already
+          in place when the overlay lifts. */}
+      <SkylineDraw className="pointer-events-none absolute inset-x-0 bottom-[clamp(8px,3vh,36px)] w-full" />
     </div>
   );
 }
