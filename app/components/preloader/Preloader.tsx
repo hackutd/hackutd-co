@@ -84,21 +84,28 @@ export function Preloader() {
       {/* Mirrors the hero's sticky viewport and skyline band one for one. The
           traced outlines draw on, then the hero's own masked artwork fades in
           over them (`.skyline-original`) as the strokes fade out, so the
-          overlay lifts onto a pixel-identical skyline. */}
+          overlay lifts onto a pixel-identical skyline. On phones the band is
+          a thin strip, so `.skyline-stage` draws it zoomed in on the centre
+          (cropping the flanks) and eases back to 1:1 before the hand-off. */}
       <div
         aria-hidden
         style={
-          { [HERO_SKYLINE.heightVar]: HERO_SKYLINE.height } as CSSProperties
+          {
+            [HERO_SKYLINE.heightVar]: HERO_SKYLINE.height,
+            "--skyline-zoom": PRELOADER.mobileSkylineZoom,
+          } as CSSProperties
         }
         className={`pointer-events-none absolute inset-x-0 top-0 ${HERO_LAYOUT.stickyViewportHeight}`}
       >
-        <SkylineDraw
-          className={`absolute inset-x-0 w-full ${HERO_SKYLINE.layerBox}`}
-        />
         <div
-          style={ORIGINAL_SKYLINE_STYLE}
-          className={`skyline-original absolute inset-x-0 bg-foreground ${HERO_SKYLINE.layerBox}`}
-        />
+          className={`skyline-stage absolute inset-x-0 md:[--skyline-zoom:1] ${HERO_SKYLINE.layerBox}`}
+        >
+          <SkylineDraw className="absolute inset-0 h-full w-full" />
+          <div
+            style={ORIGINAL_SKYLINE_STYLE}
+            className="skyline-original absolute inset-0 bg-foreground"
+          />
+        </div>
       </div>
     </div>
   );
