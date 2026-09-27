@@ -245,9 +245,13 @@ html[data-site-cursor] * {
 }
 
 /* Skyline outlines live in a ~3300-unit viewBox and trace pen lines a few
-   units wide, so the drawing stroke has to be much finer than the wordmark's. */
+   units wide: stroked finely the outline *is* the line, so it stays stroke-only
+   (a fill would flood every closed building outline). */
 .skyline-draw-path {
   stroke-width: 2;
+  animation: logo-draw-stroke var(--logo-stroke-seconds)
+    calc(var(--logo-stagger-seconds) * var(--logo-i))
+    cubic-bezier(0.65, 0, 0.35, 1) forwards;
 }
 
 @keyframes logo-draw-stroke {
@@ -289,5 +293,11 @@ html[data-site-cursor] * {
   .logo-draw-path {
     stroke: none;
     animation: logo-draw-fill 0.4s ease-out forwards;
+  }
+
+  .skyline-draw-path {
+    stroke: currentColor;
+    stroke-dashoffset: 0;
+    animation: none;
   }
 }

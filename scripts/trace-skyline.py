@@ -3,8 +3,8 @@ Vectorizes the hero skyline line art (app/assets/hero/skyline.png, an alpha
 stencil) into app/components/preloader/skylinePaths.ts so the preloader can
 stroke it on with the same dasharray keyframes as the wordmark.
 
-potrace returns each line as a closed outline, so once the stroke has drawn
-the outline, fading the fill in reproduces the original artwork exactly.
+potrace returns each pen line as a closed outline; stroked thinly the outline
+reads as the line itself, so the skyline stays stroke-only (no fill pass).
 
 Usage:  python3 scripts/trace-skyline.py     (needs: pip install pillow potracer)
 """
@@ -26,7 +26,9 @@ alpha = Image.open(SRC).convert("RGBA").split()[3]
 w, h = alpha.size
 alpha = alpha.resize((TRACE_WIDTH, round(TRACE_WIDTH * h / w)), Image.LANCZOS)
 alpha = alpha.filter(ImageFilter.MaxFilter(3))
-bitmap = np.array(alpha) > ALPHA_THRESHOLD
+# potracer treats nonzero as white, so invert to trace the pen lines themselves
+# rather than the background (whose outer contour would frame the canvas).
+bitmap = ~(np.array(alpha) > ALPHA_THRESHOLD)
 
 paths = []
 for curve in potrace.Bitmap(bitmap).trace(
