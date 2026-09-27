@@ -75,7 +75,6 @@ export default function SectionGradient() {
       );
 
       const labels = entries.map(({ label }) => label);
-      const visibleLayers = [artwork, labelLayer];
       const dynamicTransitions = new Map<
         HTMLElement,
         { incomingLabel: HTMLElement; timeline: gsap.core.Timeline }
@@ -180,7 +179,10 @@ export default function SectionGradient() {
 
       gsap.set(labels, { autoAlpha: 0, yPercent: 0 });
       gsap.set(entries[0].label, { autoAlpha: 1 });
-      gsap.set(visibleLayers, { autoAlpha: 0 });
+      // The artwork is on screen from the hero down; only the section word
+      // waits for Mission.
+      gsap.set(artwork, { autoAlpha: 1 });
+      gsap.set(labelLayer, { autoAlpha: 0 });
 
       if (prefersReducedMotion) {
         const showLabel = (index: number) => {
@@ -207,17 +209,17 @@ export default function SectionGradient() {
         showLabel(activeIndex);
 
         const missionSection = entries[0].section;
-        const setArtworkVisibility = (visible: boolean) => {
-          gsap.set(visibleLayers, { autoAlpha: visible ? 1 : 0 });
+        const setLabelVisibility = (visible: boolean) => {
+          gsap.set(labelLayer, { autoAlpha: visible ? 1 : 0 });
         };
         ScrollTrigger.create({
           trigger: missionSection,
           start: "top bottom",
-          onEnter: () => setArtworkVisibility(true),
-          onLeaveBack: () => setArtworkVisibility(false),
+          onEnter: () => setLabelVisibility(true),
+          onLeaveBack: () => setLabelVisibility(false),
         });
 
-        setArtworkVisibility(
+        setLabelVisibility(
           missionSection.getBoundingClientRect().top < window.innerHeight,
         );
         return cleanUpDynamicLabels;
@@ -358,7 +360,7 @@ export default function SectionGradient() {
       updateLabels();
 
       gsap.fromTo(
-        visibleLayers,
+        labelLayer,
         { autoAlpha: 0 },
         {
           autoAlpha: 1,
@@ -430,7 +432,7 @@ export default function SectionGradient() {
     <div ref={wrapperRef} className="absolute inset-0">
       <div
         ref={artworkRef}
-        className="invisible fixed -left-16 h-[clamp(34rem,max(62vw,78svh),58rem)] w-[clamp(56rem,118vw,125rem)] opacity-0"
+        className="fixed -left-16 h-[clamp(34rem,max(62vw,78svh),58rem)] w-[clamp(56rem,118vw,125rem)]"
         style={{
           bottom: "clamp(-8rem, -15svh, -3rem)",
           willChange: prefersReducedMotion ? "auto" : "transform, opacity",

@@ -37,12 +37,10 @@ export const SECTION_GRADIENT_SECTIONS = [
 
 export const SECTION_GRADIENT_MOTION = {
   /**
-   * Anchored to the Mission section, which is pulled up by one viewport so its
-   * stage pins the moment the hero's releases (MISSION_WORD_REVEAL.pullUp).
-   * These offsets are shifted by that same viewport so the artwork still fades
-   * in at the scroll position it always has — a beat after the hero has finished
-   * whiting out, not while the comet is still leaving. Moving the section up
-   * must not drag the gradient with it.
+   * Reveal of the section word, anchored to the Mission section (which is
+   * pulled up by one viewport so its stage pins the moment the hero's
+   * releases, MISSION_WORD_REVEAL.pullUp). The artwork itself is visible from
+   * the hero onward; only the word waits for this range.
    */
   revealStart: "top top",
   revealEnd: "top -30%",
