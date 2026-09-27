@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
-import { HERO_LAYOUT, HERO_SKYLINE } from "@/app/components/hero/sceneConfig";
+import sectionGradient from "@/app/assets/background/section-gradient.webp";
 import { LogoDraw } from "./LogoDraw";
 import { SkylineDraw } from "./SkylineDraw";
 import { LOGO_DRAW, PRELOADER } from "./sceneConfig";
@@ -49,21 +49,23 @@ export function Preloader() {
       aria-busy={phase === "drawing"}
       data-leaving={phase === "leaving" ? "" : undefined}
     >
-      <LogoDraw className="relative w-[min(40vw,18rem)] -translate-y-[10vh]" />
-      {/* Mirrors the hero's sticky viewport and skyline band one for one, so
-          the finished drawing sits pixel-exact over the hero's own skyline
-          when the overlay lifts. */}
+      {/* Same baked artwork and placement as background/SectionGradient, so
+          the page's own gradient appears to already be in place when the
+          overlay lifts. */}
       <div
         aria-hidden
-        style={
-          { [HERO_SKYLINE.heightVar]: HERO_SKYLINE.height } as CSSProperties
-        }
-        className={`pointer-events-none absolute inset-x-0 top-0 ${HERO_LAYOUT.stickyViewportHeight}`}
-      >
-        <div className={`absolute inset-x-0 ${HERO_SKYLINE.layerBox}`}>
-          <SkylineDraw animate className="h-full w-full" />
-        </div>
-      </div>
+        className="pointer-events-none absolute -left-16 h-[clamp(34rem,max(62vw,78svh),58rem)] w-[clamp(56rem,118vw,125rem)] scale-[1.04] opacity-80"
+        style={{
+          bottom: "clamp(-8rem, -15svh, -3rem)",
+          backgroundImage: `url(${sectionGradient.src})`,
+          backgroundSize: "100% 100%",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
+      <LogoDraw className="relative w-[min(40vw,18rem)] -translate-y-[10vh]" />
+      {/* Same band the hero paints its skyline into, so the drawing is already
+          in place when the overlay lifts. */}
+      <SkylineDraw className="pointer-events-none absolute inset-x-0 bottom-[clamp(8px,3vh,36px)] w-full" />
     </div>
   );
 }

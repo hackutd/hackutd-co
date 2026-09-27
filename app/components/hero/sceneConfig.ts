@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import type { StaticImageData } from "next/image";
+import skylineArt from "@/app/assets/hero/skyline.png";
 import airplaneArt from "@/app/assets/hero/dallas_airplane_transparent.png";
 import cloudLeftArt from "@/app/assets/hero/dallas_cloud_left_transparent.png";
 import cloudRightArt from "@/app/assets/hero/dallas_cloud_right_transparent.png";
@@ -94,12 +95,36 @@ export const HERO_SKYLINE = {
 } as const;
 
 /**
- * The skyline is line art drawn as vector outlines (preloader/SkylineDraw,
- * traced from app/assets/hero/skyline.png by scripts/trace-skyline.py) and
- * stroked in `--color-foreground`, so it recolors with the theme like body
- * text. It stretches to the shared band so it reaches both viewport edges
- * while staying registered with the animated sky elements.
+ * The skyline is line art, so it is drawn as a painted rectangle masked by the
+ * artwork's alpha rather than as an `<img>`. That takes one asset instead of a
+ * black plate and a white plate: the fill is `--color-foreground`, which the
+ * theme already flips from white to near-black, so the buildings recolor
+ * themselves with no second file and no swap logic.
+ *
+ * The mask fills the shared skyline band so the full artwork reaches both
+ * viewport edges while staying registered with the animated sky elements. The
+ * `-webkit-` pairs are kept for older Safari, matching the masked navbar seam.
  */
+const SKYLINE_ART = `url(${skylineArt.src})`;
+
+/** SVG morphology filter used to delicately erode the rendered line weight. */
+export const HERO_SKYLINE_STROKE_FILTER = {
+  id: "hero-skyline-thin-strokes",
+  radius: 0.9,
+} as const;
+
+export const HERO_SKYLINE_MASK: CSSProperties = {
+  maskImage: SKYLINE_ART,
+  WebkitMaskImage: SKYLINE_ART,
+  maskSize: "100% 100%",
+  WebkitMaskSize: "100% 100%",
+  maskPosition: "bottom center",
+  WebkitMaskPosition: "bottom center",
+  maskRepeat: "no-repeat",
+  WebkitMaskRepeat: "no-repeat",
+  filter: `url(#${HERO_SKYLINE_STROKE_FILTER.id})`,
+};
+
 export type HeroSkyMotion = "drift-left" | "drift-right" | "cross" | "rise";
 
 export type HeroSkyElement = {

@@ -3,26 +3,16 @@ import type { CSSProperties } from "react";
 import { SKYLINE_PATHS, SKYLINE_VIEWBOX } from "./skylinePaths";
 
 /**
- * The Dallas skyline as vector outlines, stroked in `currentColor`.
- *
- * `animate` strokes it on left to right through `.logo-draw-path`; otherwise
- * it renders fully drawn. The hero shows the static version in the same band
- * the preloader animates it in, so the overlay lifts onto an identical frame.
- * The band's box (not the art's ratio) sets the size, as the raster mask did.
+ * The hero's Dallas skyline, stroked on left to right like the wordmark.
+ * Each outline draws via `.logo-draw-path`; because the outlines trace the
+ * original pen lines, the trailing fill fade lands on the hero's own artwork.
  */
-export function SkylineDraw({
-  className,
-  animate = false,
-}: {
-  className?: string;
-  animate?: boolean;
-}) {
+export function SkylineDraw({ className }: { className?: string }) {
   const last = SKYLINE_PATHS.length - 1;
 
   return (
     <svg
       viewBox={SKYLINE_VIEWBOX}
-      preserveAspectRatio="none"
       className={className}
       aria-hidden
       fill="none"
@@ -34,12 +24,8 @@ export function SkylineDraw({
           key={i}
           d={d}
           pathLength={1}
-          className={
-            animate ? "logo-draw-path skyline-draw-path" : "skyline-line"
-          }
-          style={
-            animate ? ({ "--logo-i": i / last } as CSSProperties) : undefined
-          }
+          className="logo-draw-path skyline-draw-path"
+          style={{ "--logo-i": i / last } as CSSProperties}
         />
       ))}
     </svg>
