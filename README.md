@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="app/assets/brand/white-hackutd-logo.svg">
+    <img alt="HackUTD" src="app/assets/brand/black-hackutd-logo.svg" width="420">
+  </picture>
+</p>
+
 # hackutd.co
 
 Marketing site for [HackUTD](https://hackutd.co), the University of Texas at Dallas hackathon. Built with Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4 and GSAP, deployed on Vercel.
