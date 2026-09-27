@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
+import sectionGradient from "@/app/assets/background/section-gradient.webp";
 import { LogoDraw } from "./LogoDraw";
 import { LOGO_DRAW, PRELOADER } from "./sceneConfig";
 
@@ -46,7 +47,20 @@ export function Preloader() {
       aria-busy={phase === "drawing"}
       data-leaving={phase === "leaving" ? "" : undefined}
     >
-      <LogoDraw className="w-[min(60vw,32rem)]" />
+      {/* Same baked artwork and placement as background/SectionGradient, so
+          the page's own gradient appears to already be in place when the
+          overlay lifts. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-16 h-[clamp(34rem,max(62vw,78svh),58rem)] w-[clamp(56rem,118vw,125rem)] scale-[1.04] opacity-80"
+        style={{
+          bottom: "clamp(-8rem, -15svh, -3rem)",
+          backgroundImage: `url(${sectionGradient.src})`,
+          backgroundSize: "100% 100%",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
+      <LogoDraw className="relative w-[min(40vw,18rem)]" />
     </div>
   );
 }

@@ -267,6 +267,7 @@ html[data-site-cursor] * {
   inset: 0;
   z-index: 90;
   display: grid;
+  overflow: hidden;
   place-items: center;
   background: var(--theme-background);
   color: var(--theme-foreground);
