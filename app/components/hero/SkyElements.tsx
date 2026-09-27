@@ -149,7 +149,7 @@ export default function SkyElements({ ref }: SkyElementsProps) {
     <div
       ref={ref}
       aria-hidden="true"
-      className={`pointer-events-none absolute inset-x-0 z-0 ${HERO_SKYLINE.layerBox}`}
+      className={`pointer-events-none absolute z-0 ${HERO_SKYLINE.layerBox}`}
     >
       {HERO_SKY_ELEMENTS.map((element) => (
         <span
