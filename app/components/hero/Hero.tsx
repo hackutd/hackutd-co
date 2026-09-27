@@ -16,13 +16,12 @@ import {
   HERO_LAYOUT,
   HERO_SCENE_SCROLL,
   HERO_SKYLINE,
-  HERO_SKYLINE_MASK,
-  HERO_SKYLINE_STROKE_FILTER,
   HERO_TEXT_EFFECT,
   HERO_WHITEOUT,
   MOBILE_SCRUB,
 } from "./sceneConfig";
 import CometTrailBackground from "./CometTrailBackground";
+import { SkylineDraw } from "@/app/components/preloader/SkylineDraw";
 
 configureScrollTrigger();
 
@@ -115,11 +114,9 @@ export default function Hero() {
       // Layers that are simply on screen from the top of the page. The shader
       // gradient is deliberately not among them: it starts hidden and reveals on
       // its own range below, then leaves with everything else in the whiteout.
-      const restingLayers = [
-        skyLayer,
-        skylineLayer,
-        cometLayer,
-      ].filter((el): el is HTMLDivElement => el !== null);
+      const restingLayers = [skyLayer, skylineLayer, cometLayer].filter(
+        (el): el is HTMLDivElement => el !== null,
+      );
 
       // Every state below is declared rather than inferred.
       //
@@ -210,7 +207,6 @@ export default function Hero() {
           },
         );
       }
-
     },
     {
       scope: sectionRef,
@@ -237,25 +233,6 @@ export default function Hero() {
         }
         className={`sticky top-0 overflow-hidden isolate ${HERO_LAYOUT.stickyViewportHeight}`}
       >
-        <svg aria-hidden="true" className="absolute h-0 w-0">
-          <defs>
-            <filter
-              id={HERO_SKYLINE_STROKE_FILTER.id}
-              x="-5%"
-              y="-5%"
-              width="110%"
-              height="110%"
-              colorInterpolationFilters="sRGB"
-            >
-              <feMorphology
-                in="SourceGraphic"
-                operator="erode"
-                radius={HERO_SKYLINE_STROKE_FILTER.radius}
-              />
-            </filter>
-          </defs>
-        </svg>
-
         <div
           ref={cometBackgroundLayerRef}
           aria-hidden="true"
@@ -271,17 +248,17 @@ export default function Hero() {
         {/* Pinned to the foot of the sticky viewport at every size: the layer is
             as tall as the art needs to span the full width, floored so it stays
             substantial on phones and capped so it can't swallow short landscape
-            viewports. The mask fills the band so the skyline reaches both edges.
-
-            `bg-foreground` is the ink; the artwork is only the stencil (see
-            HERO_SKYLINE_MASK), so the skyline follows the site theme by way of
-            the same token as body text — no per-theme asset, no swap. */}
+            viewports. The vector skyline stretches to fill the band so it
+            reaches both edges, stroked in `text-foreground` so it follows the
+            theme like body text. The preloader draws the same component in the
+            same band, so its last frame registers exactly with this layer. */}
         <div
           ref={skylineLayerRef}
           aria-hidden="true"
-          style={HERO_SKYLINE_MASK}
-          className={`pointer-events-none absolute inset-x-0 z-0 bg-foreground ${HERO_SKYLINE.layerBox}`}
-        />
+          className={`pointer-events-none absolute inset-x-0 z-0 text-foreground ${HERO_SKYLINE.layerBox}`}
+        >
+          <SkylineDraw className="h-full w-full" />
+        </div>
 
         {/* Comet SVG layer */}
         <div ref={cometLayerRef} className="absolute inset-0 z-10">

@@ -247,8 +247,13 @@ html[data-site-cursor] * {
 /* Skyline outlines live in a ~3300-unit viewBox and trace pen lines a few
    units wide: stroked finely the outline *is* the line, so it stays stroke-only
    (a fill would flood every closed building outline). */
+.skyline-line,
 .skyline-draw-path {
+  stroke: currentColor;
   stroke-width: 2;
+}
+
+.skyline-draw-path {
   animation: logo-draw-stroke var(--logo-stroke-seconds)
     calc(var(--logo-stagger-seconds) * var(--logo-i))
     cubic-bezier(0.65, 0, 0.35, 1) forwards;
