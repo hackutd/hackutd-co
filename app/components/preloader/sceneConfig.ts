@@ -25,7 +25,7 @@ export const PRELOADER = {
   /** Overlay opacity transition — mirrors `.preloader` in globals.css. */
   fadeMs: 400,
   /** Below `md` the skyline draws zoomed in on its centre, then eases to 1:1. */
-  mobileSkylineZoom: 2.4,
+  mobileSkylineZoom: 3,
 } as const;
 
 /** Hold on the finished logo at the end of the video outros. */

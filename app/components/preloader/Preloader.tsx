@@ -80,7 +80,7 @@ export function Preloader() {
           </filter>
         </defs>
       </svg>
-      <LogoDraw className="relative w-[min(40vw,18rem)] -translate-y-[10vh]" />
+      <LogoDraw className="relative w-[min(78vw,18rem)] -translate-y-[10vh] md:w-[min(40vw,18rem)]" />
       {/* Mirrors the hero's sticky viewport and skyline band one for one. The
           traced outlines draw on, then the hero's own masked artwork fades in
           over them (`.skyline-original`) as the strokes fade out, so the
