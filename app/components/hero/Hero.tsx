@@ -115,11 +115,9 @@ export default function Hero() {
       // Layers that are simply on screen from the top of the page. The shader
       // gradient is deliberately not among them: it starts hidden and reveals on
       // its own range below, then leaves with everything else in the whiteout.
-      const restingLayers = [
-        skyLayer,
-        skylineLayer,
-        cometLayer,
-      ].filter((el): el is HTMLDivElement => el !== null);
+      const restingLayers = [skyLayer, skylineLayer, cometLayer].filter(
+        (el): el is HTMLDivElement => el !== null,
+      );
 
       // Every state below is declared rather than inferred.
       //
@@ -210,7 +208,6 @@ export default function Hero() {
           },
         );
       }
-
     },
     {
       scope: sectionRef,
@@ -235,7 +232,7 @@ export default function Hero() {
         style={
           { [HERO_SKYLINE.heightVar]: HERO_SKYLINE.height } as CSSProperties
         }
-        className={`sticky top-0 overflow-hidden isolate ${HERO_LAYOUT.stickyViewportHeight}`}
+        className={`sticky top-0 overflow-hidden isolate ${HERO_LAYOUT.stickyViewportHeight} ${HERO_SKYLINE.widthClass}`}
       >
         <svg aria-hidden="true" className="absolute h-0 w-0">
           <defs>
@@ -280,7 +277,7 @@ export default function Hero() {
           ref={skylineLayerRef}
           aria-hidden="true"
           style={HERO_SKYLINE_MASK}
-          className={`pointer-events-none absolute inset-x-0 z-0 bg-foreground ${HERO_SKYLINE.layerBox}`}
+          className={`pointer-events-none absolute z-0 bg-foreground ${HERO_SKYLINE.layerBox}`}
         />
 
         {/* Comet SVG layer */}
