@@ -43,7 +43,7 @@ export const HERO_COPY = {
    * Kicker above the headline. Its italic treatment separates it from the
    * headline while keeping the site's Satoshi typography consistent.
    */
-  eyebrow: "North America’s Largest 24 hour Hackathon",
+  eyebrow: "North America’s Largest 24 hour Collegiate Hackathon",
   headline: "Build something worth showing up for",
 } as const;
 

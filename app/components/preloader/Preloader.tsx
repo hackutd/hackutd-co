@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import {
@@ -23,6 +29,9 @@ const ORIGINAL_SKYLINE_STYLE: CSSProperties = {
   filter: `url(#${STROKE_FILTER_ID})`,
 };
 
+/** Marks the navbar's wordmark so the drawn logo can sit exactly over it. */
+const NAVBAR_LOGO_SELECTOR = "[data-navbar-logo] img";
+
 /**
  * Full-screen overlay that draws the wordmark and the hero skyline once,
  * fades out and unmounts.
@@ -31,10 +40,43 @@ const ORIGINAL_SKYLINE_STYLE: CSSProperties = {
  * nothing reflows when it leaves and LCP is not held hostage by the timer.
  * Dismissal waits for the whole draw cycle so a fast load never shows a
  * half-drawn logo; under reduced motion the static logo just fades in and out.
+ *
+ * The wordmark is laid over the navbar's own logo, measured from the DOM
+ * rather than mirrored in classes (its vertical offset depends on the height
+ * of the controls beside it), so the overlay lifts onto the real logo at any
+ * screen size.
  */
 export function Preloader() {
   const [phase, setPhase] = useState<Phase>("drawing");
   const prefersReducedMotion = usePrefersReducedMotion();
+  const logoRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const logo = logoRef.current;
+    const target = document.querySelector<HTMLElement>(NAVBAR_LOGO_SELECTOR);
+    if (!logo || !target) return;
+
+    const place = () => {
+      const { left, top, width, height } = target.getBoundingClientRect();
+      Object.assign(logo.style, {
+        left: `${left}px`,
+        top: `${top}px`,
+        width: `${width}px`,
+        height: `${height}px`,
+        visibility: "visible",
+      });
+    };
+
+    place();
+    const observer = new ResizeObserver(place);
+    observer.observe(target);
+    window.addEventListener("resize", place);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", place);
+    };
+  }, []);
 
   useEffect(() => {
     const hold = prefersReducedMotion
@@ -80,7 +122,11 @@ export function Preloader() {
           </filter>
         </defs>
       </svg>
-      <LogoDraw className="relative w-[min(78vw,18rem)] -translate-y-[10vh] md:w-[min(40vw,18rem)]" />
+      {/* Hidden until placed over the navbar logo, so it never flashes at a
+          guessed position before hydration. */}
+      <div ref={logoRef} className="invisible absolute">
+        <LogoDraw className="block h-full w-full" />
+      </div>
       {/* Mirrors the hero's sticky viewport and skyline band one for one. The
           traced outlines draw on, then the hero's own masked artwork fades in
           over them (`.skyline-original`) as the strokes fade out, so the

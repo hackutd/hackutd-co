@@ -187,7 +187,10 @@ export default function Navbar() {
         }`}
       />
       <Link href="/" onClick={scrollToTop} className="flex items-center">
-        <span className="relative block h-6 w-33.5 md:h-8 md:w-44.5">
+        <span
+          data-navbar-logo
+          className="relative block h-6 w-33.5 md:h-8 md:w-44.5"
+        >
           <Image
             src={whiteLogo}
             alt="HackUTD"
