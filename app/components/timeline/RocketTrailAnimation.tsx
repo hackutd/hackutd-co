@@ -372,27 +372,34 @@ export default function RocketTrailAnimation() {
       // Start with a complete wave already drawn, then advance one wavelength
       // per cycle. One phase driver keeps both edges and all markers locked.
       renderWave();
-      const waveTween = gsap.to(waveState, {
-        phase: Math.PI * 2,
-        duration,
-        ease: "none",
-        repeat: -1,
-        paused: true,
-        onUpdate: renderWave,
-      });
 
-      // Run the wave tweens only while the timeline section is on screen
-      const waveVisibility = ScrollTrigger.create({
-        trigger,
-        start: "top bottom",
-        end: "bottom top",
-        onToggle: (self) => waveTween.paused(!self.isActive),
-      });
+      // Phones keep the drawn wave but never advance it: every step rewrites
+      // the whole polygon inside the plume's mask, and on a phone that mask is
+      // re-rasterised on the CPU each frame. The sweep below still carries the
+      // wavy plume across the screen, which is a compositor-only transform.
+      if (!isMobile) {
+        const waveTween = gsap.to(waveState, {
+          phase: Math.PI * 2,
+          duration,
+          ease: "none",
+          repeat: -1,
+          paused: true,
+          onUpdate: renderWave,
+        });
 
-      // A reload restores scroll position, so the section can already be in
-      // view here — start from that state rather than relying on onToggle.
-      if (waveVisibility.isActive) {
-        waveTween.paused(false);
+        // Run the wave tweens only while the timeline section is on screen
+        const waveVisibility = ScrollTrigger.create({
+          trigger,
+          start: "top bottom",
+          end: "bottom top",
+          onToggle: (self) => waveTween.paused(!self.isActive),
+        });
+
+        // A reload restores scroll position, so the section can already be in
+        // view here — start from that state rather than relying on onToggle.
+        if (waveVisibility.isActive) {
+          waveTween.paused(false);
+        }
       }
 
       // --- Scroll-driven sweep ---
@@ -497,7 +504,9 @@ export default function RocketTrailAnimation() {
                 y={bounds.y}
                 width={bounds.width}
                 height={bounds.height}
-                animate={!prefersReducedMotion}
+                // Static on phones, like the plume's wave: a drifting fill
+                // under the mask repaints the whole plume every frame.
+                animate={false}
                 duration={14}
               />
             )}

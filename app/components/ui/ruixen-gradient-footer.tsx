@@ -8,14 +8,13 @@
 //
 // Gradient design inspired by Dia Browser — https://www.diabrowser.com
 
-import {
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
+import { useId, useRef, type CSSProperties, type ReactNode } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useGSAP } from "@gsap/react";
+import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
+
+configureScrollTrigger();
 
 export type Stop = { offset: number; color: string };
 
@@ -47,8 +46,6 @@ function bellHeights(n: number, peak: number, valley: number): number[] {
   }
   return out;
 }
-
-const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
 export interface RuixenGradientFooterProps {
   /** Footer content — links, wordmark, copyright — shown above the glow. */
@@ -95,34 +92,38 @@ export function RuixenGradientFooter({
   // that isn't safe in a fragment identifier rather than just the colons.
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const bandRef = useRef<HTMLDivElement>(null);
-  // minReveal = a flat strip on the floor, 1 = risen to full height.
-  const [progress, setProgress] = useState(minReveal);
 
-  useEffect(() => {
-    const el = bandRef.current;
-    if (!el) return;
-    // Bind to the element's OWN window so this tracks the right scroll context
-    // on a real page and inside the docs preview iframe alike.
-    const doc = el.ownerDocument;
-    const win = doc.defaultView ?? window;
-    const measure = () => {
-      // offsetHeight ignores the transform, so the band can measure itself.
-      const h = el.offsetHeight || 1;
-      // How much scroll is left before the end of the page. The glow starts
-      // rising once that's within its own height, and is full at the bottom.
-      const left =
-        doc.documentElement.scrollHeight - win.innerHeight - win.scrollY;
-      const t = clamp01((h - left) / h);
-      setProgress(minReveal + (1 - minReveal) * t);
-    };
-    measure();
-    win.addEventListener("scroll", measure, { passive: true });
-    win.addEventListener("resize", measure, { passive: true });
-    return () => {
-      win.removeEventListener("scroll", measure);
-      win.removeEventListener("resize", measure);
-    };
-  }, [minReveal]);
+  // minReveal = a flat strip on the floor, 1 = risen to full height, reached
+  // exactly as the page bottoms out. The rise starts once the scroll left is
+  // within the band's own height.
+  //
+  // A scrubbed ScrollTrigger rather than a scroll listener: the listener ran
+  // on every scroll event anywhere on the page, read `scrollHeight` (forcing a
+  // layout between GSAP's writes) and set React state. ScrollTrigger measures
+  // once per refresh and writes the transform directly.
+  useGSAP(
+    () => {
+      const el = bandRef.current;
+      if (!el) return;
+
+      gsap.fromTo(
+        el,
+        { scaleY: minReveal },
+        {
+          scaleY: 1,
+          ease: "none",
+          scrollTrigger: {
+            // offsetHeight ignores the transform, so the band can measure itself.
+            start: () => ScrollTrigger.maxScroll(window) - el.offsetHeight,
+            end: () => ScrollTrigger.maxScroll(window),
+            scrub: true,
+            invalidateOnRefresh: true,
+          },
+        },
+      );
+    },
+    { dependencies: [minReveal], revertOnUpdate: true },
+  );
 
   const colW = VBW / bars;
 
@@ -148,7 +149,8 @@ export function RuixenGradientFooter({
           height: gradientHeight,
           pointerEvents: "none",
           transformOrigin: "bottom",
-          transform: `scaleY(${progress})`,
+          // GSAP owns the transform from here; this only covers first paint.
+          transform: `scaleY(${minReveal})`,
           willChange: "transform",
         }}
       >
@@ -175,17 +177,21 @@ export function RuixenGradientFooter({
               <feGaussianBlur stdDeviation={blur} />
             </filter>
           </defs>
-          {bellHeights(bars, peak, valley).map((barH, i) => (
-            <g key={i} filter={`url(#blur-${uid})`}>
+          {/* One filter over the whole row rather than one per bar: each
+              filter is its own offscreen surface, so the per-bar version paid
+              for `bars` full-height blurs every time the band re-rasterised. */}
+          <g filter={`url(#blur-${uid})`}>
+            {bellHeights(bars, peak, valley).map((barH, i) => (
               <rect
+                key={i}
                 x={i * colW}
                 y={VBH - barH}
                 width={colW * 1.23}
                 height={barH}
                 fill={`url(#grad-${uid})`}
               />
-            </g>
-          ))}
+            ))}
+          </g>
         </svg>
       </div>
     </footer>

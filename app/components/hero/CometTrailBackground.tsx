@@ -98,26 +98,33 @@ export default function CometTrailBackground() {
       // an SVG mask on every frame. Left unattended it keeps doing that for the
       // whole page, stealing frames from sections that are nowhere near the
       // hero — so it only runs while the hero is actually on screen.
-      const wave = gsap.to(revealState, {
-        wavePhase: Math.PI * 2,
-        duration: COMET_TUNING.wave.duration,
-        ease: "none",
-        repeat: -1,
-        onUpdate: renderTrail,
-        paused: true,
-      });
+      //
+      // Phones skip it entirely: every rewrite re-rasterises the full-viewport
+      // mask on the CPU, which is the hero's idle jank there. The ribbon keeps
+      // its wave shape (frozen at phase 0) and is only redrawn by the scroll
+      // reveal below.
+      if (!isMobile) {
+        const wave = gsap.to(revealState, {
+          wavePhase: Math.PI * 2,
+          duration: COMET_TUNING.wave.duration,
+          ease: "none",
+          repeat: -1,
+          onUpdate: renderTrail,
+          paused: true,
+        });
 
-      const visibility = ScrollTrigger.create({
-        trigger,
-        start: "top bottom",
-        end: "bottom top",
-        onToggle: (self) => (self.isActive ? wave.play() : wave.pause()),
-      });
+        const visibility = ScrollTrigger.create({
+          trigger,
+          start: "top bottom",
+          end: "bottom top",
+          onToggle: (self) => (self.isActive ? wave.play() : wave.pause()),
+        });
 
-      // The hero is on screen at load, so start the tween from its initial
-      // state rather than relying on onToggle firing for it.
-      if (visibility.isActive) {
-        wave.play();
+        // The hero is on screen at load, so start the tween from its initial
+        // state rather than relying on onToggle firing for it.
+        if (visibility.isActive) {
+          wave.play();
+        }
       }
 
       gsap.to(revealState, {
@@ -163,7 +170,9 @@ export default function CometTrailBackground() {
               id={mobileGradientId}
               width={1440}
               height={900}
-              animate={!prefersReducedMotion}
+              // Static on phones: a drifting fill under the mask repaints the
+              // whole viewport every frame.
+              animate={false}
               duration={18}
             />
           )}

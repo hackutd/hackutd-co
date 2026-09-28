@@ -27,6 +27,7 @@ import CometTrailBackground from "./CometTrailBackground";
 configureScrollTrigger();
 
 const HERO_TEXT_CHARACTER_DATA_ATTR = "data-hero-text-character";
+const HERO_TEXT_WORD_DATA_ATTR = "data-hero-text-word";
 
 /** Keeps natural word wrapping while exposing each glyph as a GSAP target. */
 function renderHeroText(text: string) {
@@ -46,6 +47,7 @@ function renderHeroText(text: string) {
     return (
       <span
         key={`word-${segmentIndex}`}
+        {...{ [HERO_TEXT_WORD_DATA_ATTR]: "" }}
         aria-hidden="true"
         className="inline-block whitespace-nowrap"
       >
@@ -141,7 +143,44 @@ export default function Hero() {
 
       // The copy is present from the first paint — no entrance. Its only
       // animation is the scroll-driven exit below.
-      if (heroTextCharacters.length > 0) {
+      const exitScrollTrigger = {
+        trigger: section,
+        start: HERO_TEXT_EFFECT.exit.start,
+        end: HERO_TEXT_EFFECT.exit.end,
+        scrub,
+      };
+
+      if (isMobile && heroText) {
+        // Phones leave by word, on opacity and transform alone. A per-glyph
+        // blur gives every character its own filter surface, re-rasterised on
+        // every scroll tick — around ninety of them at once mid-exit. The
+        // stagger's total spread is kept, so the words still leave across the
+        // same stretch of scroll the glyphs do on desktop.
+        const heroTextWords = Array.from(
+          heroText.querySelectorAll<HTMLElement>(`[${HERO_TEXT_WORD_DATA_ATTR}]`),
+        );
+
+        if (heroTextWords.length > 0) {
+          gsap.fromTo(
+            heroTextWords,
+            { autoAlpha: 1, y: 0 },
+            {
+              autoAlpha: 0,
+              y: HERO_TEXT_EFFECT.exit.y,
+              duration: HERO_TEXT_EFFECT.exit.duration,
+              stagger: {
+                amount:
+                  HERO_TEXT_EFFECT.exit.stagger *
+                  Math.max(heroTextCharacters.length - 1, 0),
+              },
+              ease: HERO_TEXT_EFFECT.exit.ease,
+              immediateRender: false,
+              overwrite: "auto",
+              scrollTrigger: exitScrollTrigger,
+            },
+          );
+        }
+      } else if (heroTextCharacters.length > 0) {
         gsap.fromTo(
           heroTextCharacters,
           {
@@ -158,12 +197,7 @@ export default function Hero() {
             ease: HERO_TEXT_EFFECT.exit.ease,
             immediateRender: false,
             overwrite: "auto",
-            scrollTrigger: {
-              trigger: section,
-              start: HERO_TEXT_EFFECT.exit.start,
-              end: HERO_TEXT_EFFECT.exit.end,
-              scrub,
-            },
+            scrollTrigger: exitScrollTrigger,
           },
         );
       }

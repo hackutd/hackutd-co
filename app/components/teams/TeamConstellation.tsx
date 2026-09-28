@@ -4,7 +4,7 @@
 
 "use client";
 
-import type { CSSProperties } from "react";
+import { memo, type CSSProperties } from "react";
 import Image from "next/image";
 import type { ResolvedConstellationLayout } from "./constellationLayout";
 import type { ConstellationBox } from "./sceneConfig";
@@ -16,7 +16,7 @@ export type ActiveNodeState = {
   pointer: { x: number; y: number };
 } | null;
 
-export function TeamConstellation({
+function TeamConstellationBase({
   layout,
   box,
   activeNode,
@@ -232,3 +232,10 @@ export function TeamConstellation({
     </article>
   );
 }
+
+/**
+ * Memoised: the Teams section re-renders each time the scroll-driven track
+ * lands on a new team, and without this every constellation — and every node
+ * image in it — would re-render with it. Teams keeps the props stable.
+ */
+export const TeamConstellation = memo(TeamConstellationBase);

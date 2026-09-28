@@ -53,7 +53,8 @@ export const TEAM_GROUP_PHOTO = {
 } as const;
 
 export const TEAMS_SCROLL = {
-  smoothing: 0.22,
+  /** Seconds the scroll-driven track takes to catch up to the scroll position. */
+  scrub: 0.25,
   desktopGap: 0,
   desktopTrailingSpace: 96,
   desktopPeekWidth: 150,

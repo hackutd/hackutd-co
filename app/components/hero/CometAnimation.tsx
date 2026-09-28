@@ -171,7 +171,10 @@ export default function CometAnimation() {
         setGradientEndpoints(x1, y1, x2, y2);
       };
 
-      if (prefersReducedMotion) {
+      // Phones hold the gradient still: each orbit step re-rasterises the
+      // masked comet across the whole viewport, every frame, for as long as the
+      // hero is on screen.
+      if (prefersReducedMotion || isMobile) {
         resetGradientEndpoints();
         return;
       }
@@ -222,7 +225,13 @@ export default function CometAnimation() {
         orbit.play();
       }
     },
-    { scope: wrapperRef, dependencies: [prefersReducedMotion] },
+    {
+      scope: wrapperRef,
+      dependencies: [isMobile, prefersReducedMotion],
+      // Crossing the breakpoint starts or stops the orbit, so the previous
+      // one has to be reverted rather than left running alongside.
+      revertOnUpdate: true,
+    },
   );
 
   return (

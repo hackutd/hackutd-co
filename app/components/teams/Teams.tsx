@@ -7,10 +7,13 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import { useIsAndroid } from "@/app/hooks/useIsAndroid";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
+import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import {
   SECTION_GRADIENT_DATA_ATTR,
   SECTION_GRADIENT_LABEL_DATA_ATTR,
@@ -32,6 +35,8 @@ import {
 } from "./sceneConfig";
 import { TeamConstellation, type ActiveNodeState } from "./TeamConstellation";
 import { TeamGroupPhoto } from "./TeamGroupPhoto";
+
+configureScrollTrigger();
 
 function areBoxesEqual(left: ConstellationBox, right: ConstellationBox) {
   return (
@@ -112,7 +117,16 @@ export default function Teams() {
   useEffect(() => {
     if (!isMobile) return;
 
+    // Width is the trigger, not any resize: a phone fires height-only resizes
+    // constantly as the address bar slides, and each one used to re-lay out
+    // every constellation mid-scroll. Rotation changes the width, so it still
+    // re-measures.
+    let lastWidth = 0;
+
     const update = () => {
+      if (window.innerWidth === lastWidth) return;
+      lastWidth = window.innerWidth;
+
       const w = window.innerWidth;
       const h = window.innerHeight;
 
@@ -147,193 +161,85 @@ export default function Teams() {
     return () => window.removeEventListener("resize", update);
   }, [isMobile, isAndroid]);
 
-  useEffect(() => {
-    if (!isMobile || prefersReducedMotion) return;
+  /**
+   * Page scroll drives the horizontal track on both layouts.
+   *
+   * One scrubbed ScrollTrigger tween rather than a scroll listener: the old
+   * listener ran on every scroll event anywhere on the page and read
+   * offsetTop/offsetHeight/scrollWidth each time, forcing a layout between
+   * GSAP's style writes. ScrollTrigger measures once per refresh, and its scrub
+   * supplies the catch-up the hand-rolled lerp used to.
+   */
+  useGSAP(
+    () => {
+      if (prefersReducedMotion) return;
 
-    const section = mobileSectionRef.current;
-    const track = mobileTrackRef.current;
+      const section = isMobile ? mobileSectionRef.current : sectionRef.current;
+      const track = isMobile ? mobileTrackRef.current : trackRef.current;
+      const trackViewport = trackViewportRef.current;
 
-    if (!section || !track) return;
+      if (!section || !track || (!isMobile && !trackViewport)) return;
 
-    let frame = 0;
-    let currentX = 0;
-    let targetX = 0;
-
-    const clamp = (value: number, min: number, max: number) =>
-      Math.min(Math.max(value, min), max);
-
-    const updateTarget = () => {
-      const maxTranslate = Math.max(track.scrollWidth - window.innerWidth, 0);
-      const scrollableDistance = Math.max(
-        section.offsetHeight - window.innerHeight,
-        1,
-      );
-      const progress = clamp(
-        (window.scrollY - section.offsetTop) / scrollableDistance,
-        0,
-        1,
-      );
-
-      const nextIndex = clamp(
-        Math.round(progress * (ORDERED_OFFICER_TEAMS.length - 1)),
-        0,
-        ORDERED_OFFICER_TEAMS.length - 1,
-      );
-
-      targetX = progress * maxTranslate;
-
-      if (nextIndex !== activeTeamIndexRef.current) {
-        activeTeamIndexRef.current = nextIndex;
-        setDisplayedTeamIndex(nextIndex);
-      }
-
-      if (progress <= 0.001 || progress >= 0.999) {
-        currentX = targetX;
-        track.style.transform = `translate3d(${-currentX}px, 0, 0)`;
-        return;
-      }
-
-      queueRender();
-    };
-
-    const renderTrack = () => {
-      currentX += (targetX - currentX) * TEAMS_SCROLL.smoothing;
-
-      if (Math.abs(targetX - currentX) < 0.12) {
-        currentX = targetX;
-      }
-
-      track.style.transform = `translate3d(${-currentX}px, 0, 0)`;
-
-      if (currentX !== targetX) {
-        frame = window.requestAnimationFrame(renderTrack);
-        return;
-      }
-
-      frame = 0;
-    };
-
-    const queueRender = () => {
-      if (frame !== 0) return;
-      frame = window.requestAnimationFrame(renderTrack);
-    };
-
-    window.addEventListener("scroll", updateTarget, { passive: true });
-    window.addEventListener("resize", updateTarget);
-    updateTarget();
-
-    return () => {
-      if (frame !== 0) window.cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", updateTarget);
-      window.removeEventListener("resize", updateTarget);
-      track.style.transform = "";
-    };
-  }, [isMobile, prefersReducedMotion]);
-
-  useEffect(() => {
-    if (isMobile || prefersReducedMotion) {
-      return;
-    }
-
-    const section = sectionRef.current;
-    const trackViewport = trackViewportRef.current;
-    const track = trackRef.current;
-
-    if (!section || !trackViewport || !track) {
-      return;
-    }
-
-    let frame = 0;
-    let currentX = 0;
-    let targetX = 0;
-    let maxTranslate = 0;
-
-    const clamp = (value: number, min: number, max: number) =>
-      Math.min(Math.max(value, min), max);
-
-    const updateTarget = () => {
-      const scrollableDistance = Math.max(
-        section.offsetHeight - window.innerHeight,
-        1,
-      );
-      const progress = clamp(
-        (window.scrollY - section.offsetTop) / scrollableDistance,
-        0,
-        1,
-      );
-      targetX = progress * maxTranslate;
-
-      if (maxTranslate > 0) {
-        const slotWidth = track.scrollWidth / ORDERED_OFFICER_TEAMS.length;
-        const nextIndex = clamp(
-          Math.round((progress * maxTranslate) / slotWidth),
+      const teamCount = ORDERED_OFFICER_TEAMS.length;
+      const maxTranslate = () =>
+        Math.max(
+          track.scrollWidth -
+            (isMobile ? window.innerWidth : (trackViewport?.offsetWidth ?? 0)),
           0,
-          ORDERED_OFFICER_TEAMS.length - 1,
         );
+
+      const syncDisplayedTeam = (progress: number) => {
+        let nextIndex: number;
+
+        if (isMobile) {
+          nextIndex = Math.round(progress * (teamCount - 1));
+        } else {
+          const distance = maxTranslate();
+          if (distance <= 0) return;
+          const slotWidth = track.scrollWidth / teamCount;
+          nextIndex = Math.round((progress * distance) / slotWidth);
+        }
+
+        nextIndex = gsap.utils.clamp(0, teamCount - 1, nextIndex);
+
         if (nextIndex !== activeTeamIndexRef.current) {
           activeTeamIndexRef.current = nextIndex;
           setDisplayedTeamIndex(nextIndex);
         }
-      }
+      };
 
-      if (progress <= 0.001 || progress >= 0.999) {
-        currentX = targetX;
-        track.style.transform = `translate3d(${-currentX}px, 0, 0)`;
-        return;
-      }
-
-      queueRender();
-    };
-
-    const updateMetrics = () => {
-      maxTranslate = Math.max(track.scrollWidth - trackViewport.offsetWidth, 0);
-      updateTarget();
-    };
-
-    const renderTrack = () => {
-      currentX += (targetX - currentX) * TEAMS_SCROLL.smoothing;
-
-      if (Math.abs(targetX - currentX) < 0.12) {
-        currentX = targetX;
-      }
-
-      track.style.transform = `translate3d(${-currentX}px, 0, 0)`;
-
-      if (currentX !== targetX) {
-        frame = window.requestAnimationFrame(renderTrack);
-        return;
-      }
-
-      frame = 0;
-    };
-
-    const queueRender = () => {
-      if (frame !== 0) {
-        return;
-      }
-
-      frame = window.requestAnimationFrame(renderTrack);
-    };
-
-    updateMetrics();
-
-    const resizeObserver = new ResizeObserver(updateMetrics);
-    resizeObserver.observe(trackViewport);
-    resizeObserver.observe(track);
-    window.addEventListener("scroll", updateTarget, { passive: true });
-    window.addEventListener("resize", updateMetrics);
-
-    return () => {
-      if (frame !== 0) {
-        window.cancelAnimationFrame(frame);
-      }
-
-      resizeObserver.disconnect();
-      window.removeEventListener("scroll", updateTarget);
-      window.removeEventListener("resize", updateMetrics);
-      track.style.transform = "";
-    };
-  }, [desktopBox.height, desktopBox.width, isMobile, prefersReducedMotion]);
+      gsap.fromTo(
+        track,
+        { x: 0 },
+        {
+          x: () => -maxTranslate(),
+          ease: "none",
+          scrollTrigger: {
+            trigger: section,
+            start: "top top",
+            end: "bottom bottom",
+            scrub: TEAMS_SCROLL.scrub,
+            invalidateOnRefresh: true,
+            onUpdate: (self) => syncDisplayedTeam(self.progress),
+            onRefresh: (self) => syncDisplayedTeam(self.progress),
+          },
+        },
+      );
+    },
+    {
+      // The track's width follows the constellation box, so a new box needs a
+      // new tween measured against it.
+      dependencies: [
+        isMobile,
+        prefersReducedMotion,
+        desktopBox.width,
+        desktopBox.height,
+        mobileBox.width,
+        mobileBox.height,
+      ],
+      revertOnUpdate: true,
+    },
+  );
 
   useEffect(() => {
     if (!isMobile || !prefersReducedMotion) {
@@ -399,34 +305,46 @@ export default function Teams() {
     };
   }, []);
 
-  const clearTooltipClose = () => {
+  // Stable identities, together with the memoised layouts below, let the
+  // memoised TeamConstellation skip re-rendering when only the displayed team
+  // changes — which happens several times per pass of the scroll-driven track.
+  const clearTooltipClose = useCallback(() => {
     if (tooltipCloseTimeoutRef.current === null) {
       return;
     }
 
     window.clearTimeout(tooltipCloseTimeoutRef.current);
     tooltipCloseTimeoutRef.current = null;
-  };
+  }, []);
 
-  const scheduleTooltipClose = () => {
+  const scheduleTooltipClose = useCallback(() => {
     clearTooltipClose();
     tooltipCloseTimeoutRef.current = window.setTimeout(() => {
       setActiveNode(null);
       tooltipCloseTimeoutRef.current = null;
     }, TEAMS_SCROLL.tooltipCloseDelayMs);
-  };
+  }, [clearTooltipClose]);
 
-  const openNode = (
-    teamId: string,
-    personId: string,
-    pointer: NonNullable<ActiveNodeState>["pointer"],
-  ) => {
-    clearTooltipClose();
-    setActiveNode({ teamId, personId, pointer });
-  };
+  const openNode = useCallback(
+    (
+      teamId: string,
+      personId: string,
+      pointer: NonNullable<ActiveNodeState>["pointer"],
+    ) => {
+      clearTooltipClose();
+      setActiveNode({ teamId, personId, pointer });
+    },
+    [clearTooltipClose],
+  );
 
-  const desktopLayouts = buildLayouts(ORDERED_OFFICER_TEAMS, desktopBox);
-  const mobileLayouts = buildLayouts(ORDERED_OFFICER_TEAMS, mobileBox);
+  const desktopLayouts = useMemo(
+    () => buildLayouts(ORDERED_OFFICER_TEAMS, desktopBox),
+    [desktopBox],
+  );
+  const mobileLayouts = useMemo(
+    () => buildLayouts(ORDERED_OFFICER_TEAMS, mobileBox),
+    [mobileBox],
+  );
   const displayedTeam =
     ORDERED_OFFICER_TEAMS[displayedTeamIndex] ?? ORDERED_OFFICER_TEAMS[0];
   const sectionGradientAttributes = {
