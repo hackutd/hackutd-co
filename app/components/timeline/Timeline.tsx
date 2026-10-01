@@ -100,7 +100,6 @@ export default function Timeline() {
   return (
     <section
       ref={sectionRef}
-      id="history"
       aria-labelledby="history-heading"
       data-section-gradient="history"
       {...(prefersReducedMotion
@@ -108,6 +107,13 @@ export default function Timeline() {
         : { [TIMELINE_SECTION_DATA_ATTR]: "" })}
       className={`relative ${prefersReducedMotion ? "bg-surface" : ""} ${TIMELINE_LAYOUT.minHeight}`}
     >
+      {/* Jump target for the navbar link. With motion, the stage is empty at
+          the section top, so the anchor sits partway into the sweep instead. */}
+      <span
+        id="history"
+        aria-hidden="true"
+        className={`pointer-events-none absolute left-0 h-px w-px ${prefersReducedMotion ? "top-0" : TIMELINE_LAYOUT.anchorOffset}`}
+      />
       <div
         ref={stickyRef}
         className={`sticky top-0 ${TIMELINE_LAYOUT.stickyViewportHeight}`}

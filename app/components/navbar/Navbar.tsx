@@ -45,6 +45,7 @@ const NAV_LINKS = [
   { href: "#mission", label: "MISSION" },
   { href: "#about", label: "ABOUT" },
   { href: "#team", label: "THE TEAM" },
+  { href: "#history", label: "HISTORY" },
   { href: "#sponsors", label: "PAST SPONSORS" },
 ];
 

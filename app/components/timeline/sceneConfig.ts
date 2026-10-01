@@ -104,7 +104,7 @@ export const YEAR_MARKERS: YearMarker[] = [
   // older one a pitch further out and flips its row. The newest one holds the
   // anchor, where the plume is at its narrowest, so it takes the upper row: in
   // the lower one its labels would fall past the plume's edge on short screens.
-  { year: "2025", name: "LOST IN THE PAGES",  date: "Fall 2025",   x: 450,  y: 148, image: hackutd2025Logo,          imageWidth: 70,  imageHeight: 80, card: hackutd2025Card },
+  { year: "2025", name: "LOST IN THE PAGES",  date: "Fall 2025",   x: 450,  y: 148, image: hackutd2025Logo,          imageWidth: 70,  imageHeight: 80, card: hackutd2025Card,          href: "https://legend.hackutd.co/" },
   { year: "2024", name: "RIPPLE EFFECT",      date: "Fall 2024",   x: 615,  y: 198, image: hackutd2024Logo,          imageWidth: 80 * (hackutd2024Logo.width / hackutd2024Logo.height), imageHeight: 80, card: ripple2024Card, href: "https://ripple.hackutd.co" },
   { year: "2023", name: "HACKUTD X",          date: "Fall 2023",   x: 780,  y: 148, image: hackutdX2023Logo,         imageWidth: 64,  imageHeight: 80, card: hackutdX2023Card,         href: "https://x.hackutd.co" },
   { year: "2023", name: "AXXESS HACKATHON",   date: "Spring 2023", x: 945,  y: 198, image: axxess2023Logo,           imageWidth: 100, imageHeight: 29, card: axxess2023Card,           href: "https://www.axxess.com/hackathon" },
@@ -204,6 +204,10 @@ export const TIMELINE_LAYOUT = {
   // for its wider marker pitch without making the sweep move faster.
   minHeight: "min-h-[600vh] md:min-h-[520vh]",
   stickyViewportHeight: "h-[100svh]",
+  // Where the navbar's #history link lands, measured down from the section
+  // top. At the top itself the sweep hasn't started and the stage is empty;
+  // about a viewport in, the rocket and the newest markers are on screen.
+  anchorOffset: "top-[100svh]",
 } as const;
 
 export const MOBILE_TIMELINE_SCRUB = 0.9;
