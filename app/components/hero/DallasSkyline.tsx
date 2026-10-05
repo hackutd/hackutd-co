@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
+import logoArt from "@/app/assets/brand/white-hackutd-logo.svg";
 import { HERO_SCENE_DATA_ATTR } from "../background/sceneConfig";
 import {
   HERO_CITY,
@@ -49,22 +50,26 @@ configureScrollTrigger();
 
 /**
  * DallasSkyline: downtown Dallas as a live isometric line drawing, in the
- * manner of Lucas Marques' hairline figures. Reunion Tower, Bank of America
- * Plaza, Renaissance Tower, Comerica, Energy Plaza, Fountain Place, Chase
- * Tower, Trammell Crow Center, the Omni and the Margaret Hunt Hill bridge
- * stand among filler blocks, with a DART train running the front, tower
- * cranes, rooftop and wall billboards, strung wires, clouds, airliners and a
- * hot-air balloon overhead.
+ * manner of Lucas Marques' hairline figures — a diorama seen from above at an
+ * angle, four rows of blocks deep with streets between them. Reunion Tower,
+ * Bank of America Plaza, Renaissance Tower, Comerica, Energy Plaza, Fountain
+ * Place, Chase Tower, Trammell Crow Center, the Omni and the Margaret Hunt
+ * Hill bridge stand among dense filler blocks and low-rises; UTD's ECSW sits
+ * front and center under a HackUTD billboard. A DART train runs the front,
+ * tower cranes swing, rooftop and wall billboards turn, wires sag between the
+ * roofs and a helicopter patrols overhead. (Clouds, plane and balloon are the
+ * plate's own artwork in `SkyElements`, far above all this.)
  *
  * Everything is one stroke colour (`currentColor`) with the page background
  * as fill, so the figure follows the site theme like the body text does.
  *
  * The pointer is the weather: towers rise under it and settle behind it, the
- * nearest one lights up, cranes and billboards turn toward it, clouds, planes
- * and the balloon give it room, the Omni's facade ripples from it, Reunion's
- * ball lights in its direction, and holding it near the track slows the
- * train. Scroll parallaxes the rows. The loop sleeps when the hero is off
- * screen, the tab is hidden, or the reader asked for reduced motion.
+ * nearest one lights up, billboards turn toward it, cranes near it start
+ * sweeping left and right, the helicopter keeps its distance, the Omni's
+ * facade ripples from it, Reunion's ball lights in its direction, and holding
+ * it near the track slows the train. Scroll parallaxes the rows. The loop
+ * sleeps when the hero is off screen, the tab is hidden, or the reader asked
+ * for reduced motion.
  */
 
 // ---- the grid ------------------------------------------------------------
@@ -84,8 +89,12 @@ const Winv = (x: number, y: number): Pt => [
 ];
 const RISE = 10;
 const RADIUS = 3 * CELL;
-const TRACK_V = 1.75;
-const N = 34;
+/** Row centres across the city, back to front, with the DART between the
+ * mid row and the low-rise strip along the front. */
+const ROW_V = [-1.35, 0, 1.25, 2.9] as const;
+const TRACK_V = 2.15;
+const N = 30;
+const rowOf = (v: number) => (v < -0.6 ? 0 : v < 0.6 ? 1 : v < 2.0 ? 2 : 3);
 
 type Kind =
   | "box"
@@ -173,16 +182,32 @@ export default function DallasSkyline() {
     const still = prefersReducedMotion;
 
     const root = mk<SVGGElement>("g", svg);
-    const sky = mk<SVGGElement>("g", root);
+    const defs = mk<SVGDefsElement>("defs", root);
+    const back = mk<SVGGElement>("g", root);
     const far = mk<SVGGElement>("g", root);
     const mid = mk<SVGGElement>("g", root);
     const near = mk<SVGGElement>("g", root);
     const air = mk<SVGGElement>("g", root);
+    const rowG = [back, far, mid, near] as const;
 
-    // -- towers: the landmarks first, then filler blocks in the free cells --
+    // Streets between the rows: a dashed centre line each, under everything.
+    for (const [v, g] of [
+      [(ROW_V[0] + ROW_V[1]) / 2, far],
+      [(ROW_V[1] + ROW_V[2]) / 2, mid],
+    ] as const) {
+      const a = W(-2, v);
+      const b = W(N + 1.5, v);
+      line(g, "2 4").setAttribute("d", seg(P(a[0], a[1], 0), P(b[0], b[1], 0)));
+    }
+
+    // -- towers: the landmarks first, then filler blocks in the free lots ----
     const towers: Tower[] = [];
     const roofs: Roof[] = [];
-    const taken = new Set<string>();
+    // Occupied u-intervals per row, so lots never overlap whatever their size.
+    const used: [number, number][][] = [[], [], [], []];
+    const free = (row: number, a: number, b: number) =>
+      !used[row].some(([x, y]) => a < y && b > x);
+    const claim = (row: number, a: number, b: number) => used[row].push([a, b]);
     function tower(
       u: number,
       v: number,
@@ -193,8 +218,8 @@ export default function DallasSkyline() {
       opts: { rot?: number; landmark?: boolean; wall?: 0 | 1 | 2 } = {},
     ) {
       const [cx, cy] = W(u, v);
-      const row = v < 0.5 ? 0 : 1;
-      const g = row === 0 ? far : mid;
+      const row = rowOf(v);
+      const g = rowG[row];
       const parts = [body(g), body(g), body(g), body(g)];
       const lines: SVGPathElement[] = [];
       const t: Tower = {
@@ -216,44 +241,87 @@ export default function DallasSkyline() {
       if (kind === "crown") for (let i = 0; i < 4; i++) lines.push(line(g));
       towers.push(t);
       roofs.push({ cx, cy, z: h, row, t });
-      const span = Math.ceil(sx / 2 / CELL);
-      for (let k = -span; k <= span; k++)
-        taken.add(`${row}:${Math.round(u) + k}`);
+      const half = sx / 2 / CELL + 0.08;
+      claim(row, u - half, u + half);
       return t;
     }
-
     // West to east, the way the plate reads.
-    tower(3.6, 0.1, 30, 15, 30, "tiered", { landmark: true }); // Hyatt Regency
-    const bofa = tower(8.2, 0.05, 17, 17, 128, "chamfer", { landmark: true });
-    const ren = tower(11.4, 1.05, 14, 14, 108, "crown", { landmark: true });
-    tower(14.6, 0, 16, 15, 96, "barrel", { landmark: true }); // Comerica
-    tower(16.9, 1.1, 11, 11, 80, "tri", { landmark: true, rot: 0.3 }); // Energy Plaza
-    tower(19.6, 0.05, 15, 15, 106, "prismatic", { landmark: true }); // Fountain Place
-    tower(22.6, 1.05, 20, 9, 98, "stadium", { landmark: true }); // Chase Tower
-    tower(25.6, 0.05, 15, 15, 92, "pyramid", { landmark: true }); // Trammell Crow
-    tower(28.2, 1.1, 14, 12, 72, "box", { landmark: true }); // Thanksgiving Tower
-    const omni = tower(31.6, 1.0, 30, 9, 36, "stadium", { landmark: true }); // Omni
+    tower(3.6, 0.1, 30, 15, 26, "tiered", { landmark: true }); // Hyatt Regency
+    const bofa = tower(8.2, 0.05, 17, 17, 110, "chamfer", { landmark: true });
+    const ren = tower(11.4, 1.3, 14, 14, 92, "crown", { landmark: true });
+    tower(14.6, 0, 16, 15, 82, "barrel", { landmark: true }); // Comerica
+    tower(17.3, 0.05, 11, 11, 70, "tri", { landmark: true, rot: 0.3 }); // Energy Plaza
+    tower(19.9, 0.05, 15, 15, 90, "prismatic", { landmark: true }); // Fountain Place
+    tower(22.8, 1.25, 20, 9, 84, "stadium", { landmark: true }); // Chase Tower
+    tower(25.6, 0.05, 15, 15, 78, "pyramid", { landmark: true }); // Trammell Crow
+    tower(28.3, 1.3, 14, 12, 62, "box", { landmark: true }); // Thanksgiving Tower
+    const omni = tower(31.6, 1.2, 30, 9, 30, "stadium", { landmark: true }); // Omni
+    const ECSW_U = 17.05;
+    claim(2, ECSW_U - 2.85, ECSW_U + 2.85); // ECSW, built below
 
+    const wallChance = lite ? (HERO_CITY.mobile.wallBoards ? 0.5 : 0) : 0.5;
+    const pickWall = (p: number): 0 | 1 | 2 =>
+      rnd() < p ? (rnd() < 0.5 ? 1 : 2) : 0;
+    // Blocks: a tall back row, the main far row and a lower mid row.
     for (const row of [
-      { v: 0, min: 26, max: 70, fp: [11, 17] as const, gap: 0.1 },
-      { v: 1.05, min: 12, max: 40, fp: [8, 13] as const, gap: 0.18 },
+      {
+        v: ROW_V[0],
+        min: 22,
+        max: 58,
+        fp: [10, 16] as const,
+        gap: 0.08,
+        wall: 0.3,
+      },
+      {
+        v: ROW_V[1],
+        min: 24,
+        max: 62,
+        fp: [10, 16] as const,
+        gap: 0.1,
+        wall: 1,
+      },
+      {
+        v: ROW_V[2],
+        min: 10,
+        max: 34,
+        fp: [8, 13] as const,
+        gap: 0.14,
+        wall: 1,
+      },
     ]) {
-      const r = row.v < 0.5 ? 0 : 1;
-      for (let i = 1; i < N; i++) {
-        if (taken.has(`${r}:${i}`)) continue;
-        if (rnd() < row.gap) continue;
+      const r = rowOf(row.v);
+      for (let i = -1; i < N + 1; i += 0.5) {
         const sx = row.fp[0] + rnd() * (row.fp[1] - row.fp[0]);
+        const half = sx / 2 / CELL + 0.08;
+        if (!free(r, i - half, i + half)) continue;
+        if (rnd() < row.gap) continue;
         const sy = sx * (0.75 + rnd() * 0.5);
-        const env = row.min + (row.max - row.min) * Math.sin((i / N) * Math.PI);
+        const env =
+          row.min +
+          (row.max - row.min) * Math.sin(((i + 1) / (N + 2)) * Math.PI);
         const h = env * (0.65 + rnd() * 0.6);
-        const kind: Kind = r === 0 && rnd() < 0.3 ? "tiered" : "box";
-        const wall: 0 | 1 | 2 =
-          (lite ? HERO_CITY.mobile.wallBoards : true) && rnd() < 0.4
-            ? rnd() < 0.5
-              ? 1
-              : 2
-            : 0;
-        tower(i + (r ? 0.5 : 0), row.v, sx, sy, h, kind, { wall });
+        const kind: Kind = r < 2 && rnd() < 0.3 ? "tiered" : "box";
+        tower(i, row.v + (rnd() - 0.5) * 0.08, sx, sy, h, kind, {
+          wall: pickWall(wallChance * row.wall),
+        });
+      }
+    }
+    // Low-rises: small lots in whatever gaps are left, plus a strip along the
+    // front, so the blocks read as a city and not a row of towers.
+    const lowGap = lite ? HERO_CITY.mobile.lowriseGap : 0.28;
+    for (const [r, v] of ROW_V.entries()) {
+      const frontRow = r === 3;
+      const u0 = frontRow ? -3 : -1.5;
+      const u1 = frontRow ? N + 3 : N + 1.5;
+      for (let i = u0; i < u1; i += 0.25) {
+        const sx = 5 + rnd() * 5;
+        const half = sx / 2 / CELL + 0.05;
+        if (!free(r, i - half, i + half)) continue;
+        if (rnd() < (frontRow ? lowGap + 0.25 : lowGap)) continue;
+        const sy = 5 + rnd() * 5;
+        const h = frontRow ? 3 + rnd() * 7 : 5 + rnd() * 10;
+        const kind: Kind = rnd() < 0.2 ? "tiered" : "box";
+        tower(i, v + (rnd() - 0.5) * (frontRow ? 0.3 : 0.12), sx, sy, h, kind);
       }
     }
 
@@ -460,6 +528,116 @@ export default function DallasSkyline() {
               );
         put(p3, prism(ring, inset(ring, 0.5), z0, z0 + ph));
       } else if (t.kind !== "crown") hide(p3);
+    }
+
+    // -- UTD's ECSW: two winged slabs on colonnades around a glass core, with
+    //    the HackUTD billboard on the roof -----------------------------------
+    {
+      const g = mid;
+      const [cx, cy] = W(ECSW_U, ROW_V[2] + 0.05);
+      // a: along the row; n: toward the viewer.
+      const at = (a: number, n: number): Pt => [
+        cx + UX * a - UY * n,
+        cy + UY * a + UX * n,
+      ];
+      const block = (
+        a: number,
+        n: number,
+        la: number,
+        ln: number,
+        rr = 0.6,
+      ) => {
+        const [x, y] = at(a, n);
+        return rotRect(x, y, la, ln, rr, UANG);
+      };
+      // A window grid on the camera-facing wall between A and B.
+      const grid = (
+        A: Pt,
+        B: Pt,
+        z0: number,
+        z1: number,
+        cols: number,
+        rows: number,
+      ) => {
+        let d = "";
+        for (let k = 1; k < cols; k++) {
+          const f = k / cols;
+          const x = A[0] + (B[0] - A[0]) * f;
+          const y = A[1] + (B[1] - A[1]) * f;
+          d += seg(P(x, y, z0), P(x, y, z1));
+        }
+        for (let j = 1; j < rows; j++) {
+          const z = z0 + (z1 - z0) * (j / rows);
+          d += seg(P(A[0], A[1], z), P(B[0], B[1], z));
+        }
+        line(g).setAttribute("d", d);
+      };
+      for (const side of [-1, 1]) {
+        const a0 = side * 30;
+        // Colonnade: a recessed glass wall behind a row of pillars.
+        put(body(g), prism(block(a0, -3, 24, 7), null, 0, 11));
+        grid(at(a0 - 12, 0.5), at(a0 + 12, 0.5), 0, 11, 8, 1);
+        for (let k = -3; k <= 3; k++)
+          put(
+            body(g),
+            prism(block(a0 + k * 4, 6.2, 1.1, 1.1, 0.3), null, 0, 11),
+          );
+        const slab = block(a0, 0, 28, 14);
+        put(body(g), prism(slab, inset(slab, 0.8), 11, 30));
+        // The projecting window box on the front face.
+        put(body(g), prism(block(a0, 8.6, 24, 5, 0.5), null, 16, 27));
+        grid(at(a0 - 12, 11.1), at(a0 + 12, 11.1), 16, 27, 7, 3);
+        put(
+          body(g),
+          prism(block(a0 + side * 9, -2, 5, 5, 0.4), null, 30, 32.5),
+        );
+      }
+      const core = block(0, -4, 26, 10);
+      put(body(g), prism(core, inset(core, 0.8), 0, 23));
+      grid(at(-13, 1), at(13, 1), 3, 21, 9, 4);
+      const entry = block(0, 4, 14, 5, 0.4);
+      put(body(g), prism(entry, inset(entry, 0.5), 0, 7));
+
+      // Billboard: posts, a framed face, and the wordmark mapped onto it as a
+      // currentColor rect masked by the logo art, so it inks like the strokes.
+      const BW = 26;
+      const BH = 10.5;
+      const Z0 = 27;
+      for (const a of [-BW / 2 + 1.4, BW / 2 - 1.4])
+        put(body(g), prism(block(a, -4, 0.9, 0.9, 0.3), null, 23, Z0 + 0.5));
+      put(body(g), prism(block(0, -4, BW, 1, 0.4), null, Z0, Z0 + BH));
+      const mask = mk<SVGMaskElement>("mask", defs);
+      const maskId = "dallas-ecsw-logo";
+      mask.id = maskId;
+      mask.setAttribute("maskUnits", "userSpaceOnUse");
+      mask.setAttribute("x", "0");
+      mask.setAttribute("y", "0");
+      mask.setAttribute("width", "1");
+      mask.setAttribute("height", "1");
+      mask.style.maskType = "alpha";
+      const img = mk<SVGImageElement>("image", mask);
+      img.setAttribute("href", logoArt.src);
+      img.setAttribute("width", "1");
+      img.setAttribute("height", "1");
+      img.setAttribute("preserveAspectRatio", "none");
+      const lw = BW - 2.6;
+      const lh = lw / (logoArt.width / logoArt.height);
+      const zTop = Z0 + BH / 2 + lh / 2;
+      const zBot = zTop - lh;
+      const A = at(-lw / 2, -3.4);
+      const B = at(lw / 2, -3.4);
+      const o = P(A[0], A[1], zTop);
+      const ex = P(B[0], B[1], zTop);
+      const ey = P(A[0], A[1], zBot);
+      const logo = mk<SVGRectElement>("rect", g);
+      logo.setAttribute("width", "1");
+      logo.setAttribute("height", "1");
+      logo.setAttribute("mask", `url(#${maskId})`);
+      logo.style.fill = "currentColor";
+      logo.setAttribute(
+        "transform",
+        `matrix(${[ex[0] - o[0], ex[1] - o[1], ey[0] - o[0], ey[1] - o[1], o[0], o[1]].map(r2).join(" ")})`,
+      );
     }
 
     // -- Reunion Tower: three shafts under a lit geodesic ball ----------------
@@ -678,17 +856,19 @@ export default function DallasSkyline() {
     };
     const boards: Board[] = [];
     const boardRoofs = roofs
-      .filter((r) => !r.t.landmark && r.z > 18 && r.z < 64)
+      .filter((r) => !r.t.landmark && r.z > 14 && r.z < 64)
       .sort((a, b) => a.cx - b.cx);
     const picked = new Set<Roof>();
-    for (const f of [0.06, 0.22, 0.4, 0.58, 0.76, 0.93]) {
+    const boardCount = lite ? HERO_CITY.mobile.boards : 11;
+    for (let i = 0; i < boardCount; i++) {
+      const f = (i + 0.5) / boardCount;
       const r =
         boardRoofs[
           Math.min(boardRoofs.length - 1, Math.floor(boardRoofs.length * f))
         ];
       if (!r || picked.has(r)) continue;
       picked.add(r);
-      const g = r.row ? mid : far;
+      const g = rowG[r.row];
       boards.push({
         cx: r.cx,
         cy: r.cy,
@@ -723,7 +903,7 @@ export default function DallasSkyline() {
       put(b.el, prism(face, null, b.z + 4, b.z + 4 + b.w * 0.62));
     }
 
-    // -- tower cranes, jibs swinging toward the pointer -----------------------
+    // -- tower cranes: jibs sweep left and right while the pointer is near ---
     type Crane = {
       roof: Roof;
       mast: Solid;
@@ -733,6 +913,8 @@ export default function DallasSkyline() {
       hook: Solid;
       hookLine: SVGPathElement;
       a: Spring;
+      base: number;
+      ph: number;
       drawn: number;
       H: number;
       J: number;
@@ -741,15 +923,15 @@ export default function DallasSkyline() {
     const craneRoofs = roofs
       .filter((r) => !r.t.landmark && !picked.has(r) && r.z > 24 && r.z < 60)
       .sort((a, b) => a.cx - b.cx);
-    const craneCount = lite ? HERO_CITY.mobile.cranes : 2;
-    for (const f of [0.33, 0.7].slice(0, craneCount)) {
+    const craneCount = lite ? HERO_CITY.mobile.cranes : 3;
+    for (const f of [0.2, 0.5, 0.82].slice(0, craneCount)) {
       const roof =
         craneRoofs[
           Math.min(craneRoofs.length - 1, Math.floor(craneRoofs.length * f))
         ];
       if (!roof) continue;
       picked.add(roof);
-      const g = roof.row ? mid : far;
+      const g = rowG[roof.row];
       const H = 24 + rnd() * 10;
       const mastR = rrect(
         roof.cx - 1.3,
@@ -768,7 +950,9 @@ export default function DallasSkyline() {
         counter: body(g),
         hook: body(g),
         hookLine: line(g),
-        a: spring(UANG + 0.4 + rnd() * 0.6, 60, 14),
+        a: spring(UANG + 0.4 + rnd() * 0.6, 40, 11),
+        base: UANG + 0.4 + rnd() * 0.6,
+        ph: rnd() * 6.28,
         drawn: NaN,
         H,
         J: 22 + rnd() * 8,
@@ -840,12 +1024,14 @@ export default function DallasSkyline() {
         d += cable(tip(bofa, 16), P(r.cx, r.cy, r.z + 2), 8);
       // Pole-to-pole runs along the far row's quieter roofs.
       const poles = roofs
-        .filter((r) => r.row === 0 && !r.t.landmark && !picked.has(r))
+        .filter(
+          (r) => r.row === 1 && !r.t.landmark && !picked.has(r) && r.z > 12,
+        )
         .sort((a, b) => a.cx - b.cx)
         .filter((_, i) => i % 2 === 0);
       for (const r of poles)
         put(
-          body(far),
+          body(rowG[r.row]),
           prism(
             rrect(r.cx - 0.5, r.cy - 0.5, r.cx + 0.5, r.cy + 0.5, 0.25),
             null,
@@ -886,17 +1072,28 @@ export default function DallasSkyline() {
     }
     pts.push(P(rx, ry, ballZ + BALL_R + 10));
     pts.push(P(W(-7.6, 0.9)[0], W(-7.6, 0.9)[1], 0));
-    pts.push(P(W(uMin, TRACK_V + 0.6)[0], W(uMin, TRACK_V + 0.6)[1], 0));
-    pts.push(P(W(uMax, TRACK_V + 0.6)[0], W(uMax, TRACK_V + 0.6)[1], 0));
+    pts.push(P(W(uMin, ROW_V[3] + 0.5)[0], W(uMin, ROW_V[3] + 0.5)[1], 0));
+    pts.push(P(W(uMax, ROW_V[3] + 0.5)[0], W(uMax, ROW_V[3] + 0.5)[1], 0));
     for (const cr of cranes)
       pts.push(P(cr.roof.cx, cr.roof.cy, cr.roof.z + cr.H + 6));
+    {
+      const { radiusU, radiusV, z } = HERO_CITY.motion.heli;
+      for (const [u, v] of [
+        [N / 2 - radiusU, 0.6],
+        [N / 2 + radiusU, 0.6],
+        [N / 2, 0.6 - radiusV],
+      ]) {
+        const [hx, hy] = W(u, v);
+        pts.push(P(hx, hy, z + 14));
+      }
+    }
     const xs = pts.map((p) => p[0]);
     const ys = pts.map((p) => p[1]);
     const gx0 = Math.min(...xs) - 6;
     const gx1 = Math.max(...xs) + 6;
     const gy0 = Math.min(...ys);
     const gy1 = Math.max(...ys) + 3;
-    const SKY = 54;
+    const SKY = 10;
     const x0 = gx0;
     const x1 = gx1;
     const y0 = gy0 - SKY;
@@ -907,192 +1104,71 @@ export default function DallasSkyline() {
     );
     const spanX = x1 - x0;
 
-    // -- clouds: flat-bottomed puffs drifting across the sky ------------------
-    type Cloud = {
-      x: number;
-      y: number;
-      w: number;
-      v: number;
-      el: SVGPathElement;
-      oy: Spring;
-      d: string;
+    // -- a helicopter on patrol over the city ---------------------------------
+    const heli = {
+      cabin: body(air),
+      boom: body(air),
+      fin: body(air),
+      skids: line(air),
+      mast: line(air),
+      disc: line(air, "1.5 3"),
+      blades: line(air),
+      tail: line(air),
+      wx: 0,
+      wy: 0,
+      ox: spring(0, 20, 8),
+      oy: spring(0, 20, 8),
     };
-    const clouds: Cloud[] = [];
-    const cloudCount = lite ? HERO_CITY.mobile.clouds : 6;
-    for (let i = 0; i < cloudCount; i++) {
-      const w = 44 + rnd() * 52;
-      const h = w * (0.22 + rnd() * 0.1);
-      // Sample the upper outline of a few overlapping discs.
-      const discs: [number, number, number][] = [];
-      const n = 3 + Math.floor(rnd() * 3);
-      for (let k = 0; k < n; k++) {
-        const cx = -w / 2 + ((k + 0.5) / n) * w;
-        const rr =
-          h * (0.55 + rnd() * 0.55) * (k === 0 || k === n - 1 ? 0.7 : 1);
-        discs.push([cx, -rr * 0.15, rr]);
+    function drawHeli(t: number) {
+      const { speed, radiusU, radiusV, z } = HERO_CITY.motion.heli;
+      const th = 1.3 + t * speed;
+      const u = N / 2 + Math.cos(th) * radiusU;
+      const v = 0.6 + Math.sin(th) * radiusV;
+      const [hx, hy] = W(u, v);
+      heli.wx = hx;
+      heli.wy = hy;
+      const cx = hx + heli.ox.x;
+      const cy = hy + heli.oy.x;
+      // Heading follows the velocity around the ellipse.
+      const du = -Math.sin(th) * radiusU;
+      const dv = Math.cos(th) * radiusV;
+      const ang = Math.atan2(du * UY + dv * UX, du * UX - dv * UY);
+      const c = Math.cos(ang);
+      const s = Math.sin(ang);
+      const zz = z + 3 * Math.sin(t * 0.7);
+      // Along-heading a, across n, up dz.
+      const q = (a: number, n: number, dz: number) =>
+        P(cx + a * c - n * s, cy + a * s + n * c, zz + dz);
+      const cab = rotRect(cx + 1.6 * c, cy + 1.6 * s, 10, 5, 2.4, ang);
+      put(heli.cabin, prism(cab, inset(cab, 1.2), zz, zz + 4.4));
+      const boom = rotRect(cx - 9.5 * c, cy - 9.5 * s, 12.5, 1.4, 0.5, ang);
+      put(heli.boom, prism(boom, null, zz + 2, zz + 3.3));
+      const fin = rotRect(cx - 15.5 * c, cy - 15.5 * s, 2, 0.8, 0.3, ang);
+      put(heli.fin, prism(fin, null, zz + 2, zz + 7));
+      // Skids: two runners under the cabin on short struts.
+      let d = "";
+      for (const n of [-2.7, 2.7]) {
+        d += seg(q(-3.6, n, -1.8), q(4.8, n, -1.8));
+        for (const a of [-2, 3]) d += seg(q(a, n * 0.6, 0), q(a, n, -1.8));
       }
-      const outline: Pt[] = [];
-      const steps = 36;
-      for (let s = 0; s <= steps; s++) {
-        const x = -w / 2 + (s / steps) * w;
-        let top = 0;
-        for (const [cx, cy, rr] of discs) {
-          const dx = x - cx;
-          if (Math.abs(dx) < rr)
-            top = Math.min(top, cy - Math.sqrt(rr * rr - dx * dx));
-        }
-        outline.push([x, top]);
-      }
-      const d = poly([[-w / 2 - 2, 0], ...outline, [w / 2 + 2, 0]]);
-      const el = mk<SVGPathElement>("path", sky);
-      ink(el, "sil");
-      el.setAttribute("d", d);
-      clouds.push({
-        x: x0 + rnd() * spanX,
-        y: y0 + 14 + rnd() * (SKY + 30),
-        w,
-        v: HERO_CITY.motion.cloud * (0.5 + rnd()) * (i % 2 ? 1 : -1),
-        el,
-        oy: spring(0, 30, 10),
-        d,
-      });
-    }
-    function drawCloud(c: Cloud) {
-      c.el.setAttribute(
-        "transform",
-        `translate(${r2(c.x)} ${r2(c.y + c.oy.x)})`,
-      );
-    }
-
-    // -- airliners, crossing on long contrails --------------------------------
-    type Plane = {
-      g: SVGGElement;
-      trail: SVGPathElement;
-      x: number;
-      y: number;
-      dir: 1 | -1;
-      v: number;
-      s: number;
-      oy: Spring;
-      bank: number;
-    };
-    const planes: Plane[] = [];
-    const planeGlyph = (() => {
-      // Unit glyph, nose at +x: fuselage, swept wing, tail fin, one engine.
-      const fus = poly([
-        [-10, -1.2],
-        [7, -1.2],
-        [10, 0],
-        [7, 1.2],
-        [-10, 1.2],
-        [-11, 0.4],
-        [-11, -0.4],
-      ]);
-      const fin = poly([
-        [-10.5, -1.2],
-        [-7.5, -5.2],
-        [-5.5, -5.2],
-        [-7, -1.2],
-      ]);
-      const wing = poly([
-        [1.5, 0.4],
-        [-1.5, 3.6],
-        [-4.5, 3.6],
-        [-2.5, 0.4],
-      ]);
-      const eng = poly([
-        [-1, 2.2],
-        [1.6, 2.2],
-        [1.6, 3.4],
-        [-1, 3.4],
-      ]);
-      return { fus, fin, wing, eng };
-    })();
-    const planeCount = lite ? HERO_CITY.mobile.planes : 2;
-    for (let i = 0; i < planeCount; i++) {
-      const trail = line(sky, "3 5");
-      const g = mk<SVGGElement>("g", sky);
-      for (const d of [
-        planeGlyph.fin,
-        planeGlyph.fus,
-        planeGlyph.wing,
-        planeGlyph.eng,
-      ]) {
-        const p = mk<SVGPathElement>("path", g);
-        ink(p, "cr");
-        p.style.fill = "var(--color-background)";
-        p.setAttribute("d", d);
-      }
-      const dir: 1 | -1 = i % 2 ? -1 : 1;
-      planes.push({
-        g,
-        trail,
-        x: x0 + rnd() * spanX,
-        y: y0 + 12 + i * 24 + rnd() * 6,
-        dir,
-        v: HERO_CITY.motion.plane * (i ? 0.72 : 1),
-        s: i ? 1.5 : 2.1,
-        oy: spring(0, 24, 9),
-        bank: 0,
-      });
-    }
-    function drawPlane(p: Plane) {
-      const y = p.y + p.oy.x;
-      p.g.setAttribute(
-        "transform",
-        `translate(${r2(p.x)} ${r2(y)}) rotate(${r2(p.bank)}) scale(${r2(p.dir * p.s)} ${r2(p.s)})`,
-      );
-      const len = 60 * p.s;
-      p.trail.setAttribute(
+      heli.skids.setAttribute("d", d);
+      heli.mast.setAttribute("d", seg(q(0, 0, 4.4), q(0, 0, 6.4)));
+      const R = 10.5;
+      heli.disc.setAttribute("d", poly(ringAt(circ(cx, cy, R, 20), zz + 6.4)));
+      const rot = t * 16;
+      let b = "";
+      for (const a of [rot, rot + Math.PI / 2])
+        b += seg(
+          P(cx + Math.cos(a) * R, cy + Math.sin(a) * R, zz + 6.4),
+          P(cx - Math.cos(a) * R, cy - Math.sin(a) * R, zz + 6.4),
+        );
+      heli.blades.setAttribute("d", b);
+      const tr = Math.sin(t * 22) * 2;
+      heli.tail.setAttribute(
         "d",
-        seg([p.x - p.dir * 12 * p.s, y + 0.2], [p.x - p.dir * len, y + 0.2]),
+        seg(q(-15.8, 0, 5 + tr), q(-15.8, 0, 5 - tr)) +
+          seg(q(-15.8, -0.8, 5), q(-15.8, 0.8, 5)),
       );
-    }
-
-    // -- a hot-air balloon, climbing and swaying ------------------------------
-    const balloonG = mk<SVGGElement>("g", sky);
-    {
-      const env = mk<SVGPathElement>("path", balloonG);
-      ink(env, "sil");
-      const pts: Pt[] = [];
-      for (let k = 0; k <= 28; k++) {
-        const a = (k / 28) * Math.PI * 2;
-        const rr = 7 * (1 - 0.18 * Math.max(0, Math.sin(a)) ** 3);
-        pts.push([Math.cos(a) * rr * 0.92, Math.sin(a) * rr - 2]);
-      }
-      env.setAttribute("d", poly(pts));
-      const gores = line(balloonG);
-      gores.setAttribute(
-        "d",
-        `M-2.6 -8.6Q-3.4 -2 -1.6 4.4M2.6 -8.6Q3.4 -2 1.6 4.4M0 -9Q0 -2 0 4.6`,
-      );
-      const ropes = line(balloonG);
-      ropes.setAttribute("d", `M-2.2 4.4L-1.3 8.6M2.2 4.4L1.3 8.6`);
-      const basket = mk<SVGPathElement>("path", balloonG);
-      ink(basket, "cr");
-      basket.style.fill = "var(--color-background)";
-      basket.setAttribute(
-        "d",
-        poly([
-          [-1.7, 8.6],
-          [1.7, 8.6],
-          [1.4, 11],
-          [-1.4, 11],
-        ]),
-      );
-    }
-    const balloon = {
-      x: x0 + spanX * 0.8,
-      y: y0 + SKY + 10,
-      ox: spring(0, 24, 9),
-      oy: spring(0, 24, 9),
-    };
-    function drawBalloon(t: number) {
-      const { rise, sway, period } = HERO_CITY.motion.balloon;
-      const y = balloon.y - rise * (0.5 + 0.5 * Math.sin(t / 7)) + balloon.oy.x;
-      const x =
-        balloon.x + sway * Math.sin((t / period) * Math.PI * 2) + balloon.ox.x;
-      balloonG.setAttribute("transform", `translate(${r2(x)} ${r2(y)})`);
     }
 
     // -- scroll parallax: rows slide apart as the hero scrolls out ------------
@@ -1101,7 +1177,7 @@ export default function DallasSkyline() {
       const { parallax } = HERO_CITY;
       const scrub = isMobile ? MOBILE_SCRUB : HERO_SCENE_SCROLL.scrub;
       for (const [el, to] of [
-        [sky, parallax.sky],
+        [back, parallax.back],
         [far, parallax.far],
         [mid, parallax.mid],
         [near, parallax.near],
@@ -1169,50 +1245,17 @@ export default function DallasSkyline() {
               0.7,
             )
           : UANG;
-      for (const cr of cranes) {
-        cr.a.t = over
-          ? UANG +
-            0.5 +
-            clamp(
-              Math.atan2(over[1] - cr.roof.cy, over[0] - cr.roof.cx) -
-                UANG -
-                0.5,
-              -1.2,
-              1.2,
-            )
-          : UANG + 0.5;
-      }
-      for (const c of clouds) {
-        if (!overS) {
-          c.oy.t = 0;
-          continue;
-        }
-        const dx = c.x - overS[0];
-        const dy = c.y - overS[1];
-        const reach = c.w * 0.9;
-        const near = clamp(1 - Math.hypot(dx, dy) / reach, 0, 1);
-        c.oy.t = near * (dy < 0 ? -1 : 1) * 10;
-      }
-      for (const p of planes) {
-        if (!overS) {
-          p.oy.t = 0;
-          continue;
-        }
-        const dy = p.y - overS[1];
-        const dx = p.x - overS[0];
-        const near = clamp(1 - Math.hypot(dx, dy) / (RADIUS * 2.2), 0, 1);
-        p.oy.t = near * (dy < 0 ? -1 : 1) * 14;
-      }
-      if (overS) {
-        const dx = balloon.x - overS[0];
-        const dy = balloon.y - 15 - overS[1];
+      if (!over) for (const cr of cranes) cr.a.t = cr.base;
+      if (over) {
+        const dx = heli.wx - over[0];
+        const dy = heli.wy - over[1];
         const dist = Math.hypot(dx, dy);
-        const push = clamp(1 - dist / (RADIUS * 2), 0, 1) * 16;
-        balloon.ox.t = dist < 1 ? push : (dx / dist) * push;
-        balloon.oy.t = dist < 1 ? 0 : (dy / dist) * push;
+        const push = clamp(1 - dist / (RADIUS * 2.2), 0, 1) * 22;
+        heli.ox.t = dist < 1 ? push : (dx / dist) * push;
+        heli.oy.t = dist < 1 ? 0 : (dy / dist) * push;
       } else {
-        balloon.ox.t = 0;
-        balloon.oy.t = 0;
+        heli.ox.t = 0;
+        heli.oy.t = 0;
       }
       if (over) {
         const [, ov] = Winv(over[0], over[1]);
@@ -1236,6 +1279,15 @@ export default function DallasSkyline() {
         drawBoard(b);
       }
       for (const cr of cranes) {
+        // A pointer parked near a crane sets its jib sweeping left and right.
+        if (over && !snap) {
+          const d = Math.hypot(over[0] - cr.roof.cx, over[1] - cr.roof.cy);
+          if (d < CELL * 6) {
+            const { amplitude, speed } = HERO_CITY.motion.craneSwing;
+            cr.a.t = cr.base + Math.sin(clock * speed + cr.ph) * amplitude;
+            moving = true;
+          } else cr.a.t = cr.base;
+        }
         if (stepS(cr.a, dt, snap)) moving = true;
         drawCrane(cr);
       }
@@ -1247,29 +1299,9 @@ export default function DallasSkyline() {
         moving = true;
       }
       drawTrain();
-      for (const c of clouds) {
-        if (!snap) {
-          c.x += c.v * dt;
-          if (c.x > x1 + c.w) c.x = x0 - c.w;
-          if (c.x < x0 - c.w) c.x = x1 + c.w;
-        }
-        if (stepS(c.oy, dt, snap)) moving = true;
-        drawCloud(c);
-      }
-      for (const p of planes) {
-        if (!snap) {
-          p.x += p.dir * p.v * dt;
-          const margin = 80 * p.s;
-          if (p.dir > 0 && p.x > x1 + margin) p.x = x0 - margin;
-          if (p.dir < 0 && p.x < x0 - margin) p.x = x1 + margin;
-        }
-        if (stepS(p.oy, dt, snap)) moving = true;
-        p.bank = clamp(-p.oy.v * 0.25 * p.dir, -9, 9);
-        drawPlane(p);
-      }
-      if (stepS(balloon.ox, dt, snap)) moving = true;
-      if (stepS(balloon.oy, dt, snap)) moving = true;
-      drawBalloon(snap ? 0 : clock);
+      if (stepS(heli.ox, dt, snap)) moving = true;
+      if (stepS(heli.oy, dt, snap)) moving = true;
+      drawHeli(snap ? 0 : clock);
       // Lights: Reunion's ball glitters, brighter toward the pointer; the Omni
       // plays a slow wave that ripples out from wherever the pointer rests.
       for (const l of lamps) {
@@ -1351,6 +1383,7 @@ export default function DallasSkyline() {
     for (const b of boards) drawBoard(b);
     for (const cr of cranes) drawCrane(cr);
     drawTrain();
+    drawHeli(0);
     wake();
 
     return () => {

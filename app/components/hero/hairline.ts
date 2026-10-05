@@ -13,7 +13,7 @@ export type Spring = { x: number; v: number; t: number; k: number; c: number };
 
 // ---- camera: the 2:1 isometric view, azimuth 45° -------------------------
 const AZ = Math.PI / 4;
-const K = 0.5;
+const K = 0.68;
 const ZF = Math.sqrt(1 - K * K);
 const SC = Math.cos(AZ);
 const SS = Math.sin(AZ);

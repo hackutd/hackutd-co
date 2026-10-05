@@ -10,6 +10,7 @@ import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import { HERO_SCENE_DATA_ATTR } from "../background/sceneConfig";
 import CometAnimation from "./CometAnimation";
 import DallasSkyline from "./DallasSkyline";
+import SkyElements from "./SkyElements";
 import {
   HERO_CITY_STAGE_DATA_ATTR,
   HERO_COPY,
@@ -67,6 +68,7 @@ function renderHeroText(text: string) {
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const cometBackgroundLayerRef = useRef<HTMLDivElement>(null);
+  const skyLayerRef = useRef<HTMLDivElement>(null);
   const skylineLayerRef = useRef<HTMLDivElement>(null);
   const cometLayerRef = useRef<HTMLDivElement>(null);
   const heroTextRef = useRef<HTMLDivElement>(null);
@@ -77,6 +79,7 @@ export default function Hero() {
     () => {
       const section = sectionRef.current;
       const cometBackgroundLayer = cometBackgroundLayerRef.current;
+      const skyLayer = skyLayerRef.current;
       const skylineLayer = skylineLayerRef.current;
       const cometLayer = cometLayerRef.current;
       const heroText = heroTextRef.current;
@@ -114,7 +117,7 @@ export default function Hero() {
       // Layers that are simply on screen from the top of the page. The shader
       // gradient is deliberately not among them: it starts hidden and reveals on
       // its own range below, then leaves with everything else in the whiteout.
-      const restingLayers = [skylineLayer, cometLayer].filter(
+      const restingLayers = [skyLayer, skylineLayer, cometLayer].filter(
         (el): el is HTMLDivElement => el !== null,
       );
 
@@ -154,7 +157,9 @@ export default function Hero() {
         // stagger's total spread is kept, so the words still leave across the
         // same stretch of scroll the glyphs do on desktop.
         const heroTextWords = Array.from(
-          heroText.querySelectorAll<HTMLElement>(`[${HERO_TEXT_WORD_DATA_ATTR}]`),
+          heroText.querySelectorAll<HTMLElement>(
+            `[${HERO_TEXT_WORD_DATA_ATTR}]`,
+          ),
         );
 
         if (heroTextWords.length > 0) {
@@ -273,6 +278,11 @@ export default function Hero() {
         >
           <CometTrailBackground />
         </div>
+
+        {/* Sky before buildings: same z, so DOM order alone puts the flock
+            behind the city. The clouds, plane and balloon are the plate's own
+            artwork — far above the line drawing, they read better as art. */}
+        <SkyElements ref={skyLayerRef} />
 
         {/* Pinned to the foot of the sticky viewport at every size: the band is
             as tall as the art needs to span the full width, floored so it stays
