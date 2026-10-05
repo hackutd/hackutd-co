@@ -1053,7 +1053,10 @@ export default function DallasSkyline() {
       w.setAttribute("d", d);
     }
 
-    // -- the frame: fit the rest pose plus headroom, then leave sky above ----
+    // -- the frame: the viewBox spans the city core at ground level and the
+    //    SVG slices to the band width, so the blocks fill the viewport edge to
+    //    edge; the bridge, the helicopter's loop and the tallest tops run past
+    //    the box (overflow is visible) and bleed off the sides / rise above --
     const pts: Pt[] = [];
     for (const t of towers) {
       pts.push(
@@ -1071,31 +1074,17 @@ export default function DallasSkyline() {
       );
     }
     pts.push(P(rx, ry, ballZ + BALL_R + 10));
-    pts.push(P(W(-7.6, 0.9)[0], W(-7.6, 0.9)[1], 0));
-    pts.push(P(W(uMin, ROW_V[3] + 0.5)[0], W(uMin, ROW_V[3] + 0.5)[1], 0));
-    pts.push(P(W(uMax, ROW_V[3] + 0.5)[0], W(uMax, ROW_V[3] + 0.5)[1], 0));
     for (const cr of cranes)
       pts.push(P(cr.roof.cx, cr.roof.cy, cr.roof.z + cr.H + 6));
-    {
-      const { radiusU, radiusV, z } = HERO_CITY.motion.heli;
-      for (const [u, v] of [
-        [N / 2 - radiusU, 0.6],
-        [N / 2 + radiusU, 0.6],
-        [N / 2, 0.6 - radiusV],
-      ]) {
-        const [hx, hy] = W(u, v);
-        pts.push(P(hx, hy, z + 14));
-      }
-    }
-    const xs = pts.map((p) => p[0]);
+    const edge = (u: number) =>
+      [ROW_V[0] - 0.6, ROW_V[3] + 0.6].map((v) => P(W(u, v)[0], W(u, v)[1], 0));
+    const xs = [...edge(uMin + 1.6), ...edge(uMax - 1.6)].map((p) => p[0]);
     const ys = pts.map((p) => p[1]);
-    const gx0 = Math.min(...xs) - 6;
-    const gx1 = Math.max(...xs) + 6;
     const gy0 = Math.min(...ys);
     const gy1 = Math.max(...ys) + 3;
-    const SKY = 10;
-    const x0 = gx0;
-    const x1 = gx1;
+    const SKY = 4;
+    const x0 = Math.min(...xs);
+    const x1 = Math.max(...xs);
     const y0 = gy0 - SKY;
     const y1 = gy1;
     svg.setAttribute(
@@ -1404,7 +1393,7 @@ export default function DallasSkyline() {
     <svg
       ref={ref}
       aria-hidden="true"
-      preserveAspectRatio="xMidYMax meet"
+      preserveAspectRatio="xMidYMax slice"
       className="h-full w-full overflow-visible text-foreground"
     />
   );
