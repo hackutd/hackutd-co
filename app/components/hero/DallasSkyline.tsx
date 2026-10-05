@@ -95,6 +95,12 @@ const ROW_V = [-1.35, 0, 1.25, 2.9] as const;
 const TRACK_V = 2.15;
 const N = 30;
 const rowOf = (v: number) => (v < -0.6 ? 0 : v < 0.6 ? 1 : v < 2.0 ? 2 : 3);
+/** The Trinity cuts across the west end on a slant; nothing is built on it. */
+const RIVER_U = (v: number) => -3.7 - 0.3 * (v - 1);
+const RIVER_HALF = 1.35;
+const onRiver = (u: number, v: number, half: number) =>
+  Math.abs(u - RIVER_U(v)) < RIVER_HALF + half + 0.2;
+const U_WEST = -12.5;
 
 type Kind =
   | "box"
@@ -183,6 +189,7 @@ export default function DallasSkyline() {
 
     const root = mk<SVGGElement>("g", svg);
     const defs = mk<SVGDefsElement>("defs", root);
+    const ground = mk<SVGGElement>("g", root);
     const back = mk<SVGGElement>("g", root);
     const far = mk<SVGGElement>("g", root);
     const mid = mk<SVGGElement>("g", root);
@@ -195,9 +202,17 @@ export default function DallasSkyline() {
       [(ROW_V[0] + ROW_V[1]) / 2, far],
       [(ROW_V[1] + ROW_V[2]) / 2, mid],
     ] as const) {
-      const a = W(-2, v);
-      const b = W(N + 1.5, v);
-      line(g, "2 4").setAttribute("d", seg(P(a[0], a[1], 0), P(b[0], b[1], 0)));
+      const bank = RIVER_HALF + 0.5;
+      let d = "";
+      for (const [u0, u1] of [
+        [U_WEST, RIVER_U(v) - bank],
+        [RIVER_U(v) + bank, N + 1.5],
+      ]) {
+        const a = W(u0, v);
+        const b = W(u1, v);
+        d += seg(P(a[0], a[1], 0), P(b[0], b[1], 0));
+      }
+      line(g, "2 4").setAttribute("d", d);
     }
 
     // -- towers: the landmarks first, then filler blocks in the free lots ----
@@ -258,6 +273,8 @@ export default function DallasSkyline() {
     const omni = tower(31.6, 1.2, 30, 9, 30, "stadium", { landmark: true }); // Omni
     const ECSW_U = 17.05;
     claim(2, ECSW_U - 2.85, ECSW_U + 2.85); // ECSW, built below
+    claim(1, -7.6, 0.6); // the bridge and its landings, built below
+    claim(2, -7.6, 0.6);
 
     const wallChance = lite ? (HERO_CITY.mobile.wallBoards ? 0.5 : 0) : 0.5;
     const pickWall = (p: number): 0 | 1 | 2 =>
@@ -290,15 +307,19 @@ export default function DallasSkyline() {
       },
     ]) {
       const r = rowOf(row.v);
-      for (let i = -1; i < N + 1; i += 0.5) {
+      for (let i = U_WEST + 0.5; i < N + 1; i += 0.5) {
         const sx = row.fp[0] + rnd() * (row.fp[1] - row.fp[0]);
         const half = sx / 2 / CELL + 0.08;
         if (!free(r, i - half, i + half)) continue;
+        if (onRiver(i, row.v, half)) continue;
         if (rnd() < row.gap) continue;
         const sy = sx * (0.75 + rnd() * 0.5);
+        // The west bank is lower: a neighbourhood, not downtown.
         const env =
-          row.min +
-          (row.max - row.min) * Math.sin(((i + 1) / (N + 2)) * Math.PI);
+          i < RIVER_U(row.v)
+            ? row.min * 0.7 + (row.max - row.min) * 0.25
+            : row.min +
+              (row.max - row.min) * Math.sin(((i + 1) / (N + 2)) * Math.PI);
         const h = env * (0.65 + rnd() * 0.6);
         const kind: Kind = r < 2 && rnd() < 0.3 ? "tiered" : "box";
         tower(i, row.v + (rnd() - 0.5) * 0.08, sx, sy, h, kind, {
@@ -311,12 +332,12 @@ export default function DallasSkyline() {
     const lowGap = lite ? HERO_CITY.mobile.lowriseGap : 0.28;
     for (const [r, v] of ROW_V.entries()) {
       const frontRow = r === 3;
-      const u0 = frontRow ? -3 : -1.5;
       const u1 = frontRow ? N + 3 : N + 1.5;
-      for (let i = u0; i < u1; i += 0.25) {
+      for (let i = U_WEST; i < u1; i += 0.25) {
         const sx = 5 + rnd() * 5;
         const half = sx / 2 / CELL + 0.05;
         if (!free(r, i - half, i + half)) continue;
+        if (onRiver(i, v, half)) continue;
         if (rnd() < (frontRow ? lowGap + 0.25 : lowGap)) continue;
         const sy = 5 + rnd() * 5;
         const h = frontRow ? 3 + rnd() * 7 : 5 + rnd() * 10;
@@ -752,28 +773,72 @@ export default function DallasSkyline() {
       }
     }
 
-    // -- Margaret Hunt Hill bridge, west of town ------------------------------
+    // -- the Trinity: open water across the west end, with ripples ------------
     {
-      const BV = 0.9;
-      const u0 = -7.2;
-      const u1 = -1.4;
-      const [dcx, dcy] = W((u0 + u1) / 2, BV);
-      const deckLen = (u1 - u0) * CELL;
-      for (const u of [u0 + 1.2, (u0 + u1) / 2, u1 - 1.2]) {
-        const [px, py] = W(u, BV);
+      const L: Pt[] = [];
+      const R: Pt[] = [];
+      for (let v = -3.2; v <= 4.6; v += 0.25) {
+        const w = RIVER_HALF + 0.08 * Math.sin(v * 1.6);
+        const [lx, ly] = W(RIVER_U(v) - w, v);
+        const [qx, qy] = W(RIVER_U(v) + w + 0.06 * Math.cos(v * 1.1), v);
+        L.push(P(lx, ly, 0));
+        R.push(P(qx, qy, 0));
+      }
+      const water = mk<SVGPathElement>("path", ground);
+      ink(water, "sil");
+      water.setAttribute("d", poly(L.concat(R.reverse())));
+      // Ripples: short strokes along the flow, scattered over the water.
+      const ripples = line(ground);
+      let d = "";
+      for (let k = 0; k < 18; k++) {
+        const v = -2.2 + rnd() * 5.8;
+        const off = (rnd() - 0.5) * 1.8;
+        const len = 0.18 + rnd() * 0.2;
+        const [ax, ay] = W(RIVER_U(v) + off, v);
+        const [bx, by] = W(RIVER_U(v + len) + off, v + len);
+        d += seg(P(ax, ay, 0), P(bx, by, 0));
+      }
+      ripples.setAttribute("d", d);
+    }
+
+    // -- Margaret Hunt Hill bridge: slanted across the river to the west bank -
+    {
+      const A = W(-6.6, 1.85);
+      const B = W(-0.5, 0.1);
+      const ang = Math.atan2(B[1] - A[1], B[0] - A[0]);
+      const len = Math.hypot(B[0] - A[0], B[1] - A[1]);
+      const nx = -Math.sin(ang);
+      const ny = Math.cos(ang);
+      const at = (t: number, n = 0): Pt => [
+        A[0] + (B[0] - A[0]) * t + nx * n,
+        A[1] + (B[1] - A[1]) * t + ny * n,
+      ];
+      for (const t of [0.12, 0.5, 0.88]) {
+        const [px, py] = at(t);
         put(
           body(far),
           prism(rrect(px - 1.3, py - 1.3, px + 1.3, py + 1.3, 0.5), null, 0, 7),
         );
       }
-      const deck = rotRect(dcx, dcy, deckLen, 5, 1.2, UANG);
+      const [dcx, dcy] = at(0.5);
+      const deck = rotRect(dcx, dcy, len, 5, 1.2, ang);
       put(body(far), prism(deck, inset(deck, 0.9), 7, 9));
+      for (const [t, dir] of [
+        [0, -1],
+        [1, 1],
+      ] as const) {
+        const [ex, ey] = at(t + dir * 0.07);
+        put(
+          body(far),
+          prism(rotRect(ex, ey, len * 0.14, 4.4, 0.8, ang), null, 0, 7),
+        );
+      }
       const arch: Pt[] = [];
       const archIn: Pt[] = [];
       const ARCH = 44;
       for (let k = 0; k <= 28; k++) {
         const tt = k / 28;
-        const [ax, ay] = W(u0 + tt * (u1 - u0), BV - 0.12);
+        const [ax, ay] = at(tt, -2.2);
         const z = 9 + ARCH * Math.sin(Math.PI * tt);
         arch.push(P(ax, ay, z));
         archIn.push(P(ax, ay, z - 1.6));
@@ -785,9 +850,9 @@ export default function DallasSkyline() {
       let d = "";
       for (let k = 2; k <= 26; k += 2) {
         const tt = k / 28;
-        const [ax, ay] = W(u0 + tt * (u1 - u0), BV - 0.12);
+        const [ax, ay] = at(tt, -2.2);
         const top = P(ax, ay, 9 + ARCH * Math.sin(Math.PI * tt) - 1.6);
-        const [bx, by] = W(u0 + 0.5 + (tt - 0.5) * (u1 - u0) * 0.55, BV - 0.12);
+        const [bx, by] = at(0.5 + (tt - 0.5) * 0.55, -2.2);
         d += seg(top, P(bx, by, 9));
       }
       cables.setAttribute("d", d);
@@ -1078,7 +1143,7 @@ export default function DallasSkyline() {
       pts.push(P(cr.roof.cx, cr.roof.cy, cr.roof.z + cr.H + 6));
     const edge = (u: number) =>
       [ROW_V[0] - 0.6, ROW_V[3] + 0.6].map((v) => P(W(u, v)[0], W(u, v)[1], 0));
-    const xs = [...edge(uMin + 1.6), ...edge(uMax - 1.6)].map((p) => p[0]);
+    const xs = [...edge(-10.2), ...edge(uMax - 3.2)].map((p) => p[0]);
     const ys = pts.map((p) => p[1]);
     const gy0 = Math.min(...ys);
     const gy1 = Math.max(...ys) + 3;
