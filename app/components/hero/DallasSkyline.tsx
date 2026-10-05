@@ -92,10 +92,17 @@ const RADIUS = 3 * CELL;
 /** Row centres across the city, back to front, with the DART between the
  * mid row and the low-rise strip along the front. */
 const ROW_V = [-1.35, 0, 1.25, 2.9] as const;
-/** The DART runs the front on a slant: nearest at the west end, receding
- * toward the east, so it crosses the diorama instead of underlining it. */
-const U_TRACK0 = -2.5;
-const trackV = (u: number) => 4.4 - 0.08 * (u - U_TRACK0);
+/** The DART cuts diagonally through downtown, back-left to front-right,
+ * between Renaissance Tower and Comerica; lots keep clear of its corridor. */
+const DART_SLOPE = 1.5;
+const DART_U = (v: number) => 12.8 + DART_SLOPE * (v - 1);
+const DART_HALF = 1.0;
+/** Height of the viaduct deck: the line rides over the low-rises. */
+const DART_Z = 5.2;
+const onTrack = (u: number, v: number, half: number) =>
+  Math.abs(u - DART_U(v)) < DART_HALF + half;
+const DART_V0 = -3.3;
+const DART_V1 = 4.5;
 const N = 30;
 const rowOf = (v: number) => (v < -0.6 ? 0 : v < 0.6 ? 1 : v < 2.0 ? 2 : 3);
 /** The Trinity cuts across the west end on a slant; nothing is built on it. */
@@ -315,6 +322,7 @@ export default function DallasSkyline() {
         const half = sx / 2 / CELL + 0.08;
         if (!free(r, i - half, i + half)) continue;
         if (onRiver(i, row.v, half)) continue;
+        if (onTrack(i, row.v, half)) continue;
         if (rnd() < row.gap) continue;
         const sy = sx * (0.75 + rnd() * 0.5);
         // The west bank is lower: a neighbourhood, not downtown.
@@ -337,11 +345,12 @@ export default function DallasSkyline() {
       const frontRow = r === 3;
       const u1 = frontRow ? N + 3 : N + 1.5;
       for (let i = U_WEST; i < u1; i += 0.25) {
-        const v = frontRow ? trackV(i) + 0.85 : ROW_V[r];
+        const v = ROW_V[r];
         const sx = frontRow ? 7 + rnd() * 6 : 5 + rnd() * 5;
         const half = sx / 2 / CELL + 0.05;
         if (!free(r, i - half, i + half)) continue;
         if (onRiver(i, v, half)) continue;
+        if (onTrack(i, v, half)) continue;
         if (rnd() < (frontRow ? 0.18 : lowGap)) continue;
         const sy = frontRow ? 6 + rnd() * 5 : 5 + rnd() * 5;
         const h = frontRow ? 6 + rnd() * 24 : 5 + rnd() * 10;
@@ -862,44 +871,72 @@ export default function DallasSkyline() {
       cables.setAttribute("d", d);
     }
 
-    // -- DART along the front: track, catenary poles and wire, two cars -----
-    const uMin = U_TRACK0;
+    // -- DART: elevated line running diagonally through the city, two cars ---
     const uMax = N + 1.5;
-    const T = (u: number, dv = 0): Pt => W(u, trackV(u) + dv);
-    const trackA = T(uMin);
-    const trackB = T(uMax);
-    const TANG = Math.atan2(trackB[1] - trackA[1], trackB[0] - trackA[0]);
-    {
+    const T = (v: number, du = 0): Pt => W(DART_U(v) + du, v);
+    const TANG = (() => {
+      const a = T(DART_V0);
+      const b = T(DART_V1);
+      return Math.atan2(b[1] - a[1], b[0] - a[0]);
+    })();
+    // The bed is split by row so each stretch sits under its own row's blocks
+    // and over the rows behind it.
+    const bands: [number, number][] = [
+      [DART_V0, -0.65],
+      [-0.65, 0.65],
+      [0.65, 2.05],
+      [2.05, DART_V1],
+    ];
+    bands.forEach(([a, b], r) => {
+      const pa = T(a);
+      const pb = T(b);
       const bed = rotRect(
-        (trackA[0] + trackB[0]) / 2,
-        (trackA[1] + trackB[1]) / 2,
-        Math.hypot(trackB[0] - trackA[0], trackB[1] - trackA[1]),
+        (pa[0] + pb[0]) / 2,
+        (pa[1] + pb[1]) / 2,
+        Math.hypot(pb[0] - pa[0], pb[1] - pa[1]) + 0.4,
         3.2,
         0.6,
         TANG,
       );
-      put(body(near), prism(bed, inset(bed, 0.9), 0, 0.9));
-    }
-    const POLE_H = 9;
+      const el = body(rowG[r]);
+      put(el, prism(bed, inset(bed, 0.9), DART_Z, DART_Z + 1.2));
+      rowG[r].insertBefore(el.g, rowG[r].firstChild);
+    });
+    const POLE_H = DART_Z + 1.2 + 7;
     const poleTops: Pt[] = [];
-    for (let u = uMin + 1; u < uMax; u += 3.2) {
-      const [px, py] = T(u, 0.32);
+    for (let v = DART_V0 + 0.35; v < DART_V1; v += 0.7) {
+      const g = rowG[rowOf(v)];
+      const [cx, cy] = T(v);
+      const pier = body(g);
       put(
-        body(near),
+        pier,
         prism(
-          rrect(px - 0.45, py - 0.45, px + 0.45, py + 0.45, 0.2),
+          rrect(cx - 1.1, cy - 1.1, cx + 1.1, cy + 1.1, 0.3),
           null,
           0,
+          DART_Z,
+        ),
+      );
+      const [px, py] = T(v, 0.3);
+      const pole = body(g);
+      put(
+        pole,
+        prism(
+          rrect(px - 0.4, py - 0.4, px + 0.4, py + 0.4, 0.2),
+          null,
+          DART_Z + 1.2,
           POLE_H,
         ),
       );
-      const arm = P(px, py, POLE_H);
-      const [wx, wy] = T(u);
-      line(near).setAttribute("d", seg(arm, P(wx, wy, POLE_H - 0.6)));
-      poleTops.push(P(wx, wy, POLE_H - 0.6));
+      const arm = line(g);
+      arm.setAttribute("d", seg(P(px, py, POLE_H), P(cx, cy, POLE_H - 0.6)));
+      g.insertBefore(arm, g.firstChild);
+      g.insertBefore(pole.g, g.firstChild);
+      g.insertBefore(pier.g, g.firstChild);
+      poleTops.push(P(cx, cy, POLE_H - 0.6));
     }
     {
-      const wire = line(near);
+      const wire = line(ground);
       let d = "";
       for (let i = 1; i < poleTops.length; i++)
         d += cable(poleTops[i - 1], poleTops[i], 1.4);
@@ -907,18 +944,25 @@ export default function DallasSkyline() {
     }
     const cars = [body(near), body(near)];
     const carTops = [body(near), body(near)];
-    let trainU = 6;
+    const CAR_DV = 14.6 / CELL / Math.hypot(DART_SLOPE, 1);
+    let trainU = 1.2;
     let trainDrawn = NaN;
+    let trainRow = 3;
     const rate = spring(1, 60, 14);
     function drawTrain() {
       if (trainU === trainDrawn) return;
       trainDrawn = trainU;
+      const row = rowOf(Math.min(Math.max(trainU, ROW_V[0]), ROW_V[3]));
+      if (row !== trainRow) {
+        trainRow = row;
+        for (const s of [...cars, ...carTops]) rowG[row].appendChild(s.g);
+      }
       cars.forEach((car, k) => {
-        const [tx, ty] = T(trainU + ((k - 0.5) * 14.6) / CELL);
+        const [tx, ty] = T(trainU + (k - 0.5) * CAR_DV);
         const shell = rotRect(tx, ty, 14, 3.2, 1.3, TANG);
-        put(car, prism(shell, inset(shell, 0.7), 0.9, 5.4));
+        put(car, prism(shell, inset(shell, 0.7), DART_Z + 1.2, DART_Z + 5.7));
         const roof = rotRect(tx, ty, 9, 1.8, 0.8, TANG);
-        put(carTops[k], prism(roof, null, 5.4, 6.2));
+        put(carTops[k], prism(roof, null, DART_Z + 5.7, DART_Z + 6.5));
       });
     }
 
@@ -1156,9 +1200,7 @@ export default function DallasSkyline() {
     for (const cr of cranes)
       pts.push(P(cr.roof.cx, cr.roof.cy, cr.roof.z + cr.H + 6));
     const edge = (u: number) =>
-      [ROW_V[0] - 0.6, trackV(u) + 1.6].map((v) =>
-        P(W(u, v)[0], W(u, v)[1], 0),
-      );
+      [ROW_V[0] - 0.6, ROW_V[3] + 0.7].map((v) => P(W(u, v)[0], W(u, v)[1], 0));
     const xs = [...edge(-11), ...edge(uMax - 3.2)].map((p) => p[0]);
     const ys = pts.map((p) => p[1]);
     const gy0 = Math.min(...ys);
@@ -1329,7 +1371,7 @@ export default function DallasSkyline() {
       }
       if (over) {
         const [ou, ov] = Winv(over[0], over[1]);
-        rate.t = Math.abs(ov - trackV(ou)) * CELL < 12 ? 0.12 : 1;
+        rate.t = Math.abs(ou - DART_U(ov)) * CELL < 14 ? 0.12 : 1;
       } else rate.t = 1;
       wake();
     }
@@ -1364,8 +1406,9 @@ export default function DallasSkyline() {
       if (stepS(rate, dt, snap)) moving = true;
       if (!snap) {
         clock += dt;
-        trainU += dt * rate.x * HERO_CITY.motion.train;
-        if (trainU > uMax + 1.5) trainU = uMin - 1.5;
+        trainU +=
+          (dt * rate.x * HERO_CITY.motion.train) / Math.hypot(DART_SLOPE, 1);
+        if (trainU > DART_V1 + 0.6) trainU = DART_V0 - 0.6;
         moving = true;
       }
       drawTrain();
