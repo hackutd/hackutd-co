@@ -9,15 +9,14 @@ import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
 import { HERO_SCENE_DATA_ATTR } from "../background/sceneConfig";
 import CometAnimation from "./CometAnimation";
-import SkyElements from "./SkyElements";
+import DallasSkyline from "./DallasSkyline";
 import {
+  HERO_CITY_STAGE_DATA_ATTR,
   HERO_COPY,
   HERO_COMET_SHADER,
   HERO_LAYOUT,
   HERO_SCENE_SCROLL,
   HERO_SKYLINE,
-  HERO_SKYLINE_MASK,
-  HERO_SKYLINE_STROKE_FILTER,
   HERO_TEXT_EFFECT,
   HERO_WHITEOUT,
   MOBILE_SCRUB,
@@ -68,7 +67,6 @@ function renderHeroText(text: string) {
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const cometBackgroundLayerRef = useRef<HTMLDivElement>(null);
-  const skyLayerRef = useRef<HTMLDivElement>(null);
   const skylineLayerRef = useRef<HTMLDivElement>(null);
   const cometLayerRef = useRef<HTMLDivElement>(null);
   const heroTextRef = useRef<HTMLDivElement>(null);
@@ -79,7 +77,6 @@ export default function Hero() {
     () => {
       const section = sectionRef.current;
       const cometBackgroundLayer = cometBackgroundLayerRef.current;
-      const skyLayer = skyLayerRef.current;
       const skylineLayer = skylineLayerRef.current;
       const cometLayer = cometLayerRef.current;
       const heroText = heroTextRef.current;
@@ -117,7 +114,7 @@ export default function Hero() {
       // Layers that are simply on screen from the top of the page. The shader
       // gradient is deliberately not among them: it starts hidden and reveals on
       // its own range below, then leaves with everything else in the whiteout.
-      const restingLayers = [skyLayer, skylineLayer, cometLayer].filter(
+      const restingLayers = [skylineLayer, cometLayer].filter(
         (el): el is HTMLDivElement => el !== null,
       );
 
@@ -266,27 +263,9 @@ export default function Hero() {
         style={
           { [HERO_SKYLINE.heightVar]: HERO_SKYLINE.height } as CSSProperties
         }
+        {...{ [HERO_CITY_STAGE_DATA_ATTR]: "" }}
         className={`sticky top-0 overflow-hidden isolate ${HERO_LAYOUT.stickyViewportHeight} ${HERO_SKYLINE.widthClass}`}
       >
-        <svg aria-hidden="true" className="absolute h-0 w-0">
-          <defs>
-            <filter
-              id={HERO_SKYLINE_STROKE_FILTER.id}
-              x="-5%"
-              y="-5%"
-              width="110%"
-              height="110%"
-              colorInterpolationFilters="sRGB"
-            >
-              <feMorphology
-                in="SourceGraphic"
-                operator="erode"
-                radius={HERO_SKYLINE_STROKE_FILTER.radius}
-              />
-            </filter>
-          </defs>
-        </svg>
-
         <div
           ref={cometBackgroundLayerRef}
           aria-hidden="true"
@@ -295,24 +274,18 @@ export default function Hero() {
           <CometTrailBackground />
         </div>
 
-        {/* Sky before buildings: same z, so DOM order alone puts the flock
-            behind the skyline. */}
-        <SkyElements ref={skyLayerRef} />
-
-        {/* Pinned to the foot of the sticky viewport at every size: the layer is
+        {/* Pinned to the foot of the sticky viewport at every size: the band is
             as tall as the art needs to span the full width, floored so it stays
             substantial on phones and capped so it can't swallow short landscape
-            viewports. The mask fills the band so the skyline reaches both edges.
-
-            `bg-foreground` is the ink; the artwork is only the stencil (see
-            HERO_SKYLINE_MASK), so the skyline follows the site theme by way of
-            the same token as body text — no per-theme asset, no swap. */}
+            viewports. The city is drawn live in `currentColor`, so it follows
+            the site theme by way of the same token as body text. */}
         <div
           ref={skylineLayerRef}
           aria-hidden="true"
-          style={HERO_SKYLINE_MASK}
-          className={`pointer-events-none absolute z-0 bg-foreground ${HERO_SKYLINE.layerBox}`}
-        />
+          className={`pointer-events-none absolute z-0 ${HERO_SKYLINE.layerBox}`}
+        >
+          <DallasSkyline />
+        </div>
 
         {/* Comet SVG layer */}
         <div ref={cometLayerRef} className="absolute inset-0 z-10">

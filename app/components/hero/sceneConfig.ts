@@ -1,11 +1,3 @@
-import type { CSSProperties } from "react";
-import type { StaticImageData } from "next/image";
-import skylineArt from "@/app/assets/hero/skyline.png";
-import airplaneArt from "@/app/assets/hero/dallas_airplane_transparent.png";
-import cloudLeftArt from "@/app/assets/hero/dallas_cloud_left_transparent.png";
-import cloudRightArt from "@/app/assets/hero/dallas_cloud_right_transparent.png";
-import balloonArt from "@/app/assets/hero/dallas_hot_air_balloon_transparent.png";
-
 export const HERO_SCENE_SCROLL = {
   start: "top top",
   end: "65% bottom",
@@ -74,6 +66,40 @@ export const HERO_WHITEOUT = {
 } as const;
 
 /**
+ * The live Dallas skyline (see DallasSkyline.tsx): the sticky hero viewport
+ * is its pointer stage, and the scene's rows parallax by these SVG units as
+ * the hero scrolls, far row up and front row down, so the city gains depth
+ * while the copy leaves.
+ */
+export const HERO_CITY_STAGE_DATA_ATTR = "data-hero-city-stage";
+
+export const HERO_CITY = {
+  parallax: {
+    start: HERO_SCENE_SCROLL.start,
+    end: HERO_WHITEOUT.scene.start,
+    sky: { x: -70, y: -14 },
+    far: { x: 0, y: -10 },
+    mid: { x: 0, y: 8 },
+    near: { x: 0, y: 22 },
+  },
+  motion: {
+    /** DART cars, in grid cells per second. */
+    train: 1.25,
+    /** Clouds drift in SVG units per second, scaled per cloud. */
+    cloud: 4.5,
+    /** Airliners cross in SVG units per second. */
+    plane: 34,
+    balloon: { rise: 26, sway: 10, period: 11 },
+  },
+  mobile: {
+    clouds: 3,
+    planes: 1,
+    wallBoards: false,
+    cranes: 1,
+  },
+} as const;
+
+/**
  * The skyline band keeps the artwork readable on narrow phones and clear of the
  * hero copy on short landscape viewports. Its uncapped height matches the
  * artwork's aspect ratio so the skyline spans the viewport without side gaps.
@@ -103,215 +129,6 @@ export const HERO_SKYLINE = {
   layerBox:
     "h-[var(--hero-skyline-h)] bottom-[clamp(8px,3vh,36px)] w-[var(--hero-skyline-w)] left-[calc(50%-var(--hero-skyline-w)/2)] md:inset-x-0 md:w-auto",
 } as const;
-
-/**
- * The skyline is line art, so it is drawn as a painted rectangle masked by the
- * artwork's alpha rather than as an `<img>`. That takes one asset instead of a
- * black plate and a white plate: the fill is `--color-foreground`, which the
- * theme already flips from white to near-black, so the buildings recolor
- * themselves with no second file and no swap logic.
- *
- * The mask fills the shared skyline band so the full artwork reaches both
- * viewport edges while staying registered with the animated sky elements. The
- * `-webkit-` pairs are kept for older Safari, matching the masked navbar seam.
- */
-const SKYLINE_ART = `url(${skylineArt.src})`;
-
-/** SVG morphology filter used to delicately erode the rendered line weight. */
-export const HERO_SKYLINE_STROKE_FILTER = {
-  id: "hero-skyline-thin-strokes",
-  radius: 0.9,
-} as const;
-
-export const HERO_SKYLINE_MASK: CSSProperties = {
-  maskImage: SKYLINE_ART,
-  WebkitMaskImage: SKYLINE_ART,
-  maskSize: "100% 100%",
-  WebkitMaskSize: "100% 100%",
-  maskPosition: "bottom center",
-  WebkitMaskPosition: "bottom center",
-  maskRepeat: "no-repeat",
-  WebkitMaskRepeat: "no-repeat",
-  filter: `url(#${HERO_SKYLINE_STROKE_FILTER.id})`,
-};
-
-export type HeroSkyMotion = "drift-left" | "drift-right" | "cross" | "rise";
-
-export type HeroSkyElement = {
-  id: string;
-  /**
-   * Trimmed artwork. Its intrinsic width ÷ height sets each element's box, so
-   * swapping the file re-proportions the element with no numbers to update.
-   */
-  art: StaticImageData;
-  /** Center of the element, as a fraction of the skyline band's box. */
-  fx: number;
-  fy: number;
-  /** Width as a multiple of the band height, so it scales with the buildings. */
-  width: number;
-  motion: HeroSkyMotion;
-  /** Seconds per drift leg. Varied per cloud so the flock never beats as one. */
-  duration?: number;
-  /** Extra viewport-relative lift for elements that sit above the cloud band. */
-  verticalLift?: string;
-  /** Thins the flock out on small screens. */
-  className?: string;
-};
-
-const CLOUD_LEFT = { art: cloudLeftArt } as const;
-
-const CLOUD_RIGHT = { art: cloudRightArt } as const;
-
-/**
- * `fx`/`fy` are the element's center as a fraction of the skyline band. The
- * clouds alternate between an upper and lower row around the hero copy so their
- * line art frames the headline instead of running through it. The left and
- * right groups drift toward one another before reversing.
- */
-/**
- * Raises the whole flock off the rooflines, as a multiple of the band height so
- * the lift scales with the composition. Applied uniformly in
- * `heroSkyElementStyle`, which keeps the `fy` values above readable as the
- * reference plate's own proportions.
- */
-export const HERO_SKY_LIFT = 0.32;
-
-/** Uniform size reduction for the cloud flock. */
-export const HERO_CLOUD_SCALE = 0.85;
-
-export const HERO_SKY_ELEMENTS: HeroSkyElement[] = [
-  {
-    id: "plane",
-    art: airplaneArt,
-    fx: 0.16,
-    fy: 0.09,
-    width: 0.285,
-    motion: "cross",
-    verticalLift: "clamp(130px, 26svh, 260px)",
-  },
-  {
-    id: "cloud-a",
-    ...CLOUD_LEFT,
-    fx: 0.09,
-    fy: 0.49,
-    width: 0.4 * HERO_CLOUD_SCALE,
-    motion: "drift-right",
-    duration: 17,
-  },
-  {
-    id: "cloud-b",
-    ...CLOUD_RIGHT,
-    fx: 0.22,
-    fy: -0.16,
-    width: 0.34 * HERO_CLOUD_SCALE,
-    motion: "drift-right",
-    duration: 20,
-    className: "hidden sm:block",
-  },
-  {
-    id: "cloud-c",
-    ...CLOUD_LEFT,
-    fx: 0.42,
-    fy: -0.2,
-    width: 0.32 * HERO_CLOUD_SCALE,
-    motion: "drift-right",
-    duration: 15,
-  },
-  {
-    id: "cloud-d",
-    ...CLOUD_RIGHT,
-    fx: 0.65,
-    fy: 0.51,
-    width: 0.3 * HERO_CLOUD_SCALE,
-    motion: "drift-left",
-    duration: 19,
-    className: "hidden sm:block",
-  },
-  {
-    id: "cloud-e",
-    ...CLOUD_LEFT,
-    fx: 0.755,
-    fy: 0.47,
-    width: 0.36 * HERO_CLOUD_SCALE,
-    motion: "drift-left",
-    duration: 22,
-  },
-  {
-    id: "cloud-f",
-    ...CLOUD_RIGHT,
-    fx: 0.905,
-    fy: -0.12,
-    width: 0.38 * HERO_CLOUD_SCALE,
-    motion: "drift-left",
-    duration: 16,
-    className: "hidden md:block",
-  },
-  {
-    id: "balloon",
-    art: balloonArt,
-    fx: 0.82,
-    fy: -0.05,
-    width: 0.13,
-    motion: "rise",
-  },
-];
-
-export const HERO_SKY_MOTION = {
-  /**
-   * Clouds breathe in and out of their reference spot rather than crossing the
-   * screen. A linear leg removes the eased pause that previously made each
-   * reversal read as stop-and-go motion.
-   */
-  cloud: { xPercent: 40, ease: "none" },
-  /**
-   * The plane flies in one direction and wraps edge-to-edge. Its exact x range
-   * is measured in `SkyElements` because the artwork scales with the skyline.
-   */
-  plane: {
-    duration: 48,
-    ease: "none",
-    direction: "right-to-left",
-  },
-  /**
-   * `from`/`to` are multiples of the band height. The balloon begins in view
-   * and floats back down instead of fading out and jumping to its start.
-   */
-  balloon: {
-    from: 0,
-    to: -0.65,
-    duration: 28,
-    swayPercent: 22,
-    swayDuration: 8,
-  },
-} as const;
-
-/**
- * Same stencil trick as the skyline — the artwork supplies only the alpha and
- * `bg-foreground` supplies the ink, so every sky element recolors with the
- * theme. Each box is cut to its art's aspect, hence `100% 100%` rather than the
- * band's `cover`.
- */
-export function heroSkyElementStyle(element: HeroSkyElement): CSSProperties {
-  const art = `url(${element.art.src})`;
-  const aspect = element.art.width / element.art.height;
-  const band = `var(${HERO_SKYLINE.heightVar})`;
-  const halfWidth = element.width / 2;
-  const rise = element.width / aspect / 2 + HERO_SKY_LIFT;
-
-  return {
-    width: `calc(${band} * ${element.width})`,
-    aspectRatio: `${aspect}`,
-    left: `calc(${(element.fx * 100).toFixed(2)}% - ${band} * ${halfWidth})`,
-    top: `calc(${(element.fy * 100).toFixed(2)}% - ${band} * ${rise.toFixed(5)} - ${element.verticalLift ?? "0px"})`,
-    maskImage: art,
-    WebkitMaskImage: art,
-    maskSize: "100% 100%",
-    WebkitMaskSize: "100% 100%",
-    maskRepeat: "no-repeat",
-    WebkitMaskRepeat: "no-repeat",
-    willChange: "transform",
-  };
-}
 
 export const COMET_TUNING = {
   spine: `

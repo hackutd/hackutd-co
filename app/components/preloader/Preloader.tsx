@@ -1,40 +1,20 @@
 "use client";
 
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
-import {
-  HERO_LAYOUT,
-  HERO_SKYLINE,
-  HERO_SKYLINE_MASK,
-  HERO_SKYLINE_STROKE_FILTER,
-} from "@/app/components/hero/sceneConfig";
 import { LogoDraw } from "./LogoDraw";
-import { SkylineDraw } from "./SkylineDraw";
 import { LOGO_DRAW, PRELOADER } from "./sceneConfig";
 
 type Phase = "drawing" | "leaving" | "done";
-
-/** Own copy of the hero's erode filter: the hero isn't in the DOM on every route. */
-const STROKE_FILTER_ID = "preloader-skyline-thin-strokes";
-
-const ORIGINAL_SKYLINE_STYLE: CSSProperties = {
-  ...HERO_SKYLINE_MASK,
-  filter: `url(#${STROKE_FILTER_ID})`,
-};
 
 /** Marks the navbar's wordmark so the drawn logo can sit exactly over it. */
 const NAVBAR_LOGO_SELECTOR = "[data-navbar-logo] img";
 
 /**
- * Full-screen overlay that draws the wordmark and the hero skyline once,
- * fades out and unmounts.
+ * Full-screen overlay that draws the wordmark once, fades out and unmounts.
+ * The hero's live skyline (DallasSkyline) is already running underneath, so
+ * the overlay simply lifts off it.
  *
  * It sits on top of the already-rendered page rather than replacing it, so
  * nothing reflows when it leaves and LCP is not held hostage by the timer.
@@ -104,47 +84,10 @@ export function Preloader() {
       aria-busy={phase === "drawing"}
       data-leaving={phase === "leaving" ? "" : undefined}
     >
-      <svg aria-hidden="true" className="absolute h-0 w-0">
-        <defs>
-          <filter
-            id={STROKE_FILTER_ID}
-            x="-5%"
-            y="-5%"
-            width="110%"
-            height="110%"
-            colorInterpolationFilters="sRGB"
-          >
-            <feMorphology
-              in="SourceGraphic"
-              operator="erode"
-              radius={HERO_SKYLINE_STROKE_FILTER.radius}
-            />
-          </filter>
-        </defs>
-      </svg>
       {/* Hidden until placed over the navbar logo, so it never flashes at a
           guessed position before hydration. */}
       <div ref={logoRef} className="invisible absolute">
         <LogoDraw className="block h-full w-full" />
-      </div>
-      {/* Mirrors the hero's sticky viewport and skyline band one for one. The
-          traced outlines draw on, then the hero's own masked artwork fades in
-          over them (`.skyline-original`) as the strokes fade out, so the
-          overlay lifts onto a pixel-identical skyline. */}
-      <div
-        aria-hidden
-        style={
-          { [HERO_SKYLINE.heightVar]: HERO_SKYLINE.height } as CSSProperties
-        }
-        className={`pointer-events-none absolute inset-x-0 top-0 overflow-hidden ${HERO_LAYOUT.stickyViewportHeight} ${HERO_SKYLINE.widthClass}`}
-      >
-        <div className={`absolute ${HERO_SKYLINE.layerBox}`}>
-          <SkylineDraw className="absolute inset-0 h-full w-full" />
-          <div
-            style={ORIGINAL_SKYLINE_STYLE}
-            className="skyline-original absolute inset-0 bg-foreground"
-          />
-        </div>
       </div>
     </div>
   );
