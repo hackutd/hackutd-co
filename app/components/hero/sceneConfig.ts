@@ -1,6 +1,5 @@
 import type { CSSProperties } from "react";
 import type { StaticImageData } from "next/image";
-import skylineArt from "@/app/assets/hero/skyline.png";
 import airplaneArt from "@/app/assets/hero/dallas_airplane_transparent.png";
 import cloudLeftArt from "@/app/assets/hero/dallas_cloud_left_transparent.png";
 import cloudRightArt from "@/app/assets/hero/dallas_cloud_right_transparent.png";
@@ -74,6 +73,41 @@ export const HERO_WHITEOUT = {
 } as const;
 
 /**
+ * The live Dallas skyline (see DallasSkyline.tsx): the sticky hero viewport
+ * is its pointer stage, and the scene's rows parallax by these SVG units as
+ * the hero scrolls, far row up and front row down, so the city gains depth
+ * while the copy leaves.
+ */
+export const HERO_CITY_STAGE_DATA_ATTR = "data-hero-city-stage";
+
+export const HERO_CITY = {
+  /** Rows slide apart as the hero scrolls out; ends where the whiteout begins. */
+  parallax: {
+    start: HERO_SCENE_SCROLL.start,
+    end: HERO_WHITEOUT.scene.start,
+    back: { x: 0, y: -14 },
+    far: { x: 0, y: -8 },
+    mid: { x: 0, y: 6 },
+    near: { x: 0, y: 18 },
+  },
+  motion: {
+    /** DART speed in grid cells per second. */
+    train: 1.25,
+    /** The helicopter's patrol ellipse over the city (cells) and cruise height. */
+    heli: { speed: 0.42, radiusU: 15, radiusV: 2.4, z: 118 },
+    /** Crane jibs sweep left and right while the pointer is near them. */
+    craneSwing: { amplitude: 1.1, speed: 1.4 },
+  },
+  mobile: {
+    boards: 5,
+    wallBoards: false,
+    cranes: 1,
+    /** Chance a low-rise lot is left empty on phones. */
+    lowriseGap: 0.6,
+  },
+} as const;
+
+/**
  * The skyline band keeps the artwork readable on narrow phones and clear of the
  * hero copy on short landscape viewports. Its uncapped height matches the
  * artwork's aspect ratio so the skyline spans the viewport without side gaps.
@@ -103,37 +137,6 @@ export const HERO_SKYLINE = {
   layerBox:
     "h-[var(--hero-skyline-h)] bottom-[clamp(8px,3vh,36px)] w-[var(--hero-skyline-w)] left-[calc(50%-var(--hero-skyline-w)/2)] md:inset-x-0 md:w-auto",
 } as const;
-
-/**
- * The skyline is line art, so it is drawn as a painted rectangle masked by the
- * artwork's alpha rather than as an `<img>`. That takes one asset instead of a
- * black plate and a white plate: the fill is `--color-foreground`, which the
- * theme already flips from white to near-black, so the buildings recolor
- * themselves with no second file and no swap logic.
- *
- * The mask fills the shared skyline band so the full artwork reaches both
- * viewport edges while staying registered with the animated sky elements. The
- * `-webkit-` pairs are kept for older Safari, matching the masked navbar seam.
- */
-const SKYLINE_ART = `url(${skylineArt.src})`;
-
-/** SVG morphology filter used to delicately erode the rendered line weight. */
-export const HERO_SKYLINE_STROKE_FILTER = {
-  id: "hero-skyline-thin-strokes",
-  radius: 0.9,
-} as const;
-
-export const HERO_SKYLINE_MASK: CSSProperties = {
-  maskImage: SKYLINE_ART,
-  WebkitMaskImage: SKYLINE_ART,
-  maskSize: "100% 100%",
-  WebkitMaskSize: "100% 100%",
-  maskPosition: "bottom center",
-  WebkitMaskPosition: "bottom center",
-  maskRepeat: "no-repeat",
-  WebkitMaskRepeat: "no-repeat",
-  filter: `url(#${HERO_SKYLINE_STROKE_FILTER.id})`,
-};
 
 export type HeroSkyMotion = "drift-left" | "drift-right" | "cross" | "rise";
 
