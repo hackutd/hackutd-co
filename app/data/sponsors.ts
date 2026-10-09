@@ -23,7 +23,6 @@ import jpmorgan from "@/app/assets/sponsors/jpmorgan_chase.svg";
 import sticker_mule from "@/app/assets/sponsors/sticker_mule.svg";
 import standout_stickers from "@/app/assets/sponsors/standout_stickers.svg";
 import ti from "@/app/assets/sponsors/ti.svg";
-import l3 from "@/app/assets/sponsors/l3.svg";
 import veolia from "@/app/assets/sponsors/veolia.png";
 import CoreLogic from "@/app/assets/sponsors/CoreLogic.png";
 import FannieMae from "@/app/assets/sponsors/FannieMae_dark.svg";
@@ -37,8 +36,6 @@ import NordVPN from "@/app/assets/sponsors/NordVPN_dark.svg";
 import PRHI from "@/app/assets/sponsors/PRHI.png";
 import PNC from "@/app/assets/sponsors/PNC.png";
 import benq from "@/app/assets/sponsors/benq.png";
-import SNAP_AR from "@/app/assets/sponsors/SnapAR.png";
-import SNAP_GHOST from "@/app/assets/sponsors/SnapGhost_dark.svg";
 import INFOSYS from "@/app/assets/sponsors/Infosys.png";
 import PINATA from "@/app/assets/sponsors/pinata.png";
 import tmobile from "@/app/assets/sponsors/tmobile.svg";
@@ -114,16 +111,6 @@ const SPONSORS_MAP: Record<string, Sponsor> = {
     img: Fidelity,
     link: "https://leap.fidelitycareers.com",
   },
-  SNAP_AR: {
-    name: "Snap AR",
-    img: SNAP_AR,
-    link: "https://ar.snap.com/?lang=en-US",
-  },
-  SNAP_GHOST: {
-    name: "Snap Ghost",
-    img: SNAP_GHOST,
-    link: "https://ar.snap.com/?lang=en-US",
-  },
   PNC: {
     name: "PNC Bank",
     img: PNC,
@@ -143,11 +130,6 @@ const SPONSORS_MAP: Record<string, Sponsor> = {
     name: "Scale AI",
     img: scale,
     link: "https://scale.com/",
-  },
-  L3_HARRIS: {
-    name: "L3 Harris",
-    img: l3,
-    link: "https://www.l3harris.com/",
   },
   CBRE: {
     name: "CBRE",
