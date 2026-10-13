@@ -413,6 +413,7 @@ export default function Teams() {
           <div className="relative flex h-full flex-col">
             {/* Top info zone */}
             <div
+              data-lenis-prevent
               className="shrink-0 overflow-y-auto px-5 pt-16 pb-3"
               style={{ maxHeight: isAndroid ? "52%" : "50%" }}
             >

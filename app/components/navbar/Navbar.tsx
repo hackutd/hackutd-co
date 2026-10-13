@@ -23,6 +23,7 @@ import {
   subscribeSiteTheme,
   type SiteTheme,
 } from "../theme/siteTheme";
+import { getLenis, scrollToImmediate } from "@/app/lib/lenis";
 
 /**
  * The sponsor wall's palette, for the bar to wear while it is over the wall.
@@ -151,8 +152,9 @@ export default function Navbar() {
     // not unlock it until after this commit, so clear it inline — otherwise a
     // tap on the logo with the mobile menu open scrolls a frozen page.
     document.body.style.overflow = "";
+    getLenis()?.start();
     // Instant, to match the plain anchor jumps the section links do.
-    window.scrollTo(0, 0);
+    scrollToImmediate(0);
 
     // Drop the section hash so a reload starts at the top too, and so the
     // router has no stale fragment to reuse. replaceState rather than a push:
@@ -168,8 +170,16 @@ export default function Navbar() {
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
+
+    if (isOpen) {
+      getLenis()?.stop();
+    } else {
+      getLenis()?.start();
+    }
+
     return () => {
       document.body.style.overflow = "";
+      getLenis()?.start();
     };
   }, [isOpen]);
 

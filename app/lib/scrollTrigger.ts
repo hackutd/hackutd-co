@@ -1,6 +1,7 @@
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { CustomEase } from "gsap/CustomEase";
+import { getLenis } from "./lenis";
 import { createScrollAnchor } from "./scrollAnchor";
 
 let isConfigured = false;
@@ -85,12 +86,13 @@ function refreshOnResize() {
       baseWidth = window.innerWidth;
       baseHeight = window.innerHeight;
 
-      // Order matters: re-measure against the new layout, put the reader back
-      // where they were in it, then push that position through every trigger.
+      // Order matters: re-measure, let Lenis re-read the document height, put
+      // the reader back where they were, then update every trigger.
       // The last step is not optional — ScrollTrigger's update pass runs off
       // scroll events rather than the ticker, so without it the triggers would
       // stay on the pre-restore position until the reader scrolled.
       ScrollTrigger.refresh();
+      getLenis()?.resize();
       anchor.restore();
       ScrollTrigger.update();
 

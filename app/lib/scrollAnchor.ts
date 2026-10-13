@@ -1,3 +1,5 @@
+import { scrollToImmediate } from "./lenis";
+
 /**
  * Marks the element whose in-flow children are the page's scroll sections.
  * Read by the anchor below and declared once, on the page wrapper.
@@ -95,8 +97,9 @@ export function createScrollAnchor(): ScrollAnchor {
 
     const height = Math.max(section.offsetHeight, 1);
 
-    // Two-argument form: always instant, no dependence on `scroll-behavior`.
-    window.scrollTo(0, documentTop(section) + anchor.progress * height);
+    // Lenis immediate+force keeps its internal value in sync; the native
+    // two-argument scrollTo fallback is immediate regardless of CSS scrolling.
+    scrollToImmediate(documentTop(section) + anchor.progress * height);
   };
 
   capture();
