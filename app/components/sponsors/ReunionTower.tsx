@@ -38,23 +38,18 @@ const CENTER_Y =
   ((TOWER_BOUNDS.min[1] + TOWER_BOUNDS.max[1]) / 2) * NORM_SCALE;
 
 const COLORS = {
-  lattice: "#f0e9dc", // Warm off-white bars
+  lattice: "#e9e7e2", // Silver-grey ball bars
   latticeEdge: "#3a3f45", // Outlines on the ball
-  column: "#d4af7a", // Rich tan concrete shafts
+  column: "#cbb189", // Concrete tan shafts
+  columnBrace: "#b39d77", // Cross-braces between the columns
   drumLight: "#c2bfb4", // Warm gray concrete above/below the window band
   drumBand: "#2e4a5c", // Deep teal window band the logos ride on
-  base: "#93856f",
+  base: "#a3967f",
   ink: "#1f2226", // Outlines on the body
 };
-// Node dots: mostly warm white, sprinkled with brand pink, amber and teal —
-// the real tower's ball lights up in color for events.
-const NODE_COLORS = [
-  "#fff6e0", // warm white
-  "#ff4d94", // brand pink
-  "#ffb443", // amber
-  "#4ecfe0", // teal
-];
-const NODE_COLOR_WEIGHTS = [0.62, 0.15, 0.15, 0.08];
+// Junction dots: warm gold-white like the real tower's LEDs, slight variance.
+const NODE_COLORS = ["#fff3d4", "#ffe9ae", "#ffd98a"];
+const NODE_COLOR_WEIGHTS = [0.55, 0.3, 0.15];
 // Window band extent in normalized world y — the drum spans ~115–193, and the
 // logo rows (142/160) sit inside the dark band.
 const BAND_Y: [number, number] = [118, 168];
@@ -483,6 +478,16 @@ interface TowerPart {
   edges: THREE.EdgesGeometry;
 }
 
+// Axis-aligned footprint of a column shaft — used to thread cross-braces
+// between the three supports like the real tower's connecting struts.
+interface SupportInfo {
+  cx: number;
+  cz: number;
+  yMin: number;
+  yMax: number;
+  radius: number;
+}
+
 // All meshes, decoded + split into lattice (PlatonicSphere) vs body. The drum
 // gets its dark window band baked as vertex colors — a MeshToonMaterial with
 // vertexColors then shades the panels like the illustration. The sphere is
@@ -490,6 +495,7 @@ interface TowerPart {
 function useTowerParts(): {
   body: TowerPart[];
   sphere: TowerPart[];
+  supports: SupportInfo[];
   sphereCenter: [number, number];
 } {
   return useMemo(() => {
@@ -498,6 +504,7 @@ function useTowerParts(): {
     const dark = new THREE.Color(COLORS.drumBand);
     const body: TowerPart[] = [];
     const sphere: TowerPart[] = [];
+    const supports: SupportInfo[] = [];
     const sphereCenter: [number, number] = [0, 0];
 
     for (const part of TOWER_PARTS) {
@@ -540,11 +547,26 @@ function useTowerParts(): {
         geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
       }
 
+      if (/^support/i.test(part.name)) {
+        geo.computeBoundingBox();
+        const bb = geo.boundingBox!;
+        supports.push({
+          cx: (bb.min.x + bb.max.x) / 2,
+          cz: (bb.min.z + bb.max.z) / 2,
+          yMin: bb.min.y,
+          yMax: bb.max.y,
+          radius: Math.min(
+            (bb.max.x - bb.min.x) / 2,
+            (bb.max.z - bb.min.z) / 2,
+          ),
+        });
+      }
+
       const edges = new THREE.EdgesGeometry(geo, part.inSphere ? 55 : 25);
       const entry = { name: part.name, inSphere: part.inSphere, geo, edges };
       (part.inSphere ? sphere : body).push(entry);
     }
-    return { body, sphere, sphereCenter };
+    return { body, sphere, supports, sphereCenter };
   }, []);
 }
 
@@ -732,6 +754,92 @@ function TowerBody({
   );
 }
 
+// Horizontal struts tying the three column shafts together — the real
+// tower's legs are braced this way. Cylinders span each pair of supports,
+// end points pulled 3/4 of the way into each column surface.
+function ConnectorBars({
+  supports,
+  ramp,
+}: {
+  supports: SupportInfo[];
+  ramp: THREE.DataTexture;
+}) {
+  const mats = useMemo(
+    () => ({
+      brace: new THREE.MeshToonMaterial({
+        color: COLORS.columnBrace,
+        gradientMap: ramp,
+      }),
+      edge: new THREE.LineBasicMaterial({ color: COLORS.ink }),
+    }),
+    [ramp],
+  );
+  useEffect(
+    () => () => {
+      Object.values(mats).forEach((m) => m.dispose());
+    },
+    [mats],
+  );
+
+  const bars = useMemo(() => {
+    const list: { geo: THREE.CylinderGeometry; edges: THREE.EdgesGeometry }[] =
+      [];
+    if (supports.length < 2) return list;
+    const pairs: [number, number][] = [
+      [0, 1],
+      [1, 2 % supports.length],
+      [0, 2 % supports.length],
+    ];
+    for (const [ia, ib] of pairs) {
+      const A = supports[ia];
+      const B = supports[ib];
+      const y0 = Math.max(A.yMin, B.yMin) + 5;
+      const y1 = Math.min(A.yMax, B.yMax) - 5;
+      if (y1 - y0 < 8) continue;
+      const dx = B.cx - A.cx;
+      const dz = B.cz - A.cz;
+      const dist = Math.hypot(dx, dz);
+      const dirX = dx / dist;
+      const dirZ = dz / dist;
+      const count = Math.max(3, Math.round((y1 - y0) / 8));
+      for (let k = 0; k < count; k++) {
+        const y = y0 + ((y1 - y0) * (k + 0.5)) / count;
+        const ax = A.cx + dirX * A.radius * 0.75;
+        const az = A.cz + dirZ * A.radius * 0.75;
+        const bx = B.cx - dirX * B.radius * 0.75;
+        const bz = B.cz - dirZ * B.radius * 0.75;
+        const len = Math.hypot(bx - ax, bz - az);
+        const geo = new THREE.CylinderGeometry(0.55, 0.55, len, 8);
+        geo.rotateZ(Math.PI / 2); // lie along +X
+        geo.rotateY(-Math.atan2(bz - az, bx - ax));
+        geo.translate((ax + bx) / 2, y, (az + bz) / 2);
+        list.push({ geo, edges: new THREE.EdgesGeometry(geo, 25) });
+      }
+    }
+    return list;
+  }, [supports]);
+
+  useEffect(
+    () => () => {
+      bars.forEach((b) => {
+        b.geo.dispose();
+        b.edges.dispose();
+      });
+    },
+    [bars],
+  );
+
+  return (
+    <>
+      {bars.map((b, i) => (
+        <mesh key={i} geometry={b.geo} material={mats.brace}>
+          <lineSegments geometry={b.edges} material={mats.edge} />
+        </mesh>
+      ))}
+    </>
+  );
+}
+
 // ── Tower model ─────────────────────────────────────────────
 function TowerModel({
   scrollProgressRef,
@@ -766,7 +874,7 @@ function TowerModel({
   // Static layout of slots
   const placements = useMemo(() => generateSlots(), []);
 
-  const { body, sphere, sphereCenter } = useTowerParts();
+  const { body, sphere, supports, sphereCenter } = useTowerParts();
   const ramp = useToonRamp();
   const latticeNodes = useMemo(
     () => decodeLatticeNodes(sphereCenter),
@@ -829,6 +937,7 @@ function TowerModel({
         rotation={[0, Math.PI + THREE.MathUtils.degToRad(10), 0]}
       >
         <TowerBody body={body} ramp={ramp} />
+        <ConnectorBars supports={supports} ramp={ramp} />
         <group ref={globeRef}>
           {/* renderOrder 3 puts the lattice in front of the logos (order 2) */}
           <LatticeBall
