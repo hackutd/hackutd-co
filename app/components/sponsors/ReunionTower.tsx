@@ -1,36 +1,67 @@
 "use client";
 
-import { Suspense, useRef, useMemo, useEffect, useState } from "react";
+import { useRef, useMemo, useEffect, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { getImageProps, type StaticImageData } from "next/image";
 import { useNearViewport } from "@/app/hooks/useNearViewport";
+import { useIsMobile } from "@/app/hooks/useIsMobile";
 
-const MODEL_PATH = "/models/sponsor-globe-flat-4.glb";
 const AUTO_ROTATION_SPEED = 0.3;
 const MAX_FRAME_DELTA = 1 / 30;
 const ROTATION_SMOOTHING = 0.08;
 
-// Cylinder radius: MainRoom is ~37.7 after normalization. Place logos just outside.
+// Logos ride just outside the glass band (radius 43, y 130–170 below).
 const LOGO_RADIUS = 45.0;
 const LOGO_OFFSET = 0.0; // Tiny offset to prevent z-fighting
 
 const MIN_LOGO_DISPLAY_HEIGHT = 12.0; // "Wayy bigger" height
 const MAX_LOGO_DISPLAY_WIDTH = 32.0;  // "Wayy bigger" width
-const LOGO_PADDING = 2.2; // Minimum gap between any two logo edges (world units)
 const SLOT_COUNT = 10;    // Number of active logos on the tower at once
 
-// ── Blue glass band vertical constraints ───────────────────
-// MainRoom cylinder normalized: y=[89.57, 154.80], height=65.23
-const CYLINDER_MIN_Y = 89.57;
-const CYLINDER_MAX_Y = 154.80;
-const CYLINDER_HEIGHT = CYLINDER_MAX_Y - CYLINDER_MIN_Y; // ~65.23
-// Blue band is the middle portion — gray structural rings at top/bottom
-const BAND_TOP_MARGIN = CYLINDER_HEIGHT * 0.22;   // Top 15% is gray ledge
-const BAND_BOTTOM_MARGIN = CYLINDER_HEIGHT * 0.18; // Bottom 10% is gray ring
-const BAND_MIN_Y = CYLINDER_MIN_Y + BAND_BOTTOM_MARGIN;  // ~99.4
-const BAND_MAX_Y = CYLINDER_MAX_Y - BAND_TOP_MARGIN;     // ~141.8
+// ── Tower geometry ──────────────────────────────────────────
+// Built from primitives rather than a GLB: nothing to download or traverse,
+// and every color is a constant here. World units: 420 tall, base at y=-210,
+// matching the camera rig below. Flat toon fills + inverted-hull ink outlines.
+const COLORS = {
+  concrete: "#e4ded2",
+  steel: "#959ca4",
+  glass: "#134e5e",
+  globe: "#c4c9cf",
+  ink: "#111111",
+};
+const INK = 0.9; // Outline thickness (world units)
+const SEGMENTS = 40;
+const TOWER_BASE_Y = -210;
+
+// [bottom radius, top radius, bottom y, top y, color]
+type Part = [number, number, number, number, string];
+
+const CORE: Part = [15, 15, TOWER_BASE_Y, 120, COLORS.concrete];
+const SHAFT: Part = [10, 10, TOWER_BASE_Y, 112, COLORS.concrete];
+const SHAFT_DISTANCE = 28;
+const SHAFT_ANGLES = [60, 180, 300].map(THREE.MathUtils.degToRad);
+
+const DRUM: Part[] = [
+  [34, 45, 100, 115, COLORS.concrete], // Underside collar where the shafts meet
+  [45, 45, 115, 130, COLORS.steel],    // Lower ring
+  [43, 43, 130, 170, COLORS.glass],    // Rotating window band — logos ride here
+  [47, 47, 170, 178, COLORS.steel],    // Observation deck ledge
+  [40, 40, 178, 190, COLORS.concrete],
+  [40, 18, 190, 198, COLORS.concrete], // Roof
+];
+
+const GLOBE_Y = 133;
+const GLOBE_RADIUS = 77;
+const GLOBE_CUT = -40; // Globe is open below this local y, where the shafts enter
+const GLOBE_DETAIL = 3; // Geodesic subdivision: higher = denser struts
+const STRUT_OPACITY = 0.6;
+
+// Three-band cel ramp for MeshToonMaterial
+const TOON_RAMP = new THREE.DataTexture(new Uint8Array([110, 190, 255]), 3, 1, THREE.RedFormat);
+TOON_RAMP.minFilter = THREE.NearestFilter;
+TOON_RAMP.magFilter = THREE.NearestFilter;
+TOON_RAMP.needsUpdate = true;
 
 // ── Types ───────────────────────────────────────────────────
 interface SponsorPlacement {
@@ -90,38 +121,6 @@ function generateSlots(): SponsorPlacement[] {
     }
   }
   return slots;
-}
-
-// ── Near-white discard material ─────────────────────────────
-// Discards near-white pixels so logos with white backgrounds render transparent.
-function useWhiteDiscardMaterial(texture: THREE.Texture) {
-  return useMemo(() => {
-    const mat = new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-      alphaTest: 0.1,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-      opacity: 1,
-    });
-
-    mat.onBeforeCompile = (shader) => {
-      shader.fragmentShader = shader.fragmentShader.replace(
-        "#include <map_fragment>",
-        `
-        #include <map_fragment>
-    
-
-        // Apply brightness reduction and saturation boost to colored logos
-        diffuseColor.rgb *= 0.55; // TUNE THIS PLS!!!!
-        float luma = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-        diffuseColor.rgb = mix(vec3(luma), diffuseColor.rgb, 1.5);
-        `
-      );
-    };
-
-    return mat;
-  }, [texture]);
 }
 
 // ── SVG dimension fix ───────────────────────────────────────
@@ -288,9 +287,7 @@ function loadCappedTexture(url: string): Promise<THREE.Texture> {
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
       const texture = new THREE.CanvasTexture(canvas);
-      // colorSpace is deliberately left at the Texture default (NoColorSpace),
-      // which is what TextureLoader produced before — the brightness and
-      // saturation constants in useWhiteDiscardMaterial are tuned against it.
+      texture.colorSpace = THREE.SRGBColorSpace; // Logos render in their true brand colors
       texture.anisotropy = 4;
       resolve(texture);
     };
@@ -378,9 +375,6 @@ function SponsorLogo({
     return geo;
   }, [texture]);
 
-  // Shared material for this slot
-  const material = useWhiteDiscardMaterial(texture);
-
   useFrame(() => {
     const worldTheta = placement.theta + groupRotationRef.current;
     // Shift trigger phase to 1.4*PI (from 1.0*PI) to swap the logo earlier.
@@ -396,85 +390,59 @@ function SponsorLogo({
 
   return (
     <group position={[0, placement.y, 0]} rotation={[0, rotY, 0]}>
-      <mesh geometry={arcGeo} material={material} renderOrder={2} />
+      <mesh geometry={arcGeo} renderOrder={2}>
+        <meshBasicMaterial
+          map={texture}
+          transparent
+          alphaTest={0.1}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+        />
+      </mesh>
     </group>
   );
 }
 
+// ── Toon solid with ink outline ─────────────────────────────
+function Solid({ part: [rBottom, rTop, y0, y1, color], x = 0, z = 0 }: { part: Part; x?: number; z?: number }) {
+  const h = y1 - y0;
+  return (
+    <group position={[x, (y0 + y1) / 2, z]}>
+      <mesh>
+        <cylinderGeometry args={[rTop, rBottom, h, SEGMENTS]} />
+        <meshToonMaterial color={color} gradientMap={TOON_RAMP} />
+      </mesh>
+      {/* Inverted hull: a slightly larger back-face shell drawn in ink shows only at the silhouette */}
+      <mesh>
+        <cylinderGeometry args={[rTop + INK, rBottom + INK, h + INK * 2, SEGMENTS]} />
+        <meshBasicMaterial color={COLORS.ink} side={THREE.BackSide} />
+      </mesh>
+    </group>
+  );
+}
+
+// Every triangle edge of a subdivided icosahedron, minus the open bottom: the geodesic struts.
+function buildGlobeStruts(): THREE.BufferGeometry {
+  const edges = new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(GLOBE_RADIUS, GLOBE_DETAIL), 1);
+  const p = edges.attributes.position.array;
+  const kept: number[] = [];
+  for (let i = 0; i < p.length; i += 6) {
+    if (p[i + 1] > GLOBE_CUT && p[i + 4] > GLOBE_CUT) kept.push(...p.slice(i, i + 6));
+  }
+  edges.dispose();
+  return new THREE.BufferGeometry().setAttribute("position", new THREE.Float32BufferAttribute(kept, 3));
+}
+
 // ── Tower model ─────────────────────────────────────────────
 function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerSceneProps) {
-  const { scene } = useGLTF(MODEL_PATH);
-  const globeRef = useRef<THREE.Object3D | null>(null);
-  const globeMaterialsRef = useRef<THREE.Material[]>([]);
+  const globeRef = useRef<THREE.Group>(null);
+  const globeFillRef = useRef<THREE.MeshBasicMaterial>(null);
   const sponsorGroupRef = useRef<THREE.Group>(null);
   const smoothRotation = useRef(0);
   const autoAngle = useRef(0);
 
-  const clonedScene = useMemo(() => scene.clone(true), [scene]);
-
-  // Normalize model
-  const { normScale, centerY } = useMemo(() => {
-    const box = new THREE.Box3().setFromObject(clonedScene);
-    const size = new THREE.Vector3();
-    const center = new THREE.Vector3();
-    box.getSize(size);
-    box.getCenter(center);
-    const s = 420 / size.y;
-    return { normScale: s, centerY: center.y * s };
-  }, [clonedScene]);
-
-  // Find PlatonicSphere and apply transparency + add black edge outlines to everything
-  useEffect(() => {
-    const mats: THREE.Material[] = [];
-    const edgeMat = new THREE.LineBasicMaterial({ color: 0x000000 });
-
-    // Collect sphere UUIDs first so we can use a different edge threshold
-    const sphereUuids = new Set<string>();
-    const sphereNode = clonedScene.getObjectByName("PlatonicSphere");
-    if (sphereNode) {
-      globeRef.current = sphereNode;
-      sphereNode.traverse((n) => sphereUuids.add(n.uuid));
-    }
-
-    const darkenFactor = 0.55; // Tune this: lower = darker (0.0–1.0)
-
-    clonedScene.traverse((child) => {
-      if (child.name === "PlatonicSphere") {
-        // Apply transparency to the sphere and all its sub-meshes (bars, connectors, etc.)
-        child.traverse((node) => {
-          if (node instanceof THREE.Mesh) {
-            node.material = node.material.clone();
-            node.material.transparent = true;
-            node.material.opacity = 0.6;
-            node.material.depthWrite = false;
-            node.renderOrder = 3; // Render AFTER logos (renderOrder=2) so sphere appears in front
-            if ("color" in node.material) {
-              node.material.color.set(0xb0b0b0);
-            }
-            mats.push(node.material as THREE.Material);
-          }
-        });
-      }
-
-      // Uniform gray for all non-sphere meshes
-      if (child instanceof THREE.Mesh && !sphereUuids.has(child.uuid)) {
-        child.material = child.material.clone();
-        if ("color" in child.material) {
-          child.material.color.set(0xb0b0b0);
-        }
-      }
-
-      // Add black edge outlines — higher threshold on sphere = fewer edges drawn
-      if (child instanceof THREE.Mesh) {
-        const isSphere = sphereUuids.has(child.uuid);
-        const edges = new THREE.EdgesGeometry(child.geometry, isSphere ? 55 : 25);
-        const lines = new THREE.LineSegments(edges, edgeMat);
-        if (child.renderOrder === 3) lines.renderOrder = 3;
-        child.add(lines);
-      }
-    });
-    globeMaterialsRef.current = mats;
-  }, [clonedScene]);
+  const struts = useMemo(buildGlobeStruts, []);
+  useEffect(() => () => struts.dispose(), [struts]);
 
   const validSponsors = useMemo(() => sponsors.filter((s) => s.logo), [sponsors]);
   const logoUrls = useMemo(() => validSponsors.map((s) => logoTextureUrl(s.logo!)), [validSponsors]);
@@ -495,12 +463,11 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
   useFrame((_, delta) => {
     const scroll = scrollProgressRef.current ?? 0;
 
-    // Parabolic fading: Starts at 1.0, reaches 0.2 at scroll=0.5, ends at 1.0
+    // Parabolic fading: ~0.2 near the start of the scroll, opaque by the end
     const minOpacity = 0.2;
-    const targetOpacity = 4 * (1 - minOpacity) * Math.pow(scroll - 0.1, 2) + minOpacity;
-    globeMaterialsRef.current.forEach((mat) => {
-      mat.opacity = targetOpacity;
-    });
+    if (globeFillRef.current) {
+      globeFillRef.current.opacity = Math.min(1, 4 * (1 - minOpacity) * Math.pow(scroll - 0.1, 2) + minOpacity);
+    }
 
     if (!globeRef.current) return;
 
@@ -526,14 +493,27 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
   });
 
   return (
-    <group dispose={null}>
-      <primitive
-        object={clonedScene}
-        scale={[normScale, normScale, normScale]}
-        position={[0, -centerY, 0]}
-        rotation={[0, Math.PI + THREE.MathUtils.degToRad(10), 0]}
-      />
-      <group ref={sponsorGroupRef} position={[2.3, 0, 0]}>
+    <group>
+      <Solid part={CORE} />
+      {SHAFT_ANGLES.map((a) => (
+        <Solid key={a} part={SHAFT} x={Math.sin(a) * SHAFT_DISTANCE} z={Math.cos(a) * SHAFT_DISTANCE} />
+      ))}
+      {DRUM.map((part, i) => (
+        <Solid key={i} part={part} />
+      ))}
+
+      <group ref={globeRef} position={[0, GLOBE_Y, 0]}>
+        {/* Drawn after the logos (renderOrder 2) so the globe sits in front of them */}
+        <mesh renderOrder={3}>
+          <sphereGeometry args={[GLOBE_RADIUS, 48, 24, 0, Math.PI * 2, 0, Math.acos(GLOBE_CUT / GLOBE_RADIUS)]} />
+          <meshBasicMaterial ref={globeFillRef} color={COLORS.globe} transparent depthWrite={false} />
+        </mesh>
+        <lineSegments geometry={struts} renderOrder={4}>
+          <lineBasicMaterial color={COLORS.ink} transparent opacity={STRUT_OPACITY} depthWrite={false} />
+        </lineSegments>
+      </group>
+
+      <group ref={sponsorGroupRef}>
         {textures &&
           placements.map((placement, i) => (
             <SponsorLogo
@@ -621,15 +601,10 @@ export default function ReunionTower({
 }: ReunionTowerProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
+  const isMobile = useIsMobile();
 
-  // Preload the model before it approaches, but defer creating its GPU context
-  // until the canvas is within half a viewport.
-  const shouldPreloadModel = useNearViewport(wrapperRef, "200%");
+  // Defer creating the GPU context until the canvas is within half a viewport.
   const shouldMountCanvas = useNearViewport(wrapperRef, "50%");
-
-  useEffect(() => {
-    if (shouldPreloadModel) useGLTF.preload(MODEL_PATH);
-  }, [shouldPreloadModel]);
 
   // Render frames only while the tower is on screen
   useEffect(() => {
@@ -647,9 +622,13 @@ export default function ReunionTower({
     <div ref={wrapperRef} className="h-full w-full">
       {shouldMountCanvas && (
         <Canvas
-          dpr={1}
+          // Phones get no MSAA and 1x pixels; desktop gets a little extra
+          // resolution so the ink outlines stay crisp.
+          dpr={isMobile ? 1 : [1, 1.5]}
+          // No tone mapping, so COLORS render as the exact hex values
+          flat
           gl={{
-            antialias: true,
+            antialias: !isMobile,
             alpha: true,
             powerPreference: "high-performance",
             stencil: false,
@@ -664,19 +643,16 @@ export default function ReunionTower({
           }}
           frameloop={inView ? "always" : "never"}
         >
-          {/* The model carries its own flat gray colors and drawn edges, so a
-              single flat ambient light is all it needs — directional lights and
-              an Environment probe would shade the uniform gray unevenly. */}
-          <ambientLight intensity={3.5} />
-  
-          <Suspense fallback={null}>
-            <TowerModel
-              scrollProgressRef={scrollProgressRef}
-              dragOffsetRef={dragOffsetRef}
-              sponsors={sponsors}
-            />
-          </Suspense>
-  
+          {/* Toon materials step this into the three cel bands of TOON_RAMP */}
+          <ambientLight intensity={1.8} />
+          <directionalLight position={[-120, 200, 160]} intensity={1.6} />
+
+          <TowerModel
+            scrollProgressRef={scrollProgressRef}
+            dragOffsetRef={dragOffsetRef}
+            sponsors={sponsors}
+          />
+
           <CameraRig scrollProgressRef={scrollProgressRef} />
         </Canvas>
       )}
