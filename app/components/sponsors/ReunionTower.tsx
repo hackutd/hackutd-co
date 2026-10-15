@@ -6,6 +6,12 @@ import * as THREE from "three";
 import { getImageProps, type StaticImageData } from "next/image";
 import { useNearViewport } from "@/app/hooks/useNearViewport";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
+import {
+  TOWER_BOUNDS,
+  TOWER_DATA,
+  LATTICE_NODES,
+  TOWER_PARTS,
+} from "./towerGeometry";
 
 const AUTO_ROTATION_SPEED = 0.3;
 const MAX_FRAME_DELTA = 1 / 30;
@@ -20,63 +26,32 @@ const MAX_LOGO_DISPLAY_WIDTH = 32.0; // "Wayy bigger" width
 const SLOT_COUNT = 10; // Number of active logos on the tower at once
 
 // ── Tower geometry ──────────────────────────────────────────
-// Built from primitives rather than a GLB: nothing to download or traverse,
-// and every color is a constant here. World units: 420 tall, base at y=-210,
-// matching the camera rig below. The silhouette follows the old GLB model —
-// an open geodesic lattice ball wrapped around the drum, on fluted columns —
-// with real materials and lit nodes instead of flat gray fills.
+// The real GLB meshes live in ./towerGeometry (generated, quantized): the same
+// beveled lattice bars, connectors, drum panels and columns as the old model —
+// no .glb download and no loader. The scene is normalized to 420 world units
+// tall and centered at y=0, exactly like the old useGLTF pipeline.
+
+const MODEL_HEIGHT = 420;
+const NORM_SCALE =
+  MODEL_HEIGHT / (TOWER_BOUNDS.max[1] - TOWER_BOUNDS.min[1]);
+const CENTER_Y =
+  ((TOWER_BOUNDS.min[1] + TOWER_BOUNDS.max[1]) / 2) * NORM_SCALE;
+
 const COLORS = {
-  concrete: "#e2dabd", // Warm ivory columns
-  concreteShade: "#b3a888", // Collar underside
-  steel: "#5a6470", // Dark ring bands
-  steelLight: "#aab3bd", // Secondary rings + mullions
-  glass: "#0e4a5e", // Window band — dark so white plaques read on it
-  strut: "#d8d4c8", // Warm aluminum lattice
-  node: "#ffc15e", // Lit dome nodes — amber like the real tower
-  nodeAlt: "#ef8fc8", // Occasional brand pink
-  plinth: "#948d7c", // Ground plinth
-  shell: "#dceeff", // Faint glass shell inside the lattice
+  lattice: "#eceae4", // Warm off-white bars
+  latticeEdge: "#3a3f45", // Outlines on the ball
+  node: "#ffffff", // Lit junction dots
+  column: "#d3c3a2", // Tan concrete shafts
+  drumLight: "#b8bcc0", // Drum concrete above/below the window band
+  drumBand: "#3d4a56", // Dark window band the logos ride on
+  base: "#8b8578",
+  ink: "#1f2226", // Outlines on the body
 };
-const SEGMENTS = 48;
-const TOWER_BASE_Y = -210;
-
-// [bottom radius, top radius, bottom y, top y, color]
-type Part = [number, number, number, number, string];
-
-// Tapered fluted columns — one core + three shafts converging into the collar.
-const CORE: Part = [16, 12, TOWER_BASE_Y, 118, COLORS.concrete];
-const SHAFT: Part = [11, 9, TOWER_BASE_Y, 104, COLORS.concrete];
-const SHAFT_DISTANCE = 30;
-const SHAFT_ANGLES = [60, 180, 300].map(THREE.MathUtils.degToRad);
-const SHAFT_TILT = THREE.MathUtils.degToRad(3.2); // Slight inward lean
-const FLUTE_RIBS = 16; // Horizontal ribs per column, like the GLB's segments
-
-const DRUM: Part[] = [
-  [30, 44, 100, 116, COLORS.concreteShade], // Underside collar where shafts meet
-  [45, 45, 116, 124, COLORS.steel], // Lower dark ring
-  [44, 43.5, 124, 130, COLORS.steelLight], // Secondary ring
-  [43, 43, 130, 170, COLORS.glass], // Window band — logos ride here
-  [47, 47, 170, 178, COLORS.steel], // Observation deck ledge
-  [40, 40, 178, 190, COLORS.concrete],
-  [40, 16, 190, 200, COLORS.concrete], // Roof taper
-];
-const MULLION_COUNT = 32; // Vertical window ribs on the glass band
-const MULLION_RADIUS = 43.6; // Inside LOGO_RADIUS (45) with clearance
-
-const GLOBE_Y = 133;
-const GLOBE_RADIUS = 77;
-const GLOBE_CUT = -50; // Globe opens just under the collar, where the shafts enter
-const GLOBE_DETAIL = 2; // Geodesic subdivision: 2 ≈ 270 struts, chunky like the GLB
-const STRUT_RADIUS = 1.2;
-const NODE_RADIUS = 2.4;
-const NODE_ALT_EVERY = 9; // Every 9th node is pink instead of amber
-const SHELL_OPACITY = 0.07;
-
-// Ground plinth: two stacked disks at the tower's foot.
-const PLINTH: Part[] = [
-  [96, 88, TOWER_BASE_Y, TOWER_BASE_Y + 8, COLORS.plinth],
-  [82, 76, TOWER_BASE_Y + 8, TOWER_BASE_Y + 14, COLORS.concreteShade],
-];
+// Window band extent in normalized world y — the drum spans ~115–193, and the
+// logo rows (142/160) sit inside the dark band.
+const BAND_Y: [number, number] = [118, 168];
+const SPHERE_OPACITY = 0.9;
+const NODE_RADIUS = 0.3; // Raw model units — small white dots at bar junctions
 
 // ── Types ───────────────────────────────────────────────────
 interface SponsorPlacement {
@@ -309,7 +284,9 @@ function loadCappedTexture(url: string): Promise<THREE.Texture> {
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
       const texture = new THREE.CanvasTexture(canvas);
-      texture.colorSpace = THREE.SRGBColorSpace; // Logos render in their true brand colors
+      // colorSpace is deliberately left at the Texture default (NoColorSpace) —
+      // the brightness/saturation constants in useWhiteDiscardMaterial are
+      // tuned against it.
       texture.anisotropy = 4;
       resolve(texture);
     };
@@ -356,6 +333,38 @@ function useCappedTextures(urls: string[] | null): THREE.Texture[] | null {
   return textures;
 }
 
+// ── Near-white discard material ─────────────────────────────
+// Discards near-white pixels so logos with white backgrounds render
+// transparent — the logo floats on the glass band instead of boxing.
+function useWhiteDiscardMaterial(texture: THREE.Texture) {
+  return useMemo(() => {
+    const mat = new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      alphaTest: 0.1,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      opacity: 1,
+    });
+
+    mat.onBeforeCompile = (shader) => {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <map_fragment>",
+        `
+        #include <map_fragment>
+
+        // Darken and saturate colored logos so they read on the band
+        diffuseColor.rgb *= 0.55;
+        float luma = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+        diffuseColor.rgb = mix(vec3(luma), diffuseColor.rgb, 1.5);
+        `,
+      );
+    };
+
+    return mat;
+  }, [texture]);
+}
+
 // ── Single sponsor logo ─────────────────────────────────────
 function SponsorLogo({
   placement,
@@ -373,7 +382,7 @@ function SponsorLogo({
   // shrinking sponsor list; fall back rather than indexing off the end.
   const texture = textures[sponsorIdx] ?? textures[0];
 
-  const { arcGeo, cardGeo } = useMemo(() => {
+  const arcGeo = useMemo(() => {
     // Canvas-backed now rather than an <img>, so read the size structurally —
     // HTMLCanvasElement carries width/height just as HTMLImageElement does.
     const img = texture.image as { width: number; height: number } | undefined;
@@ -389,7 +398,7 @@ function SponsorLogo({
     const r = LOGO_RADIUS + LOGO_OFFSET;
     const thetaLen = w / r;
     const thetaStart = -thetaLen / 2;
-    const arcGeo = new THREE.CylinderGeometry(
+    const geo = new THREE.CylinderGeometry(
       r,
       r,
       h,
@@ -399,36 +408,17 @@ function SponsorLogo({
       thetaStart,
       thetaLen,
     );
-    const normals = arcGeo.attributes.normal;
+    const normals = geo.attributes.normal;
     for (let i = 0; i < normals.count; i++) {
       normals.setXYZ(i, -normals.getX(i), -normals.getY(i), -normals.getZ(i));
     }
-
-    // White plaque behind each logo, mirroring the sponsor wall's cards —
-    // keeps dark wordmarks legible on the dark glass band.
-    const cardR = LOGO_RADIUS - 0.6;
-    const cardLen = (w * 1.3) / cardR;
-    const cardGeo = new THREE.CylinderGeometry(
-      cardR,
-      cardR,
-      h * 1.45,
-      12,
-      1,
-      true,
-      -cardLen / 2,
-      cardLen,
-    );
-
-    return { arcGeo, cardGeo };
+    return geo;
   }, [texture]);
 
-  useEffect(
-    () => () => {
-      arcGeo.dispose();
-      cardGeo.dispose();
-    },
-    [arcGeo, cardGeo],
-  );
+  useEffect(() => () => arcGeo.dispose(), [arcGeo]);
+
+  // Shared material for this slot
+  const material = useWhiteDiscardMaterial(texture);
 
   useFrame(() => {
     const worldTheta = placement.theta + groupRotationRef.current;
@@ -446,329 +436,273 @@ function SponsorLogo({
 
   return (
     <group position={[0, placement.y, 0]} rotation={[0, rotY, 0]}>
-      <mesh geometry={cardGeo} renderOrder={1}>
-        <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
-      </mesh>
-      <mesh geometry={arcGeo} renderOrder={2}>
-        <meshBasicMaterial
-          map={texture}
-          transparent
-          alphaTest={0.1}
-          side={THREE.DoubleSide}
-          depthWrite={false}
-        />
-      </mesh>
+      <mesh geometry={arcGeo} material={material} renderOrder={2} />
     </group>
   );
 }
 
-// ── Tower parts ─────────────────────────────────────────────
-// LatheGeometry needs lathe-space points (x = radius, y = height), so each
-// part's [rBottom, rTop, y0, y1] is remapped around its own center.
-function partGeometry(
-  [rBottom, rTop, y0, y1]: Part,
-  ribs = 0,
-): THREE.LatheGeometry {
-  const h = y1 - y0;
-  const mid = (y0 + y1) / 2;
-  const steps = ribs > 0 ? ribs * 3 : 2;
-  // Closed profile: bottom cap in, side up, top cap in — lathe leaves ends open otherwise.
-  const pts: THREE.Vector2[] = [new THREE.Vector2(0.01, y0 - mid)];
-  for (let i = 0; i <= steps; i++) {
-    const t = i / steps;
-    let r = rBottom + (rTop - rBottom) * t;
-    if (ribs > 0) {
-      // Triangular rib wave: small periodic bulge, like the GLB's segments
-      const phase = (t * ribs) % 1;
-      r *= 1 + 0.07 * Math.max(0, 1 - Math.abs(phase * 2 - 1) * 3);
-    }
-    pts.push(new THREE.Vector2(Math.max(r, 0.01), y0 + h * t - mid));
+// ── Decoded GLB parts ───────────────────────────────────────
+// towerGeometry.ts packs every mesh as quantized Int16 positions, Int8
+// normals and Uint16 indices behind one base64 blob; decode once into real
+// BufferGeometry. World-space coords, pre-normalization (see NORM_SCALE).
+function b64ToArrayBuffer(b64: string): ArrayBuffer {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}
+
+const QUANT_MAX = 65535;
+
+function decodePositions(
+  src: ArrayBuffer,
+  byteOffset: number,
+  count: number,
+): Float32Array {
+  const q = new Int16Array(src, byteOffset, count * 3);
+  const out = new Float32Array(count * 3);
+  const { min, scale } = TOWER_BOUNDS;
+  for (let i = 0; i < out.length; i++) {
+    out[i] = ((q[i] + 32768) / QUANT_MAX) * scale + min[i % 3];
   }
-  pts.push(new THREE.Vector2(0.01, y1 - mid));
-  return new THREE.LatheGeometry(pts, SEGMENTS);
+  return out;
 }
 
-type Finish = "stone" | "steel" | "glass";
-
-// Phong for anything meant to gleam: metallic finishes need an env map under
-// MeshStandardMaterial, and this scene ships none — specular fakes it cheaply.
-function Solid({
-  part,
-  x = 0,
-  z = 0,
-  tilt = 0,
-  ribs = 0,
-  finish = "stone",
-}: {
-  part: Part;
-  x?: number;
-  z?: number;
-  tilt?: number;
-  ribs?: number;
-  finish?: Finish;
-}) {
-  const geo = useMemo(() => partGeometry(part, ribs), [part, ribs]);
-  useEffect(() => () => geo.dispose(), [geo]);
-  return (
-    <group
-      position={[x, (part[2] + part[3]) / 2, z]}
-      rotation={[
-        tilt === 0 ? 0 : -Math.cos(Math.atan2(x, z)) * tilt,
-        0,
-        tilt === 0 ? 0 : Math.sin(Math.atan2(x, z)) * tilt,
-      ]}
-    >
-      <mesh geometry={geo}>
-        {finish === "stone" && (
-          <meshStandardMaterial
-            color={part[4]}
-            roughness={0.85}
-            metalness={0}
-          />
-        )}
-        {finish === "steel" && (
-          <meshPhongMaterial
-            color={part[4]}
-            shininess={70}
-            specular="#77808c"
-          />
-        )}
-        {finish === "glass" && (
-          <meshPhongMaterial
-            color={part[4]}
-            shininess={120}
-            specular="#8fc4d6"
-            emissive="#07272f"
-          />
-        )}
-      </mesh>
-    </group>
-  );
+interface TowerPart {
+  name: string;
+  inSphere: boolean;
+  geo: THREE.BufferGeometry;
+  edges: THREE.EdgesGeometry;
 }
 
-// Vertical window ribs around the glass band, between it and the logo ring.
-function Mullions() {
-  const ref = useRef<THREE.InstancedMesh>(null);
-  const { geo, mat } = useMemo(
-    () => ({
-      geo: new THREE.BoxGeometry(0.9, 38, 0.7),
-      mat: new THREE.MeshPhongMaterial({
-        color: COLORS.steelLight,
-        shininess: 60,
-        specular: "#8a94a0",
-      }),
-    }),
-    [],
-  );
-  useEffect(
-    () => () => {
-      geo.dispose();
-      mat.dispose();
-    },
-    [geo, mat],
-  );
-  useEffect(() => {
-    const m = new THREE.Matrix4();
-    const p = new THREE.Vector3();
-    const q = new THREE.Quaternion();
-    const s = new THREE.Vector3(1, 1, 1);
-    for (let i = 0; i < MULLION_COUNT; i++) {
-      const a = (i / MULLION_COUNT) * Math.PI * 2;
-      p.set(Math.sin(a) * MULLION_RADIUS, 150, Math.cos(a) * MULLION_RADIUS);
-      q.setFromEuler(new THREE.Euler(0, a, 0));
-      m.compose(p, q, s);
-      ref.current?.setMatrixAt(i, m);
-    }
-    if (ref.current) ref.current.instanceMatrix.needsUpdate = true;
-  }, [geo, mat]);
-  return <instancedMesh ref={ref} args={[geo, mat, MULLION_COUNT]} />;
-}
-
-// Unique vertices + edges of a subdivided icosahedron, minus the open bottom.
-// The GLB ball is a lattice of chunky struts — the drum and logos show through.
-function buildGeodesic(): {
-  verts: THREE.Vector3[];
-  edges: [number, number][];
+// All meshes, decoded + split into lattice (PlatonicSphere) vs body. The drum
+// gets its dark window band baked as vertex colors — a MeshToonMaterial with
+// vertexColors then shades the panels like the illustration. The sphere is
+// recentred on the Y axis so globeRef spins it instead of orbiting it.
+function useTowerParts(): {
+  body: TowerPart[];
+  sphere: TowerPart[];
+  sphereCenter: [number, number];
 } {
-  const geo = new THREE.IcosahedronGeometry(GLOBE_RADIUS, GLOBE_DETAIL);
-  const pos = geo.attributes.position.array;
-  const vertIndex = new Map<string, number>();
-  const verts: THREE.Vector3[] = [];
-  const edgeSet = new Set<string>();
-  const edges: [number, number][] = [];
+  return useMemo(() => {
+    const buf = b64ToArrayBuffer(TOWER_DATA);
+    const light = new THREE.Color(COLORS.drumLight);
+    const dark = new THREE.Color(COLORS.drumBand);
+    const body: TowerPart[] = [];
+    const sphere: TowerPart[] = [];
+    const sphereCenter: [number, number] = [0, 0];
 
-  const indexOf = (i: number) => {
-    const v = new THREE.Vector3(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
-    const key = `${v.x.toFixed(3)},${v.y.toFixed(3)},${v.z.toFixed(3)}`;
-    let idx = vertIndex.get(key);
-    if (idx === undefined) {
-      idx = verts.length;
-      vertIndex.set(key, idx);
-      verts.push(v);
-    }
-    return idx;
-  };
-  const addEdge = (a: number, b: number) => {
-    const key = a < b ? `${a}-${b}` : `${b}-${a}`;
-    if (!edgeSet.has(key)) {
-      edgeSet.add(key);
-      edges.push([a, b]);
-    }
-  };
+    for (const part of TOWER_PARTS) {
+      const geo = new THREE.BufferGeometry();
+      const positions = decodePositions(buf, part.posOff, part.vCount);
+      geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      if (part.normOff >= 0) {
+        const q = new Int8Array(buf, part.normOff, part.vCount * 3);
+        const nor = new Float32Array(part.vCount * 3);
+        for (let i = 0; i < nor.length; i++) nor[i] = q[i] / 127;
+        geo.setAttribute("normal", new THREE.BufferAttribute(nor, 3));
+      } else {
+        geo.computeVertexNormals();
+      }
+      geo.setIndex(
+        new THREE.BufferAttribute(
+          new Uint16Array(buf, part.idxOff, part.iCount),
+          1,
+        ),
+      );
 
-  for (let i = 0; i < pos.length / 9; i++) {
-    const a = indexOf(i * 3);
-    const b = indexOf(i * 3 + 1);
-    const c = indexOf(i * 3 + 2);
-    addEdge(a, b);
-    addEdge(b, c);
-    addEdge(c, a);
-  }
-  geo.dispose();
+      if (part.inSphere) {
+        geo.computeBoundingBox();
+        const bb = geo.boundingBox!;
+        sphereCenter[0] = (bb.min.x + bb.max.x) / 2;
+        sphereCenter[1] = (bb.min.z + bb.max.z) / 2;
+        geo.translate(-sphereCenter[0], 0, -sphereCenter[1]);
+      }
 
-  // Drop everything at or below the open bottom so columns enter cleanly.
-  const keepVert = verts.map((v) => v.y > GLOBE_CUT);
-  const keptEdges = edges.filter(([a, b]) => keepVert[a] && keepVert[b]);
-  const remap = new Map<number, number>();
-  const keptVerts: THREE.Vector3[] = [];
-  verts.forEach((v, i) => {
-    if (keepVert[i]) {
-      remap.set(i, keptVerts.length);
-      keptVerts.push(v);
+      if (/mainroom/i.test(part.name)) {
+        const pos = geo.attributes.position;
+        const colors = new Float32Array(part.vCount * 3);
+        for (let i = 0; i < part.vCount; i++) {
+          const ny = pos.getY(i) * NORM_SCALE - CENTER_Y;
+          const c = ny > BAND_Y[0] && ny < BAND_Y[1] ? dark : light;
+          colors[i * 3] = c.r;
+          colors[i * 3 + 1] = c.g;
+          colors[i * 3 + 2] = c.b;
+        }
+        geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+      }
+
+      const edges = new THREE.EdgesGeometry(geo, part.inSphere ? 55 : 25);
+      const entry = { name: part.name, inSphere: part.inSphere, geo, edges };
+      (part.inSphere ? sphere : body).push(entry);
     }
-  });
-  return {
-    verts: keptVerts,
-    edges: keptEdges.map(([a, b]) => [remap.get(a)!, remap.get(b)!]),
-  };
+    return { body, sphere, sphereCenter };
+  }, []);
 }
 
-// The dome: instanced strut cylinders + glowing node spheres + a faint inner
-// shell for depth. Everything rides globeRef so it counter-rotates slowly.
-function GeodesicBall({
+// Junction points between lattice bars — extracted at generation time by
+// clustering the sphere's vertices, so a white dot lands at every connector.
+// Takes the sphere's recentre offset so the dots ride the spinning lattice.
+function decodeLatticeNodes(center: [number, number]): Float32Array {
+  const buf = b64ToArrayBuffer(LATTICE_NODES);
+  const q = new Int16Array(buf);
+  const out = new Float32Array(q.length);
+  const { min, scale } = TOWER_BOUNDS;
+  for (let i = 0; i < q.length; i++) {
+    const axis = i % 3;
+    const off = axis === 0 ? center[0] : axis === 2 ? center[1] : 0;
+    out[i] = ((q[i] + 32768) / QUANT_MAX) * scale + min[axis] - off;
+  }
+  return out;
+}
+
+// Shared toon ramp — three hard steps keeps the flat illustration shading.
+function useToonRamp() {
+  return useMemo(() => {
+    const ramp = new THREE.DataTexture(
+      new Uint8Array([80, 170, 255]),
+      3,
+      1,
+      THREE.RedFormat,
+    );
+    ramp.minFilter = THREE.NearestFilter;
+    ramp.magFilter = THREE.NearestFilter;
+    ramp.needsUpdate = true;
+    return ramp;
+  }, []);
+}
+
+// The lattice ball: the GLB's PlatonicSphere mesh with slightly transparent
+// toon bars plus white dots on every junction. Rides globeRef so it can
+// counter-rotate against the sponsor ring.
+function LatticeBall({
+  sphere,
+  nodes,
+  ramp,
   materialsRef,
 }: {
+  sphere: TowerPart[];
+  nodes: Float32Array;
+  ramp: THREE.DataTexture;
   materialsRef: React.MutableRefObject<THREE.Material[]>;
 }) {
-  const strutsRef = useRef<THREE.InstancedMesh>(null);
   const nodesRef = useRef<THREE.InstancedMesh>(null);
-  const altNodesRef = useRef<THREE.InstancedMesh>(null);
-
-  const { verts, edges } = useMemo(() => buildGeodesic(), []);
-  const altCount = useMemo(
-    () => Math.ceil(verts.length / NODE_ALT_EVERY),
-    [verts],
-  );
-
-  const geoms = useMemo(
-    () => ({
-      strut: new THREE.CylinderGeometry(STRUT_RADIUS, STRUT_RADIUS, 1, 7),
-      node: new THREE.SphereGeometry(NODE_RADIUS, 12, 10),
-      shell: new THREE.SphereGeometry(
-        GLOBE_RADIUS - 1,
-        48,
-        24,
-        0,
-        Math.PI * 2,
-        0,
-        Math.acos(GLOBE_CUT / GLOBE_RADIUS),
-      ),
-    }),
-    [],
-  );
-  useEffect(
-    () => () => Object.values(geoms).forEach((g) => g.dispose()),
-    [geoms],
-  );
 
   const mats = useMemo(
     () => ({
-      strut: new THREE.MeshPhongMaterial({
-        color: COLORS.strut,
-        shininess: 90,
-        specular: "#9aa4b0",
+      lattice: new THREE.MeshToonMaterial({
+        color: COLORS.lattice,
+        gradientMap: ramp,
+        transparent: true,
+        opacity: SPHERE_OPACITY,
+      }),
+      edge: new THREE.LineBasicMaterial({
+        color: COLORS.latticeEdge,
         transparent: true,
       }),
       node: new THREE.MeshBasicMaterial({
         color: COLORS.node,
         transparent: true,
       }),
-      nodeAlt: new THREE.MeshBasicMaterial({
-        color: COLORS.nodeAlt,
-        transparent: true,
-      }),
-      shell: new THREE.MeshBasicMaterial({
-        color: COLORS.shell,
-        transparent: true,
-        opacity: SHELL_OPACITY,
-        depthWrite: false,
-      }),
     }),
+    [ramp],
+  );
+
+  const nodeGeo = useMemo(
+    () => new THREE.SphereGeometry(NODE_RADIUS, 8, 6),
     [],
   );
+
   useEffect(() => {
-    materialsRef.current = [mats.strut, mats.node, mats.nodeAlt, mats.shell];
+    materialsRef.current = [mats.lattice, mats.edge, mats.node];
     return () => {
       Object.values(mats).forEach((m) => m.dispose());
+      nodeGeo.dispose();
     };
-  }, [mats, materialsRef]);
+  }, [mats, nodeGeo, materialsRef]);
 
   useEffect(() => {
     const m = new THREE.Matrix4();
-    const mid = new THREE.Vector3();
-    const dir = new THREE.Vector3();
-    const up = new THREE.Vector3(0, 1, 0);
-    const q = new THREE.Quaternion();
-    const s = new THREE.Vector3();
-
-    if (strutsRef.current) {
-      edges.forEach(([a, b], i) => {
-        const va = verts[a];
-        const vb = verts[b];
-        mid.addVectors(va, vb).multiplyScalar(0.5);
-        dir.subVectors(vb, va);
-        const len = dir.length();
-        q.setFromUnitVectors(up, dir.normalize());
-        s.set(1, len, 1);
-        m.compose(mid, q, s);
-        strutsRef.current!.setMatrixAt(i, m);
-      });
-      strutsRef.current.instanceMatrix.needsUpdate = true;
+    for (let i = 0; i < nodes.length / 3; i++) {
+      m.makeTranslation(nodes[i * 3], nodes[i * 3 + 1], nodes[i * 3 + 2]);
+      nodesRef.current?.setMatrixAt(i, m);
     }
-    let amber = 0;
-    let pink = 0;
-    verts.forEach((v, i) => {
-      m.compose(v, q.identity(), s.set(1, 1, 1));
-      if (i % NODE_ALT_EVERY === 0) {
-        altNodesRef.current?.setMatrixAt(pink++, m);
-      } else {
-        nodesRef.current?.setMatrixAt(amber++, m);
-      }
-    });
     if (nodesRef.current) nodesRef.current.instanceMatrix.needsUpdate = true;
-    if (altNodesRef.current)
-      altNodesRef.current.instanceMatrix.needsUpdate = true;
-  }, [verts, edges]);
+  }, [nodes]);
 
   return (
     <>
-      <instancedMesh
-        ref={strutsRef}
-        args={[geoms.strut, mats.strut, edges.length]}
-        renderOrder={4}
-      />
+      {sphere.map((p) => (
+        <mesh
+          key={p.name}
+          geometry={p.geo}
+          material={mats.lattice}
+          renderOrder={3}
+        >
+          <lineSegments
+            geometry={p.edges}
+            material={mats.edge}
+            renderOrder={3}
+          />
+        </mesh>
+      ))}
       <instancedMesh
         ref={nodesRef}
-        args={[geoms.node, mats.node, verts.length - altCount]}
-        renderOrder={4}
+        args={[nodeGeo, mats.node, nodes.length / 3]}
+        renderOrder={3}
       />
-      <instancedMesh
-        ref={altNodesRef}
-        args={[geoms.node, mats.nodeAlt, altCount]}
-        renderOrder={4}
-      />
-      {/* Faint shell gives the ball a glassy body without hiding the drum */}
-      <mesh geometry={geoms.shell} material={mats.shell} renderOrder={3} />
+    </>
+  );
+}
+
+// Body meshes — columns, drum, base. Toon shaded, ink outlines.
+function TowerBody({
+  body,
+  ramp,
+}: {
+  body: TowerPart[];
+  ramp: THREE.DataTexture;
+}) {
+  const mats = useMemo(
+    () => ({
+      column: new THREE.MeshToonMaterial({
+        color: COLORS.column,
+        gradientMap: ramp,
+      }),
+      drum: new THREE.MeshToonMaterial({
+        color: "#ffffff",
+        vertexColors: true,
+        gradientMap: ramp,
+      }),
+      base: new THREE.MeshToonMaterial({
+        color: COLORS.base,
+        gradientMap: ramp,
+      }),
+      edge: new THREE.LineBasicMaterial({ color: COLORS.ink }),
+    }),
+    [ramp],
+  );
+  useEffect(
+    () => () => {
+      Object.values(mats).forEach((m) => m.dispose());
+    },
+    [mats],
+  );
+
+  const matFor = (name: string) =>
+    /support/i.test(name)
+      ? mats.column
+      : /mainroom/i.test(name)
+        ? mats.drum
+        : mats.base;
+
+  return (
+    <>
+      {body.map((p) => (
+        <mesh key={p.name} geometry={p.geo} material={matFor(p.name)}>
+          <lineSegments geometry={p.edges} material={mats.edge} />
+        </mesh>
+      ))}
     </>
   );
 }
@@ -807,21 +741,35 @@ function TowerModel({
   // Static layout of slots
   const placements = useMemo(() => generateSlots(), []);
 
+  const { body, sphere, sphereCenter } = useTowerParts();
+  const ramp = useToonRamp();
+  const latticeNodes = useMemo(
+    () => decodeLatticeNodes(sphereCenter),
+    [sphereCenter],
+  );
+
+  useEffect(
+    () => () => {
+      [...body, ...sphere].forEach((p) => {
+        p.geo.dispose();
+        p.edges.dispose();
+      });
+    },
+    [body, sphere],
+  );
+
   useFrame((_, delta) => {
     const scroll = scrollProgressRef.current ?? 0;
 
     // Parabolic fading: ~0.2 near the start of the scroll, opaque by the end.
-    // Fades the whole lattice (struts, nodes, shell, belt) as one material set.
+    // Fades the whole lattice (bars, edge lines, node dots) as one material set.
     const minOpacity = 0.2;
     const targetOpacity = Math.min(
       1,
       4 * (1 - minOpacity) * Math.pow(scroll - 0.1, 2) + minOpacity,
     );
     globeMaterialsRef.current.forEach((mat) => {
-      mat.opacity =
-        mat === globeMaterialsRef.current[3]
-          ? targetOpacity * SHELL_OPACITY // Shell stays faint at full scroll
-          : targetOpacity;
+      mat.opacity = targetOpacity;
     });
 
     if (!globeRef.current) return;
@@ -849,41 +797,26 @@ function TowerModel({
 
   return (
     <group>
-      {PLINTH.map((part, i) => (
-        <Solid key={`plinth-${i}`} part={part} />
-      ))}
-      <Solid part={CORE} ribs={FLUTE_RIBS} />
-      {SHAFT_ANGLES.map((a) => (
-        <Solid
-          key={a}
-          part={SHAFT}
-          x={Math.sin(a) * SHAFT_DISTANCE}
-          z={Math.cos(a) * SHAFT_DISTANCE}
-          tilt={SHAFT_TILT}
-          ribs={FLUTE_RIBS}
-        />
-      ))}
-      {DRUM.map((part, i) => (
-        <Solid
-          key={i}
-          part={part}
-          finish={
-            part[4] === COLORS.glass
-              ? "glass"
-              : part[4] === COLORS.steel || part[4] === COLORS.steelLight
-                ? "steel"
-                : "stone"
-          }
-        />
-      ))}
-      <Mullions />
-
-      <group ref={globeRef} position={[0, GLOBE_Y, 0]}>
-        {/* Drawn after the logos (renderOrder 2) so the lattice sits in front of them */}
-        <GeodesicBall materialsRef={globeMaterialsRef} />
+      {/* Model normalized like the old GLB pipeline: 420 tall, centered, rotated */}
+      <group
+        scale={[NORM_SCALE, NORM_SCALE, NORM_SCALE]}
+        position={[0, -CENTER_Y, 0]}
+        rotation={[0, Math.PI + THREE.MathUtils.degToRad(10), 0]}
+      >
+        <TowerBody body={body} ramp={ramp} />
+        <group ref={globeRef}>
+          {/* renderOrder 3 puts the lattice in front of the logos (order 2) */}
+          <LatticeBall
+            sphere={sphere}
+            nodes={latticeNodes}
+            ramp={ramp}
+            materialsRef={globeMaterialsRef}
+          />
+        </group>
       </group>
 
-      <group ref={sponsorGroupRef}>
+      {/* The drum is ~2 units off-axis in the model; shift the logo ring over */}
+      <group ref={sponsorGroupRef} position={[2.3, 0, 0]}>
         {textures &&
           placements.map((placement, i) => (
             <SponsorLogo
@@ -1018,13 +951,12 @@ export default function ReunionTower({
           }}
           frameloop={inView ? "always" : "never"}
         >
-          {/* Hemisphere wash + warm key: stone stays soft, phong picks up the sun */}
-          <hemisphereLight args={["#ffffff", "#8f8672", 0.9]} />
-          <ambientLight intensity={0.35} />
-          <directionalLight position={[-120, 200, 160]} intensity={1.5} />
+          {/* Hemisphere wash + warm key light for the toon shading */}
+          <hemisphereLight args={["#ffffff", "#776f60", 1.1]} />
+          <directionalLight position={[-120, 200, 160]} intensity={1.6} />
           <directionalLight
             position={[140, 40, -100]}
-            intensity={0.4}
+            intensity={0.5}
             color="#bfd4e0"
           />
 
