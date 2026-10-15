@@ -42,8 +42,8 @@ const COLORS = {
   latticeEdge: "#3a3f45", // Outlines on the ball
   column: "#cbb189", // Concrete tan shafts
   columnBrace: "#b39d77", // Cross-braces between the columns
-  drumLight: "#33536e", // Steel-blue glass panels above/below the window band
-  drumBand: "#1d3a5c", // Deep navy window band the logos ride on
+  drumTrim: "#c4ae87", // Concrete trim above/below the window band
+  drumBand: "#1d3a5c", // Deep navy glass band the logos ride on
   base: "#a3967f",
   ink: "#1f2226", // Outlines on the body
 };
@@ -53,6 +53,8 @@ const NODE_COLOR_WEIGHTS = [0.55, 0.3, 0.15];
 // Window band extent in normalized world y — the drum spans ~115–193, and the
 // logo rows (142/160) sit inside the dark band.
 const BAND_Y: [number, number] = [118, 168];
+// Vertical pane divisions on the glass band — streaked like a curtain wall.
+const GLASS_PANES = 30;
 const SPHERE_OPACITY = 0.9;
 const NODE_RADIUS = 0.3; // Raw model units — small white dots at bar junctions
 
@@ -489,23 +491,23 @@ interface SupportInfo {
 }
 
 // All meshes, decoded + split into lattice (PlatonicSphere) vs body. The drum
-// gets its dark window band baked as vertex colors — a MeshToonMaterial with
-// vertexColors then shades the panels like the illustration. The sphere is
-// recentred on the Y axis so globeRef spins it instead of orbiting it.
+// gets cylindrical UVs so makeDrumTexture can paint the concrete trim and the
+// paneled glass band per-pixel — vertex colors are too coarse for panes. The
+// sphere is recentred on the Y axis so globeRef spins it instead of orbiting it.
 function useTowerParts(): {
   body: TowerPart[];
   sphere: TowerPart[];
   supports: SupportInfo[];
   sphereCenter: [number, number];
+  drumBandV: [number, number];
 } {
   return useMemo(() => {
     const buf = b64ToArrayBuffer(TOWER_DATA);
-    const light = new THREE.Color(COLORS.drumLight);
-    const dark = new THREE.Color(COLORS.drumBand);
     const body: TowerPart[] = [];
     const sphere: TowerPart[] = [];
     const supports: SupportInfo[] = [];
     const sphereCenter: [number, number] = [0, 0];
+    const drumBandV: [number, number] = [0, 1];
 
     for (const part of TOWER_PARTS) {
       const geo = new THREE.BufferGeometry();
@@ -535,16 +537,23 @@ function useTowerParts(): {
       }
 
       if (/mainroom/i.test(part.name)) {
+        geo.computeBoundingBox();
+        const bb = geo.boundingBox!;
+        const dcx = (bb.min.x + bb.max.x) / 2;
+        const dcz = (bb.min.z + bb.max.z) / 2;
+        // Where the glass band lands in drum-local v space.
+        const wMin = bb.min.y * NORM_SCALE - CENTER_Y;
+        const wMax = bb.max.y * NORM_SCALE - CENTER_Y;
+        drumBandV[0] = (BAND_Y[0] - wMin) / (wMax - wMin);
+        drumBandV[1] = (BAND_Y[1] - wMin) / (wMax - wMin);
         const pos = geo.attributes.position;
-        const colors = new Float32Array(part.vCount * 3);
+        const uvs = new Float32Array(part.vCount * 2);
         for (let i = 0; i < part.vCount; i++) {
-          const ny = pos.getY(i) * NORM_SCALE - CENTER_Y;
-          const c = ny > BAND_Y[0] && ny < BAND_Y[1] ? dark : light;
-          colors[i * 3] = c.r;
-          colors[i * 3 + 1] = c.g;
-          colors[i * 3 + 2] = c.b;
+          const theta = Math.atan2(pos.getZ(i) - dcz, pos.getX(i) - dcx);
+          uvs[i * 2] = (theta + Math.PI) / (2 * Math.PI);
+          uvs[i * 2 + 1] = (pos.getY(i) - bb.min.y) / (bb.max.y - bb.min.y);
         }
-        geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+        geo.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
       }
 
       if (/^support/i.test(part.name)) {
@@ -566,8 +575,58 @@ function useTowerParts(): {
       const entry = { name: part.name, inSphere: part.inSphere, geo, edges };
       (part.inSphere ? sphere : body).push(entry);
     }
-    return { body, sphere, supports, sphereCenter };
+    return { body, sphere, supports, sphereCenter, drumBandV };
   }, []);
+}
+
+// Painted drum skin: concrete trim everywhere except the window band, which
+// gets navy glass with a sky sheen, a reflection streak per pane, and dark
+// mullions — the flat illustration's curtain wall. v0/v1 is the band's span
+// in drum-local v space (v runs bottom → top, canvas rows run down).
+function makeDrumTexture(v0: number, v1: number): THREE.CanvasTexture {
+  const W = 720;
+  const H = 192;
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d")!;
+
+  ctx.fillStyle = COLORS.drumTrim;
+  ctx.fillRect(0, 0, W, H);
+
+  const yTop = Math.max(0, Math.round(H * (1 - v1)));
+  const yBot = Math.min(H, Math.round(H * (1 - v0)));
+  const bandH = Math.max(1, yBot - yTop);
+
+  const sky = ctx.createLinearGradient(0, yTop, 0, yBot);
+  sky.addColorStop(0, "#3d5d85");
+  sky.addColorStop(0.4, COLORS.drumBand);
+  sky.addColorStop(1, "#12273f");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, yTop, W, bandH);
+
+  const paneW = W / GLASS_PANES;
+  for (let p = 0; p < GLASS_PANES; p++) {
+    const x0 = p * paneW;
+    const streak = ctx.createLinearGradient(x0, 0, x0 + paneW * 0.2, 0);
+    streak.addColorStop(0, "rgba(125,156,192,0.95)");
+    streak.addColorStop(1, "rgba(125,156,192,0)");
+    ctx.fillStyle = streak;
+    ctx.fillRect(x0, yTop, paneW * 0.2, bandH);
+    const sheen = ctx.createLinearGradient(x0, 0, x0 + paneW, 0);
+    sheen.addColorStop(0, "rgba(125,156,192,0)");
+    sheen.addColorStop(0.55, "rgba(125,156,192,0.15)");
+    sheen.addColorStop(1, "rgba(125,156,192,0)");
+    ctx.fillStyle = sheen;
+    ctx.fillRect(x0, yTop, paneW, bandH);
+    ctx.fillStyle = "rgba(10,22,36,0.85)";
+    ctx.fillRect(x0 + paneW - 2, yTop, 2, bandH);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.anisotropy = 4;
+  return texture;
 }
 
 // Junction points between lattice bars — extracted at generation time by
@@ -706,19 +765,22 @@ function LatticeBall({
 function TowerBody({
   body,
   ramp,
+  drumBandV,
 }: {
   body: TowerPart[];
   ramp: THREE.DataTexture;
+  drumBandV: [number, number];
 }) {
-  const mats = useMemo(
-    () => ({
+  const mats = useMemo(() => {
+    const drumTex = makeDrumTexture(drumBandV[0], drumBandV[1]);
+    return {
       column: new THREE.MeshToonMaterial({
         color: COLORS.column,
         gradientMap: ramp,
       }),
       drum: new THREE.MeshToonMaterial({
         color: "#ffffff",
-        vertexColors: true,
+        map: drumTex,
         gradientMap: ramp,
       }),
       base: new THREE.MeshToonMaterial({
@@ -726,12 +788,15 @@ function TowerBody({
         gradientMap: ramp,
       }),
       edge: new THREE.LineBasicMaterial({ color: COLORS.ink }),
-    }),
-    [ramp],
-  );
+      drumTex,
+    };
+  }, [ramp, drumBandV]);
   useEffect(
     () => () => {
-      Object.values(mats).forEach((m) => m.dispose());
+      mats.drumTex.dispose();
+      Object.values(mats).forEach((m) => {
+        if (m instanceof THREE.Material) m.dispose();
+      });
     },
     [mats],
   );
@@ -874,7 +939,7 @@ function TowerModel({
   // Static layout of slots
   const placements = useMemo(() => generateSlots(), []);
 
-  const { body, sphere, supports, sphereCenter } = useTowerParts();
+  const { body, sphere, supports, sphereCenter, drumBandV } = useTowerParts();
   const ramp = useToonRamp();
   const latticeNodes = useMemo(
     () => decodeLatticeNodes(sphereCenter),
@@ -930,7 +995,7 @@ function TowerModel({
         position={[0, -CENTER_Y, 0]}
         rotation={[0, Math.PI + THREE.MathUtils.degToRad(10), 0]}
       >
-        <TowerBody body={body} ramp={ramp} />
+        <TowerBody body={body} ramp={ramp} drumBandV={drumBandV} />
         <ConnectorBars supports={supports} ramp={ramp} />
         <group ref={globeRef}>
           {/* renderOrder 3 puts the lattice in front of the logos (order 2) */}
