@@ -28,13 +28,13 @@ function AnimatedInterestHeading() {
             >
               <span
                 data-interest-letter-out
-                className="block leading-[0.98] will-change-transform"
+                className="block leading-[0.98]"
               >
                 {visibleLetter}
               </span>
               <span
                 data-interest-letter-in
-                className="absolute left-0 top-full block leading-[0.98] will-change-transform"
+                className="absolute left-0 top-full block leading-[0.98]"
               >
                 {visibleLetter}
               </span>

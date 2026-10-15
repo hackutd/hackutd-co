@@ -1,9 +1,18 @@
 "use client";
 
 import { useRef, type ComponentProps, type CSSProperties } from "react";
-import { ShaderGradient, ShaderGradientCanvas } from "@shadergradient/react";
+import { Canvas } from "@react-three/fiber";
+import { ShaderGradient } from "@shadergradient/react";
+import * as THREE from "three";
 import { useNearViewport } from "@/app/hooks/useNearViewport";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
+
+Object.assign(THREE.ShaderChunk, {
+  uv2_pars_vertex: "",
+  uv2_vertex: "",
+  uv2_pars_fragment: "",
+  encodings_fragment: "",
+});
 
 type ShaderGradientProps = ComponentProps<typeof ShaderGradient> & {
   axesHelper?: string;
@@ -88,6 +97,8 @@ export default function BrandShaderBackground({
     ...brandShaderGradientProps,
     ...shaderProps,
   };
+  const pixelDensity = mergedShaderProps.pixelDensity ?? 1;
+  const fov = mergedShaderProps.fov ?? 45;
   const wrapperClassName = ["pointer-events-none h-full w-full", className]
     .filter(Boolean)
     .join(" ");
@@ -99,21 +110,22 @@ export default function BrandShaderBackground({
       style={{ height: "100%", width: "100%", ...style }}
     >
       {shouldMountCanvas && (
-        <ShaderGradientCanvas
+        <Canvas
+          key={pixelDensity + fov}
           className="h-full w-full"
-          style={{ height: "100%", width: "100%" }}
-          pixelDensity={mergedShaderProps.pixelDensity}
-          fov={mergedShaderProps.fov}
-          pointerEvents="none"
-          lazyLoad={lazyLoad}
-          threshold={0}
-          rootMargin={rootMargin}
+          style={{ pointerEvents: "none" }}
+          dpr={pixelDensity}
+          camera={{ fov }}
+          linear
+          flat
+          resize={{ offsetSize: true }}
+          gl={{ antialias: false, stencil: false, depth: true }}
         >
           <ShaderGradient
             {...mergedShaderProps}
             animate={prefersReducedMotion ? "off" : "on"}
           />
-        </ShaderGradientCanvas>
+        </Canvas>
       )}
     </div>
   );

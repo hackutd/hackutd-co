@@ -212,11 +212,10 @@ export default function RocketTrailAnimation() {
 
   // The trail canvas is parked a full viewport to the right inside an
   // overflow-hidden box, so the canvas's own lazy observer can't see it until
-  // the rocket has already slid into frame — by which point the trail shows the
-  // page background instead of the gradient. Watching the unclipped section box
-  // instead mounts it while the section is still approaching, and the rocket
-  // only starts moving once that section reaches the top of the viewport.
-  const shaderActive = useNearViewport(clipRef);
+  // the rocket has already slid into frame. Watching the unclipped section box
+  // mounts it before arrival, while its 50% margin releases the context before
+  // the sponsor globe can mount in its wider viewport margin.
+  const shaderActive = useNearViewport(clipRef, "50%");
 
   const cfg = isMobile ? MOBILE_TRAIL_WAVE : TRAIL_WAVE;
 

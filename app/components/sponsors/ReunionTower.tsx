@@ -622,15 +622,14 @@ export default function ReunionTower({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
 
-  // The canvas is unmounted entirely while it is far from the viewport: a
-  // paused WebGL canvas still holds its context, geometry, and every sponsor
-  // texture in GPU memory. The wide margin remounts it early enough that the
-  // scene is rebuilt (from the browser's HTTP cache) before it scrolls in.
-  const isNearViewport = useNearViewport(wrapperRef, "200%");
+  // Preload the model before it approaches, but defer creating its GPU context
+  // until the canvas is within one viewport.
+  const shouldPreloadModel = useNearViewport(wrapperRef, "200%");
+  const shouldMountCanvas = useNearViewport(wrapperRef, "100%");
 
   useEffect(() => {
-    if (isNearViewport) useGLTF.preload(MODEL_PATH);
-  }, [isNearViewport]);
+    if (shouldPreloadModel) useGLTF.preload(MODEL_PATH);
+  }, [shouldPreloadModel]);
 
   // Render frames only while the tower is on screen
   useEffect(() => {
@@ -646,7 +645,7 @@ export default function ReunionTower({
 
   return (
     <div ref={wrapperRef} className="h-full w-full">
-      {isNearViewport && (
+      {shouldMountCanvas && (
         <Canvas
           dpr={[1, 1.5]}
           gl={{
