@@ -38,15 +38,23 @@ const CENTER_Y =
   ((TOWER_BOUNDS.min[1] + TOWER_BOUNDS.max[1]) / 2) * NORM_SCALE;
 
 const COLORS = {
-  lattice: "#eceae4", // Warm off-white bars
+  lattice: "#f0e9dc", // Warm off-white bars
   latticeEdge: "#3a3f45", // Outlines on the ball
-  node: "#ffffff", // Lit junction dots
-  column: "#d3c3a2", // Tan concrete shafts
-  drumLight: "#b8bcc0", // Drum concrete above/below the window band
-  drumBand: "#3d4a56", // Dark window band the logos ride on
-  base: "#8b8578",
+  column: "#d4af7a", // Rich tan concrete shafts
+  drumLight: "#c2bfb4", // Warm gray concrete above/below the window band
+  drumBand: "#2e4a5c", // Deep teal window band the logos ride on
+  base: "#93856f",
   ink: "#1f2226", // Outlines on the body
 };
+// Node dots: mostly warm white, sprinkled with brand pink, amber and teal —
+// the real tower's ball lights up in color for events.
+const NODE_COLORS = [
+  "#fff6e0", // warm white
+  "#ff4d94", // brand pink
+  "#ffb443", // amber
+  "#4ecfe0", // teal
+];
+const NODE_COLOR_WEIGHTS = [0.62, 0.15, 0.15, 0.08];
 // Window band extent in normalized world y — the drum spans ~115–193, and the
 // logo rows (142/160) sit inside the dark band.
 const BAND_Y: [number, number] = [118, 168];
@@ -601,7 +609,7 @@ function LatticeBall({
         transparent: true,
       }),
       node: new THREE.MeshBasicMaterial({
-        color: COLORS.node,
+        color: "#ffffff",
         transparent: true,
       }),
     }),
@@ -623,11 +631,28 @@ function LatticeBall({
 
   useEffect(() => {
     const m = new THREE.Matrix4();
+    const color = new THREE.Color();
+    const rand = seededRandom(2026);
+    const pick = () => {
+      const r = rand();
+      let acc = 0;
+      for (let i = 0; i < NODE_COLOR_WEIGHTS.length; i++) {
+        acc += NODE_COLOR_WEIGHTS[i];
+        if (r <= acc) return NODE_COLORS[i];
+      }
+      return NODE_COLORS[0];
+    };
     for (let i = 0; i < nodes.length / 3; i++) {
       m.makeTranslation(nodes[i * 3], nodes[i * 3 + 1], nodes[i * 3 + 2]);
       nodesRef.current?.setMatrixAt(i, m);
+      nodesRef.current?.setColorAt(i, color.set(pick()));
     }
-    if (nodesRef.current) nodesRef.current.instanceMatrix.needsUpdate = true;
+    if (nodesRef.current) {
+      nodesRef.current.instanceMatrix.needsUpdate = true;
+      if (nodesRef.current.instanceColor) {
+        nodesRef.current.instanceColor.needsUpdate = true;
+      }
+    }
   }, [nodes]);
 
   return (
