@@ -42,8 +42,8 @@ const COLORS = {
   latticeEdge: "#3a3f45", // Outlines on the ball
   column: "#cbb189", // Concrete tan shafts
   columnBrace: "#b39d77", // Cross-braces between the columns
-  drumLight: "#39434d", // Dark glass panels above/below the window band
-  drumBand: "#202a33", // Darker window band the logos ride on
+  drumLight: "#33536e", // Steel-blue glass panels above/below the window band
+  drumBand: "#1d3a5c", // Deep navy window band the logos ride on
   base: "#a3967f",
   ink: "#1f2226", // Outlines on the body
 };
