@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import {
   type PointerEvent as ReactPointerEvent,
   useCallback,
@@ -14,6 +13,7 @@ import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
+import BrandGradientVideo from "@/app/components/background/BrandGradientVideo";
 import BrandSvgGradient from "@/app/components/background/BrandSvgGradient";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { useNearViewport } from "@/app/hooks/useNearViewport";
@@ -35,11 +35,6 @@ import {
   TRAIL_WAVE,
   YEAR_MARKERS,
 } from "./sceneConfig";
-
-const BrandShaderBackground = dynamic(
-  () => import("@/app/components/background/BrandShaderBackground"),
-  { ssr: false },
-);
 
 configureScrollTrigger();
 
@@ -90,6 +85,7 @@ export default function RocketTrailAnimation() {
   // Last pointer position, in client coordinates. Seeded by the pointerenter
   // that opens the card so its very first frame is already under the cursor.
   const pointerRef = useRef({ x: 0, y: 0 });
+  const [sweepDone, setSweepDone] = useState(false);
 
   const cardHeight =
     CARD_POPOVER.width / CARD_POPOVER.imageAspect + CARD_POPOVER.captionHeight;
@@ -212,11 +208,10 @@ export default function RocketTrailAnimation() {
 
   // The trail canvas is parked a full viewport to the right inside an
   // overflow-hidden box, so the canvas's own lazy observer can't see it until
-  // the rocket has already slid into frame — by which point the trail shows the
-  // page background instead of the gradient. Watching the unclipped section box
-  // instead mounts it while the section is still approaching, and the rocket
-  // only starts moving once that section reaches the top of the viewport.
-  const shaderActive = useNearViewport(clipRef);
+  // the rocket has already slid into frame. Watching the unclipped section box
+  // mounts it before arrival, while its 50% margin releases the context before
+  // the sponsor globe can mount in its wider viewport margin.
+  const shaderActive = useNearViewport(clipRef, "50%");
 
   const cfg = isMobile ? MOBILE_TRAIL_WAVE : TRAIL_WAVE;
 
@@ -435,6 +430,9 @@ export default function RocketTrailAnimation() {
             start: TIMELINE_SCROLL.start,
             end: TIMELINE_SCROLL.end,
             scrub,
+            onEnter: () => setSweepDone(false),
+            onLeave: () => setSweepDone(true),
+            onEnterBack: () => setSweepDone(false),
             // Re-measure enterX/exitX on resize so the sweep always clears both edges
             invalidateOnRefresh: true,
           },
@@ -573,7 +571,7 @@ export default function RocketTrailAnimation() {
                     transformOrigin: "0 0",
                   }}
                 >
-                  {shaderActive && <BrandShaderBackground lazyLoad={false} />}
+                  {shaderActive && !sweepDone && <BrandGradientVideo />}
                 </div>
               </foreignObject>
             )}

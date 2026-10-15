@@ -615,7 +615,7 @@ export default function Sponsors() {
           {mountGlobe && (
           <div
             ref={towerStageRef}
-            className="relative hidden lg:order-1 lg:block lg:h-[400vh] lg:w-[45%]"
+            className="relative hidden lg:order-1 lg:block lg:h-[300vh] lg:w-[45%]"
           >
             <div
               ref={towerWrapRef}

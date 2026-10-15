@@ -7,7 +7,10 @@ export type Project = {
   name: string;
   label: string;
   description: string;
-  link: string;
+  /** Omit while the repo is private; the card renders unclickable */
+  link?: string;
+  /** Shown on hover/focus, e.g. why a card has no link */
+  tooltip?: string;
   /** Statically imported so next/image gets the intrinsic size from the file */
   image: StaticImageData;
 };
@@ -17,7 +20,7 @@ export const projects: Project[] = [
     name: "Harp",
     label: "Applications",
     description: "Hacker Applications & Review Platform.",
-    link: "https://github.com/hackutd/harp",
+    tooltip: "Repo is private for now",
     image: harp,
   },
   {

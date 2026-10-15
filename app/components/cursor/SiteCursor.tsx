@@ -8,7 +8,6 @@ import { CURSOR_DOT_CLIP_PATH, cursorClipPath } from "./cursorShape";
 import {
   CURSOR_BOX,
   CURSOR_FADE,
-  CURSOR_FOLLOW,
   CURSOR_INTERACTIVE_SELECTOR,
   CURSOR_MORPH,
   CURSOR_PRESS,
@@ -70,28 +69,14 @@ export default function SiteCursor() {
 
     /** Pointer is over the document at all — false once it leaves the window. */
     let isPresent = false;
-    /** Set until the pointer has been seen once, so it never flies in from 0,0. */
-    let isUnplaced = true;
     let isSuppressed = isSiteCursorSuppressed();
     let isInteractive = false;
     let lastTarget: Element | null = null;
 
-    // Reduced motion gets every state this draws, with none of the travel
-    // between them: the cursor is pinned to the pointer and changes shape on
-    // the frame it crosses a link.
-    const moveTo = prefersReducedMotion
-      ? (x: number, y: number) => {
-          gsap.set(root, { x, y });
-        }
-      : (() => {
-          const toX = gsap.quickTo(root, "x", CURSOR_FOLLOW);
-          const toY = gsap.quickTo(root, "y", CURSOR_FOLLOW);
-
-          return (x: number, y: number) => {
-            toX(x);
-            toY(y);
-          };
-        })();
+    // Pinned to the pointer: any follow easing reads as a heavy, lagging mouse.
+    const moveTo = (x: number, y: number) => {
+      gsap.set(root, { x, y });
+    };
 
     const syncVisibility = () => {
       const opacity = isPresent && !isSuppressed ? 1 : 0;
@@ -151,16 +136,6 @@ export default function SiteCursor() {
     };
 
     const handleMove = (event: PointerEvent) => {
-      // A pointer arriving for the first time, or coming back after leaving
-      // the window, is placed outright; everything after that eases. The move
-      // still runs on that first frame — it retargets the follow tween from
-      // where the cursor was just put, so a chase left over from the exit
-      // cannot drag it back out.
-      if (isUnplaced) {
-        isUnplaced = false;
-        gsap.set(root, { x: event.clientX, y: event.clientY });
-      }
-
       moveTo(event.clientX, event.clientY);
 
       if (!isPresent) {
@@ -184,10 +159,6 @@ export default function SiteCursor() {
 
       isPresent = false;
       lastTarget = null;
-      // Whatever it comes back on, it comes back *at* — a cursor that slides
-      // across the page to meet a pointer that re-entered elsewhere reads as
-      // a stray object, not as the pointer.
-      isUnplaced = true;
       syncVisibility();
     };
 

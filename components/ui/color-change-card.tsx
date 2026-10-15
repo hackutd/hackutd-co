@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef } from "react";
+import { useId, useRef } from "react";
 import Image, { type StaticImageData } from "next/image";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Lock } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
@@ -12,7 +12,9 @@ export type ColorChangeCardProps = {
   eyebrow: string;
   heading: string;
   description: string;
-  href: string;
+  /** Omitted renders the card unclickable */
+  href?: string;
+  tooltip?: string;
   imageSrc: StaticImageData;
   imageAlt: string;
   imageClassName?: string;
@@ -62,6 +64,7 @@ export default function ColorChangeCard({
   heading,
   description,
   href,
+  tooltip,
   imageSrc,
   imageAlt,
   imageClassName = "w-1/2 max-w-72",
@@ -71,6 +74,7 @@ export default function ColorChangeCard({
   prefersReducedMotion = false,
 }: ColorChangeCardProps) {
   const cardRef = useRef<HTMLAnchorElement>(null);
+  const tooltipId = useId();
 
   useGSAP(
     (_context, contextSafe) => {
@@ -132,7 +136,7 @@ export default function ColorChangeCard({
           stagger: 0.012,
           overwrite: "auto",
         });
-        gsap.to(arrow, {
+        if (arrow) gsap.to(arrow, {
           rotation: -45,
           duration: 0.5,
           ease: "power3.out",
@@ -180,7 +184,7 @@ export default function ColorChangeCard({
           },
           overwrite: "auto",
         });
-        gsap.to(arrow, {
+        if (arrow) gsap.to(arrow, {
           rotation: 0,
           duration: 0.45,
           ease: "power3.out",
@@ -218,10 +222,12 @@ export default function ColorChangeCard({
       ref={cardRef}
       data-project-card
       data-project-reveal
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={`Visit ${heading}`}
+      // An <a> without href is not a link: no navigation, no pointer cursor.
+      {...(href
+        ? { href, target: "_blank", rel: "noopener noreferrer" }
+        : { tabIndex: 0 })}
+      aria-label={href ? `Visit ${heading}` : heading}
+      aria-describedby={tooltip ? tooltipId : undefined}
       className="group relative block h-68 w-full overflow-hidden bg-[#26232b] text-white outline-none focus-visible:ring-2 focus-visible:ring-pink focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <div
@@ -234,7 +240,6 @@ export default function ColorChangeCard({
           className="absolute inset-0 opacity-20"
           style={{ backgroundColor: accent }}
         />
-        <span className="absolute inset-0 opacity-10 [background-image:linear-gradient(to_right,currentColor_1px,transparent_1px),linear-gradient(to_bottom,currentColor_1px,transparent_1px)] [background-size:34px_34px]" />
         <div
           data-card-logo
           className="flex w-full items-center justify-center px-8 pb-8 will-change-transform sm:px-12"
@@ -257,12 +262,31 @@ export default function ColorChangeCard({
           <p className="text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-white/55">
             {String(index).padStart(2, "0")}
           </p>
-          <ArrowRight
-            data-card-arrow
-            aria-hidden="true"
-            className="size-7 shrink-0 text-white/80 will-change-transform"
-            strokeWidth={1.5}
-          />
+          <span className="flex items-center gap-2">
+            {tooltip ? (
+              <span
+                id={tooltipId}
+                role="tooltip"
+                className="rounded-full bg-white/90 px-2.5 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-black opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus:opacity-100"
+              >
+                {tooltip}
+              </span>
+            ) : null}
+            {href ? (
+              <ArrowRight
+                data-card-arrow
+                aria-hidden="true"
+                className="size-7 shrink-0 text-white/80 will-change-transform"
+                strokeWidth={1.5}
+              />
+            ) : (
+              <Lock
+                aria-hidden="true"
+                className="size-6 shrink-0 text-white/80"
+                strokeWidth={1.5}
+              />
+            )}
+          </span>
         </div>
 
         <div>

@@ -40,9 +40,12 @@ export default function SkyElements({ ref }: SkyElementsProps) {
       }
 
       let context: gsap.Context | null = null;
+      let tweens: gsap.core.Tween[] = [];
+      let isVisible = false;
 
       const build = () => {
         context?.revert();
+        tweens = [];
         context = gsap.context(() => {
           const band = layer.offsetHeight;
 
@@ -51,13 +54,15 @@ export default function SkyElements({ ref }: SkyElementsProps) {
             .forEach((cloud) => {
               const direction = cloud.dataset.sky === "drift-right" ? 1 : -1;
 
-              gsap.to(cloud, {
-                xPercent: direction * HERO_SKY_MOTION.cloud.xPercent,
-                duration: Number(cloud.dataset.skyDuration),
-                ease: HERO_SKY_MOTION.cloud.ease,
-                repeat: -1,
-                yoyo: true,
-              });
+              tweens.push(
+                gsap.to(cloud, {
+                  xPercent: direction * HERO_SKY_MOTION.cloud.xPercent,
+                  duration: Number(cloud.dataset.skyDuration),
+                  ease: HERO_SKY_MOTION.cloud.ease,
+                  repeat: -1,
+                  yoyo: true,
+                }),
+              );
             });
 
           const plane = layer.querySelector<HTMLElement>("[data-sky='cross']");
@@ -71,17 +76,19 @@ export default function SkyElements({ ref }: SkyElementsProps) {
                 : [leftX, rightX];
             const initialProgress = -fromX / (toX - fromX);
 
-            gsap
-              .fromTo(
-                plane,
-                { x: fromX },
-                {
-                  x: toX,
-                  repeat: -1,
-                  ...HERO_SKY_MOTION.plane,
-                },
-              )
-              .progress(initialProgress);
+            tweens.push(
+              gsap
+                .fromTo(
+                  plane,
+                  { x: fromX },
+                  {
+                    x: toX,
+                    repeat: -1,
+                    ...HERO_SKY_MOTION.plane,
+                  },
+                )
+                .progress(initialProgress),
+            );
           }
 
           const balloon = layer.querySelector<HTMLElement>("[data-sky='rise']");
@@ -89,33 +96,56 @@ export default function SkyElements({ ref }: SkyElementsProps) {
             const { from, to, duration, swayPercent, swayDuration } =
               HERO_SKY_MOTION.balloon;
 
-            gsap.fromTo(
-              balloon,
-              { y: band * from, autoAlpha: 1 },
-              {
-                y: band * to,
-                autoAlpha: 1,
-                duration,
-                ease: "none",
-                repeat: -1,
-                yoyo: true,
-              },
+            tweens.push(
+              gsap.fromTo(
+                balloon,
+                { y: band * from, autoAlpha: 1 },
+                {
+                  y: band * to,
+                  autoAlpha: 1,
+                  duration,
+                  ease: "none",
+                  repeat: -1,
+                  yoyo: true,
+                },
+              ),
             );
 
             // Separate tween so the sway keeps its own slow rhythm instead of
             // being tied to the length of the climb.
-            gsap.to(balloon, {
-              xPercent: swayPercent,
-              duration: swayDuration,
-              ease: "none",
-              repeat: -1,
-              yoyo: true,
-            });
+            tweens.push(
+              gsap.to(balloon, {
+                xPercent: swayPercent,
+                duration: swayDuration,
+                ease: "none",
+                repeat: -1,
+                yoyo: true,
+              }),
+            );
           }
         }, layer);
+
+        if (!isVisible) {
+          tweens.forEach((tween) => tween.pause());
+        }
       };
 
       build();
+
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          isVisible = entry.isIntersecting;
+          tweens.forEach((tween) => {
+            if (isVisible) {
+              tween.resume();
+            } else {
+              tween.pause();
+            }
+          });
+        },
+        { rootMargin: "0px" },
+      );
+      observer.observe(layer);
 
       // The balloon's travel is measured in pixels off the band height, so a
       // resize has to rebuild it. Width is the trigger rather than any resize:
@@ -139,6 +169,7 @@ export default function SkyElements({ ref }: SkyElementsProps) {
       return () => {
         window.clearTimeout(rebuildTimer);
         window.removeEventListener("resize", onResize);
+        observer.disconnect();
         context?.revert();
       };
     },

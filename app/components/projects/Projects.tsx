@@ -78,6 +78,7 @@ export default function Projects() {
                 heading={project.name}
                 description={project.description}
                 href={project.link}
+                tooltip={project.tooltip}
                 imageSrc={project.image}
                 imageAlt={`${project.name} logo`}
                 imageClassName={art.imageClassName}
