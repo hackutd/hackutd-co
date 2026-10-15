@@ -70,6 +70,7 @@ export default function InterestFormCard({
 
       const media = card.querySelector<HTMLElement>("[data-interest-media]");
       const wash = card.querySelector<HTMLElement>("[data-interest-wash]");
+      const scrim = card.querySelector<HTMLElement>("[data-interest-scrim]");
       const arrow = card.querySelector<SVGElement>("[data-interest-arrow]");
       const outgoingLetters = gsap.utils.toArray<HTMLElement>(
         "[data-interest-letter-out]",
@@ -88,7 +89,14 @@ export default function InterestFormCard({
           overwrite: "auto",
         });
         gsap.to(wash, {
-          opacity: 0.08,
+          opacity: 0,
+          duration: 0.55,
+          ease: "power2.out",
+          overwrite: "auto",
+        });
+        // Half the scrim keeps the white copy readable on the bright gradient.
+        gsap.to(scrim, {
+          opacity: 0.5,
           duration: 0.55,
           ease: "power2.out",
           overwrite: "auto",
@@ -125,6 +133,12 @@ export default function InterestFormCard({
         });
         gsap.to(wash, {
           opacity: 0.58,
+          duration: 0.5,
+          ease: "power2.out",
+          overwrite: "auto",
+        });
+        gsap.to(scrim, {
+          opacity: 1,
           duration: 0.5,
           ease: "power2.out",
           overwrite: "auto",
@@ -195,7 +209,6 @@ export default function InterestFormCard({
         <span className="absolute -left-[12%] -top-[55%] h-[130%] w-[75%] rounded-full bg-white/55 blur-3xl" />
         <span className="absolute -bottom-[65%] right-[2%] h-[125%] w-[70%] rounded-full bg-purple/60 blur-3xl" />
         <span className="absolute inset-0 bg-[radial-gradient(circle_at_75%_30%,rgba(255,255,255,0.4),transparent_22%)]" />
-        <span className="absolute inset-0 opacity-10 [background-image:linear-gradient(to_right,currentColor_1px,transparent_1px),linear-gradient(to_bottom,currentColor_1px,transparent_1px)] [background-size:34px_34px]" />
         <span
           data-interest-wash
           className={`absolute inset-0 bg-[#26232b] ${prefersReducedMotion ? "opacity-20" : "opacity-[0.58]"}`}
@@ -203,6 +216,7 @@ export default function InterestFormCard({
       </div>
 
       <span
+        data-interest-scrim
         aria-hidden="true"
         className="absolute inset-0 z-10 bg-linear-to-t from-black/85 via-black/10 to-black/10"
       />
