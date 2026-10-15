@@ -202,24 +202,41 @@ with pymupdf.open(dst) as doc:
             XObject=pikepdf.Dictionary(I0=img), Font=pikepdf.Dictionary(F1=font)
         )
         ops = [f"q {pg.rect.width} 0 0 {pg.rect.height} 0 0 cm /I0 Do Q".encode()]
-        lines: dict[tuple[int, int], tuple[pymupdf.Rect, list[str]]] = {}
         for w in pg.get_text("words"):
-            key = (w[5], w[6])
-            rect, words = lines.setdefault(key, (pymupdf.Rect(w[:4]), []))
-            rect |= w[:4]
-            words.append(w[4])
-        for rect, words in lines.values():
-            text = " ".join(words)
-            encoded = text.encode("cp1252", "replace").decode("cp1252")
-            for ch in "\\()":
-                encoded = encoded.replace(ch, "\\" + ch)
-            width = max(helv.text_length(encoded, fontsize=1) or 1e-4, 1e-4)
+            rect, text = pymupdf.Rect(w[:4]), w[4]
+            raw = (
+                text.encode("cp1252", "replace")
+                .replace(b"\\", b"\\\\")
+                .replace(b"(", b"\\(")
+                .replace(b")", b"\\)")
+            )
+            width = max(helv.text_length(text, fontsize=1) or 1e-4, 1e-4)
             sx, sy = rect.width / width, rect.height * 0.9
             baseline = rect.y1 - rect.height * 0.1
             ops.append(
-                f"BT 3 Tr /F1 1 Tf {sx:.3f} 0 0 {sy:.3f} {rect.x0:.3f} {baseline:.3f} Tm ({encoded}) Tj ET".encode()
+                f"BT 3 Tr /F1 1 Tf {sx:.3f} 0 0 {sy:.3f} {rect.x0:.3f} {baseline:.3f} Tm (".encode()
+                + raw
+                + b") Tj ET"
             )
         page.Contents = flat.make_stream(b"\n".join(ops) + b"\n")
+
+        annots = []
+        for link in pg.get_links():
+            if "uri" not in link:
+                continue
+            annots.append(
+                flat.make_indirect(
+                    pikepdf.Dictionary(
+                        Type=pikepdf.Name.Annot,
+                        Subtype=pikepdf.Name.Link,
+                        Rect=list(pymupdf.Rect(link["from"])),
+                        Border=[0, 0, 0],
+                        A=pikepdf.Dictionary(S=pikepdf.Name.URI, URI=link["uri"]),
+                    )
+                )
+            )
+        if annots:
+            page.Annots = pikepdf.Array(annots)
 
 flat.save(
     tmp,
