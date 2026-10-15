@@ -16,52 +16,67 @@ const LOGO_RADIUS = 45.0;
 const LOGO_OFFSET = 0.0; // Tiny offset to prevent z-fighting
 
 const MIN_LOGO_DISPLAY_HEIGHT = 12.0; // "Wayy bigger" height
-const MAX_LOGO_DISPLAY_WIDTH = 32.0;  // "Wayy bigger" width
-const SLOT_COUNT = 10;    // Number of active logos on the tower at once
+const MAX_LOGO_DISPLAY_WIDTH = 32.0; // "Wayy bigger" width
+const SLOT_COUNT = 10; // Number of active logos on the tower at once
 
 // ── Tower geometry ──────────────────────────────────────────
 // Built from primitives rather than a GLB: nothing to download or traverse,
 // and every color is a constant here. World units: 420 tall, base at y=-210,
-// matching the camera rig below. Flat toon fills + inverted-hull ink outlines.
+// matching the camera rig below. The silhouette follows the old GLB model —
+// an open geodesic lattice ball wrapped around the drum, on fluted columns —
+// with real materials and lit nodes instead of flat gray fills.
 const COLORS = {
-  concrete: "#e4ded2",
-  steel: "#959ca4",
-  glass: "#134e5e",
-  globe: "#c4c9cf",
-  ink: "#111111",
+  concrete: "#e2dabd", // Warm ivory columns
+  concreteShade: "#b3a888", // Collar underside
+  steel: "#5a6470", // Dark ring bands
+  steelLight: "#aab3bd", // Secondary rings + mullions
+  glass: "#0e4a5e", // Window band — dark so white plaques read on it
+  strut: "#d8d4c8", // Warm aluminum lattice
+  node: "#ffc15e", // Lit dome nodes — amber like the real tower
+  nodeAlt: "#ef8fc8", // Occasional brand pink
+  plinth: "#948d7c", // Ground plinth
+  shell: "#dceeff", // Faint glass shell inside the lattice
 };
-const INK = 0.9; // Outline thickness (world units)
-const SEGMENTS = 40;
+const SEGMENTS = 48;
 const TOWER_BASE_Y = -210;
 
 // [bottom radius, top radius, bottom y, top y, color]
 type Part = [number, number, number, number, string];
 
-const CORE: Part = [15, 15, TOWER_BASE_Y, 120, COLORS.concrete];
-const SHAFT: Part = [10, 10, TOWER_BASE_Y, 112, COLORS.concrete];
-const SHAFT_DISTANCE = 28;
+// Tapered fluted columns — one core + three shafts converging into the collar.
+const CORE: Part = [16, 12, TOWER_BASE_Y, 118, COLORS.concrete];
+const SHAFT: Part = [11, 9, TOWER_BASE_Y, 104, COLORS.concrete];
+const SHAFT_DISTANCE = 30;
 const SHAFT_ANGLES = [60, 180, 300].map(THREE.MathUtils.degToRad);
+const SHAFT_TILT = THREE.MathUtils.degToRad(3.2); // Slight inward lean
+const FLUTE_RIBS = 16; // Horizontal ribs per column, like the GLB's segments
 
 const DRUM: Part[] = [
-  [34, 45, 100, 115, COLORS.concrete], // Underside collar where the shafts meet
-  [45, 45, 115, 130, COLORS.steel],    // Lower ring
-  [43, 43, 130, 170, COLORS.glass],    // Rotating window band — logos ride here
-  [47, 47, 170, 178, COLORS.steel],    // Observation deck ledge
+  [30, 44, 100, 116, COLORS.concreteShade], // Underside collar where shafts meet
+  [45, 45, 116, 124, COLORS.steel], // Lower dark ring
+  [44, 43.5, 124, 130, COLORS.steelLight], // Secondary ring
+  [43, 43, 130, 170, COLORS.glass], // Window band — logos ride here
+  [47, 47, 170, 178, COLORS.steel], // Observation deck ledge
   [40, 40, 178, 190, COLORS.concrete],
-  [40, 18, 190, 198, COLORS.concrete], // Roof
+  [40, 16, 190, 200, COLORS.concrete], // Roof taper
 ];
+const MULLION_COUNT = 32; // Vertical window ribs on the glass band
+const MULLION_RADIUS = 43.6; // Inside LOGO_RADIUS (45) with clearance
 
 const GLOBE_Y = 133;
 const GLOBE_RADIUS = 77;
-const GLOBE_CUT = -40; // Globe is open below this local y, where the shafts enter
-const GLOBE_DETAIL = 3; // Geodesic subdivision: higher = denser struts
-const STRUT_OPACITY = 0.6;
+const GLOBE_CUT = -50; // Globe opens just under the collar, where the shafts enter
+const GLOBE_DETAIL = 2; // Geodesic subdivision: 2 ≈ 270 struts, chunky like the GLB
+const STRUT_RADIUS = 1.2;
+const NODE_RADIUS = 2.4;
+const NODE_ALT_EVERY = 9; // Every 9th node is pink instead of amber
+const SHELL_OPACITY = 0.07;
 
-// Three-band cel ramp for MeshToonMaterial
-const TOON_RAMP = new THREE.DataTexture(new Uint8Array([110, 190, 255]), 3, 1, THREE.RedFormat);
-TOON_RAMP.minFilter = THREE.NearestFilter;
-TOON_RAMP.magFilter = THREE.NearestFilter;
-TOON_RAMP.needsUpdate = true;
+// Ground plinth: two stacked disks at the tower's foot.
+const PLINTH: Part[] = [
+  [96, 88, TOWER_BASE_Y, TOWER_BASE_Y + 8, COLORS.plinth],
+  [82, 76, TOWER_BASE_Y + 8, TOWER_BASE_Y + 14, COLORS.concreteShade],
+];
 
 // ── Types ───────────────────────────────────────────────────
 interface SponsorPlacement {
@@ -109,7 +124,7 @@ function generateSlots(): SponsorPlacement[] {
       const initialSponsorIndex = r * cols + c;
       const theta = (c * (Math.PI * 2)) / cols + (r * Math.PI) / cols; // Staggered rows
       const y = r === 0 ? 142 : 160; // Fixed heights in the blue band
-      
+
       slots.push({
         theta: theta % (Math.PI * 2),
         y,
@@ -154,7 +169,10 @@ async function patchSvgUrl(url: string): Promise<string> {
 
     const vb = svg.getAttribute("viewBox");
     if (vb) {
-      const parts = vb.trim().split(/[\s,]+/).map(Number);
+      const parts = vb
+        .trim()
+        .split(/[\s,]+/)
+        .map(Number);
       if (parts.length === 4) {
         const [, , vbW, vbH] = parts;
         const aspect = vbW / vbH;
@@ -209,10 +227,14 @@ function usePatchedSvgUrls(urls: string[]): string[] | null {
       urls.map((u) => patchSvgUrl(u).then(loadableOrPlaceholder)),
     ).then((results) => {
       if (cancelled) {
-        results.forEach((r) => { if (r.startsWith("blob:")) URL.revokeObjectURL(r); });
+        results.forEach((r) => {
+          if (r.startsWith("blob:")) URL.revokeObjectURL(r);
+        });
         return;
       }
-      results.forEach((r) => { if (r.startsWith("blob:")) createdObjectUrls.push(r); });
+      results.forEach((r) => {
+        if (r.startsWith("blob:")) createdObjectUrls.push(r);
+      });
       setPatchedUrls(results);
     });
 
@@ -220,7 +242,7 @@ function usePatchedSvgUrls(urls: string[]): string[] | null {
       cancelled = true;
       createdObjectUrls.forEach((u) => URL.revokeObjectURL(u));
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlKey]);
 
   return patchedUrls;
@@ -328,7 +350,7 @@ function useCappedTextures(urls: string[] | null): THREE.Texture[] | null {
     return () => {
       cancelled = true;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlKey]);
 
   return textures;
@@ -351,7 +373,7 @@ function SponsorLogo({
   // shrinking sponsor list; fall back rather than indexing off the end.
   const texture = textures[sponsorIdx] ?? textures[0];
 
-  const arcGeo = useMemo(() => {
+  const { arcGeo, cardGeo } = useMemo(() => {
     // Canvas-backed now rather than an <img>, so read the size structurally —
     // HTMLCanvasElement carries width/height just as HTMLImageElement does.
     const img = texture.image as { width: number; height: number } | undefined;
@@ -367,29 +389,66 @@ function SponsorLogo({
     const r = LOGO_RADIUS + LOGO_OFFSET;
     const thetaLen = w / r;
     const thetaStart = -thetaLen / 2;
-    const geo = new THREE.CylinderGeometry(r, r, h, 12, 1, true, thetaStart, thetaLen);
-    const normals = geo.attributes.normal;
+    const arcGeo = new THREE.CylinderGeometry(
+      r,
+      r,
+      h,
+      12,
+      1,
+      true,
+      thetaStart,
+      thetaLen,
+    );
+    const normals = arcGeo.attributes.normal;
     for (let i = 0; i < normals.count; i++) {
       normals.setXYZ(i, -normals.getX(i), -normals.getY(i), -normals.getZ(i));
     }
-    return geo;
+
+    // White plaque behind each logo, mirroring the sponsor wall's cards —
+    // keeps dark wordmarks legible on the dark glass band.
+    const cardR = LOGO_RADIUS - 0.6;
+    const cardLen = (w * 1.3) / cardR;
+    const cardGeo = new THREE.CylinderGeometry(
+      cardR,
+      cardR,
+      h * 1.45,
+      12,
+      1,
+      true,
+      -cardLen / 2,
+      cardLen,
+    );
+
+    return { arcGeo, cardGeo };
   }, [texture]);
+
+  useEffect(
+    () => () => {
+      arcGeo.dispose();
+      cardGeo.dispose();
+    },
+    [arcGeo, cardGeo],
+  );
 
   useFrame(() => {
     const worldTheta = placement.theta + groupRotationRef.current;
     // Shift trigger phase to 1.4*PI (from 1.0*PI) to swap the logo earlier.
     // This ensures the transition happens shortly after the logo enters the hidden zone.
     const revolution = Math.floor((worldTheta + Math.PI * 1.4) / (Math.PI * 2));
-    let nextIdx = (placement.initialSponsorIndex + revolution * SLOT_COUNT) % totalSponsors;
+    let nextIdx =
+      (placement.initialSponsorIndex + revolution * SLOT_COUNT) % totalSponsors;
     if (nextIdx < 0) nextIdx = (nextIdx + totalSponsors) % totalSponsors;
     if (nextIdx !== sponsorIdx) setSponsorIdx(nextIdx);
   });
 
   // Local rotation to face outward
-  const rotY = placement.theta + Math.PI / 2; 
+  const rotY = placement.theta + Math.PI / 2;
 
   return (
     <group position={[0, placement.y, 0]} rotation={[0, rotY, 0]}>
+      <mesh geometry={cardGeo} renderOrder={1}>
+        <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+      </mesh>
       <mesh geometry={arcGeo} renderOrder={2}>
         <meshBasicMaterial
           map={texture}
@@ -403,49 +462,337 @@ function SponsorLogo({
   );
 }
 
-// ── Toon solid with ink outline ─────────────────────────────
-function Solid({ part: [rBottom, rTop, y0, y1, color], x = 0, z = 0 }: { part: Part; x?: number; z?: number }) {
+// ── Tower parts ─────────────────────────────────────────────
+// LatheGeometry needs lathe-space points (x = radius, y = height), so each
+// part's [rBottom, rTop, y0, y1] is remapped around its own center.
+function partGeometry(
+  [rBottom, rTop, y0, y1]: Part,
+  ribs = 0,
+): THREE.LatheGeometry {
   const h = y1 - y0;
+  const mid = (y0 + y1) / 2;
+  const steps = ribs > 0 ? ribs * 3 : 2;
+  // Closed profile: bottom cap in, side up, top cap in — lathe leaves ends open otherwise.
+  const pts: THREE.Vector2[] = [new THREE.Vector2(0.01, y0 - mid)];
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    let r = rBottom + (rTop - rBottom) * t;
+    if (ribs > 0) {
+      // Triangular rib wave: small periodic bulge, like the GLB's segments
+      const phase = (t * ribs) % 1;
+      r *= 1 + 0.07 * Math.max(0, 1 - Math.abs(phase * 2 - 1) * 3);
+    }
+    pts.push(new THREE.Vector2(Math.max(r, 0.01), y0 + h * t - mid));
+  }
+  pts.push(new THREE.Vector2(0.01, y1 - mid));
+  return new THREE.LatheGeometry(pts, SEGMENTS);
+}
+
+type Finish = "stone" | "steel" | "glass";
+
+// Phong for anything meant to gleam: metallic finishes need an env map under
+// MeshStandardMaterial, and this scene ships none — specular fakes it cheaply.
+function Solid({
+  part,
+  x = 0,
+  z = 0,
+  tilt = 0,
+  ribs = 0,
+  finish = "stone",
+}: {
+  part: Part;
+  x?: number;
+  z?: number;
+  tilt?: number;
+  ribs?: number;
+  finish?: Finish;
+}) {
+  const geo = useMemo(() => partGeometry(part, ribs), [part, ribs]);
+  useEffect(() => () => geo.dispose(), [geo]);
   return (
-    <group position={[x, (y0 + y1) / 2, z]}>
-      <mesh>
-        <cylinderGeometry args={[rTop, rBottom, h, SEGMENTS]} />
-        <meshToonMaterial color={color} gradientMap={TOON_RAMP} />
-      </mesh>
-      {/* Inverted hull: a slightly larger back-face shell drawn in ink shows only at the silhouette */}
-      <mesh>
-        <cylinderGeometry args={[rTop + INK, rBottom + INK, h + INK * 2, SEGMENTS]} />
-        <meshBasicMaterial color={COLORS.ink} side={THREE.BackSide} />
+    <group
+      position={[x, (part[2] + part[3]) / 2, z]}
+      rotation={[
+        tilt === 0 ? 0 : -Math.cos(Math.atan2(x, z)) * tilt,
+        0,
+        tilt === 0 ? 0 : Math.sin(Math.atan2(x, z)) * tilt,
+      ]}
+    >
+      <mesh geometry={geo}>
+        {finish === "stone" && (
+          <meshStandardMaterial
+            color={part[4]}
+            roughness={0.85}
+            metalness={0}
+          />
+        )}
+        {finish === "steel" && (
+          <meshPhongMaterial
+            color={part[4]}
+            shininess={70}
+            specular="#77808c"
+          />
+        )}
+        {finish === "glass" && (
+          <meshPhongMaterial
+            color={part[4]}
+            shininess={120}
+            specular="#8fc4d6"
+            emissive="#07272f"
+          />
+        )}
       </mesh>
     </group>
   );
 }
 
-// Every triangle edge of a subdivided icosahedron, minus the open bottom: the geodesic struts.
-function buildGlobeStruts(): THREE.BufferGeometry {
-  const edges = new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(GLOBE_RADIUS, GLOBE_DETAIL), 1);
-  const p = edges.attributes.position.array;
-  const kept: number[] = [];
-  for (let i = 0; i < p.length; i += 6) {
-    if (p[i + 1] > GLOBE_CUT && p[i + 4] > GLOBE_CUT) kept.push(...p.slice(i, i + 6));
+// Vertical window ribs around the glass band, between it and the logo ring.
+function Mullions() {
+  const ref = useRef<THREE.InstancedMesh>(null);
+  const { geo, mat } = useMemo(
+    () => ({
+      geo: new THREE.BoxGeometry(0.9, 38, 0.7),
+      mat: new THREE.MeshPhongMaterial({
+        color: COLORS.steelLight,
+        shininess: 60,
+        specular: "#8a94a0",
+      }),
+    }),
+    [],
+  );
+  useEffect(
+    () => () => {
+      geo.dispose();
+      mat.dispose();
+    },
+    [geo, mat],
+  );
+  useEffect(() => {
+    const m = new THREE.Matrix4();
+    const p = new THREE.Vector3();
+    const q = new THREE.Quaternion();
+    const s = new THREE.Vector3(1, 1, 1);
+    for (let i = 0; i < MULLION_COUNT; i++) {
+      const a = (i / MULLION_COUNT) * Math.PI * 2;
+      p.set(Math.sin(a) * MULLION_RADIUS, 150, Math.cos(a) * MULLION_RADIUS);
+      q.setFromEuler(new THREE.Euler(0, a, 0));
+      m.compose(p, q, s);
+      ref.current?.setMatrixAt(i, m);
+    }
+    if (ref.current) ref.current.instanceMatrix.needsUpdate = true;
+  }, [geo, mat]);
+  return <instancedMesh ref={ref} args={[geo, mat, MULLION_COUNT]} />;
+}
+
+// Unique vertices + edges of a subdivided icosahedron, minus the open bottom.
+// The GLB ball is a lattice of chunky struts — the drum and logos show through.
+function buildGeodesic(): {
+  verts: THREE.Vector3[];
+  edges: [number, number][];
+} {
+  const geo = new THREE.IcosahedronGeometry(GLOBE_RADIUS, GLOBE_DETAIL);
+  const pos = geo.attributes.position.array;
+  const vertIndex = new Map<string, number>();
+  const verts: THREE.Vector3[] = [];
+  const edgeSet = new Set<string>();
+  const edges: [number, number][] = [];
+
+  const indexOf = (i: number) => {
+    const v = new THREE.Vector3(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
+    const key = `${v.x.toFixed(3)},${v.y.toFixed(3)},${v.z.toFixed(3)}`;
+    let idx = vertIndex.get(key);
+    if (idx === undefined) {
+      idx = verts.length;
+      vertIndex.set(key, idx);
+      verts.push(v);
+    }
+    return idx;
+  };
+  const addEdge = (a: number, b: number) => {
+    const key = a < b ? `${a}-${b}` : `${b}-${a}`;
+    if (!edgeSet.has(key)) {
+      edgeSet.add(key);
+      edges.push([a, b]);
+    }
+  };
+
+  for (let i = 0; i < pos.length / 9; i++) {
+    const a = indexOf(i * 3);
+    const b = indexOf(i * 3 + 1);
+    const c = indexOf(i * 3 + 2);
+    addEdge(a, b);
+    addEdge(b, c);
+    addEdge(c, a);
   }
-  edges.dispose();
-  return new THREE.BufferGeometry().setAttribute("position", new THREE.Float32BufferAttribute(kept, 3));
+  geo.dispose();
+
+  // Drop everything at or below the open bottom so columns enter cleanly.
+  const keepVert = verts.map((v) => v.y > GLOBE_CUT);
+  const keptEdges = edges.filter(([a, b]) => keepVert[a] && keepVert[b]);
+  const remap = new Map<number, number>();
+  const keptVerts: THREE.Vector3[] = [];
+  verts.forEach((v, i) => {
+    if (keepVert[i]) {
+      remap.set(i, keptVerts.length);
+      keptVerts.push(v);
+    }
+  });
+  return {
+    verts: keptVerts,
+    edges: keptEdges.map(([a, b]) => [remap.get(a)!, remap.get(b)!]),
+  };
+}
+
+// The dome: instanced strut cylinders + glowing node spheres + a faint inner
+// shell for depth. Everything rides globeRef so it counter-rotates slowly.
+function GeodesicBall({
+  materialsRef,
+}: {
+  materialsRef: React.MutableRefObject<THREE.Material[]>;
+}) {
+  const strutsRef = useRef<THREE.InstancedMesh>(null);
+  const nodesRef = useRef<THREE.InstancedMesh>(null);
+  const altNodesRef = useRef<THREE.InstancedMesh>(null);
+
+  const { verts, edges } = useMemo(() => buildGeodesic(), []);
+  const altCount = useMemo(
+    () => Math.ceil(verts.length / NODE_ALT_EVERY),
+    [verts],
+  );
+
+  const geoms = useMemo(
+    () => ({
+      strut: new THREE.CylinderGeometry(STRUT_RADIUS, STRUT_RADIUS, 1, 7),
+      node: new THREE.SphereGeometry(NODE_RADIUS, 12, 10),
+      shell: new THREE.SphereGeometry(
+        GLOBE_RADIUS - 1,
+        48,
+        24,
+        0,
+        Math.PI * 2,
+        0,
+        Math.acos(GLOBE_CUT / GLOBE_RADIUS),
+      ),
+    }),
+    [],
+  );
+  useEffect(
+    () => () => Object.values(geoms).forEach((g) => g.dispose()),
+    [geoms],
+  );
+
+  const mats = useMemo(
+    () => ({
+      strut: new THREE.MeshPhongMaterial({
+        color: COLORS.strut,
+        shininess: 90,
+        specular: "#9aa4b0",
+        transparent: true,
+      }),
+      node: new THREE.MeshBasicMaterial({
+        color: COLORS.node,
+        transparent: true,
+      }),
+      nodeAlt: new THREE.MeshBasicMaterial({
+        color: COLORS.nodeAlt,
+        transparent: true,
+      }),
+      shell: new THREE.MeshBasicMaterial({
+        color: COLORS.shell,
+        transparent: true,
+        opacity: SHELL_OPACITY,
+        depthWrite: false,
+      }),
+    }),
+    [],
+  );
+  useEffect(() => {
+    materialsRef.current = [mats.strut, mats.node, mats.nodeAlt, mats.shell];
+    return () => {
+      Object.values(mats).forEach((m) => m.dispose());
+    };
+  }, [mats, materialsRef]);
+
+  useEffect(() => {
+    const m = new THREE.Matrix4();
+    const mid = new THREE.Vector3();
+    const dir = new THREE.Vector3();
+    const up = new THREE.Vector3(0, 1, 0);
+    const q = new THREE.Quaternion();
+    const s = new THREE.Vector3();
+
+    if (strutsRef.current) {
+      edges.forEach(([a, b], i) => {
+        const va = verts[a];
+        const vb = verts[b];
+        mid.addVectors(va, vb).multiplyScalar(0.5);
+        dir.subVectors(vb, va);
+        const len = dir.length();
+        q.setFromUnitVectors(up, dir.normalize());
+        s.set(1, len, 1);
+        m.compose(mid, q, s);
+        strutsRef.current!.setMatrixAt(i, m);
+      });
+      strutsRef.current.instanceMatrix.needsUpdate = true;
+    }
+    let amber = 0;
+    let pink = 0;
+    verts.forEach((v, i) => {
+      m.compose(v, q.identity(), s.set(1, 1, 1));
+      if (i % NODE_ALT_EVERY === 0) {
+        altNodesRef.current?.setMatrixAt(pink++, m);
+      } else {
+        nodesRef.current?.setMatrixAt(amber++, m);
+      }
+    });
+    if (nodesRef.current) nodesRef.current.instanceMatrix.needsUpdate = true;
+    if (altNodesRef.current)
+      altNodesRef.current.instanceMatrix.needsUpdate = true;
+  }, [verts, edges]);
+
+  return (
+    <>
+      <instancedMesh
+        ref={strutsRef}
+        args={[geoms.strut, mats.strut, edges.length]}
+        renderOrder={4}
+      />
+      <instancedMesh
+        ref={nodesRef}
+        args={[geoms.node, mats.node, verts.length - altCount]}
+        renderOrder={4}
+      />
+      <instancedMesh
+        ref={altNodesRef}
+        args={[geoms.node, mats.nodeAlt, altCount]}
+        renderOrder={4}
+      />
+      {/* Faint shell gives the ball a glassy body without hiding the drum */}
+      <mesh geometry={geoms.shell} material={mats.shell} renderOrder={3} />
+    </>
+  );
 }
 
 // ── Tower model ─────────────────────────────────────────────
-function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerSceneProps) {
+function TowerModel({
+  scrollProgressRef,
+  dragOffsetRef,
+  sponsors,
+}: TowerSceneProps) {
   const globeRef = useRef<THREE.Group>(null);
-  const globeFillRef = useRef<THREE.MeshBasicMaterial>(null);
+  const globeMaterialsRef = useRef<THREE.Material[]>([]);
   const sponsorGroupRef = useRef<THREE.Group>(null);
   const smoothRotation = useRef(0);
   const autoAngle = useRef(0);
 
-  const struts = useMemo(buildGlobeStruts, []);
-  useEffect(() => () => struts.dispose(), [struts]);
-
-  const validSponsors = useMemo(() => sponsors.filter((s) => s.logo), [sponsors]);
-  const logoUrls = useMemo(() => validSponsors.map((s) => logoTextureUrl(s.logo!)), [validSponsors]);
+  const validSponsors = useMemo(
+    () => sponsors.filter((s) => s.logo),
+    [sponsors],
+  );
+  const logoUrls = useMemo(
+    () => validSponsors.map((s) => logoTextureUrl(s.logo!)),
+    [validSponsors],
+  );
 
   // Patch any SVGs missing explicit width/height before handing URLs to TextureLoader.
   // Without this, viewBox-only SVGs rasterize to a 0x0 bitmap -> WebGL errors.
@@ -463,11 +810,19 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
   useFrame((_, delta) => {
     const scroll = scrollProgressRef.current ?? 0;
 
-    // Parabolic fading: ~0.2 near the start of the scroll, opaque by the end
+    // Parabolic fading: ~0.2 near the start of the scroll, opaque by the end.
+    // Fades the whole lattice (struts, nodes, shell, belt) as one material set.
     const minOpacity = 0.2;
-    if (globeFillRef.current) {
-      globeFillRef.current.opacity = Math.min(1, 4 * (1 - minOpacity) * Math.pow(scroll - 0.1, 2) + minOpacity);
-    }
+    const targetOpacity = Math.min(
+      1,
+      4 * (1 - minOpacity) * Math.pow(scroll - 0.1, 2) + minOpacity,
+    );
+    globeMaterialsRef.current.forEach((mat) => {
+      mat.opacity =
+        mat === globeMaterialsRef.current[3]
+          ? targetOpacity * SHELL_OPACITY // Shell stays faint at full scroll
+          : targetOpacity;
+    });
 
     if (!globeRef.current) return;
 
@@ -494,23 +849,38 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
 
   return (
     <group>
-      <Solid part={CORE} />
+      {PLINTH.map((part, i) => (
+        <Solid key={`plinth-${i}`} part={part} />
+      ))}
+      <Solid part={CORE} ribs={FLUTE_RIBS} />
       {SHAFT_ANGLES.map((a) => (
-        <Solid key={a} part={SHAFT} x={Math.sin(a) * SHAFT_DISTANCE} z={Math.cos(a) * SHAFT_DISTANCE} />
+        <Solid
+          key={a}
+          part={SHAFT}
+          x={Math.sin(a) * SHAFT_DISTANCE}
+          z={Math.cos(a) * SHAFT_DISTANCE}
+          tilt={SHAFT_TILT}
+          ribs={FLUTE_RIBS}
+        />
       ))}
       {DRUM.map((part, i) => (
-        <Solid key={i} part={part} />
+        <Solid
+          key={i}
+          part={part}
+          finish={
+            part[4] === COLORS.glass
+              ? "glass"
+              : part[4] === COLORS.steel || part[4] === COLORS.steelLight
+                ? "steel"
+                : "stone"
+          }
+        />
       ))}
+      <Mullions />
 
       <group ref={globeRef} position={[0, GLOBE_Y, 0]}>
-        {/* Drawn after the logos (renderOrder 2) so the globe sits in front of them */}
-        <mesh renderOrder={3}>
-          <sphereGeometry args={[GLOBE_RADIUS, 48, 24, 0, Math.PI * 2, 0, Math.acos(GLOBE_CUT / GLOBE_RADIUS)]} />
-          <meshBasicMaterial ref={globeFillRef} color={COLORS.globe} transparent depthWrite={false} />
-        </mesh>
-        <lineSegments geometry={struts} renderOrder={4}>
-          <lineBasicMaterial color={COLORS.ink} transparent opacity={STRUT_OPACITY} depthWrite={false} />
-        </lineSegments>
+        {/* Drawn after the logos (renderOrder 2) so the lattice sits in front of them */}
+        <GeodesicBall materialsRef={globeMaterialsRef} />
       </group>
 
       <group ref={sponsorGroupRef}>
@@ -536,7 +906,11 @@ const CAMERA_FIT_OFFSET = 1.6;
 const CAMERA_VERTICAL_OFFSET = 6;
 
 // ── Camera rig ──────────────────────────────────────────────
-function CameraRig({ scrollProgressRef }: { scrollProgressRef: React.RefObject<number> }) {
+function CameraRig({
+  scrollProgressRef,
+}: {
+  scrollProgressRef: React.RefObject<number>;
+}) {
   const { camera, size } = useThree();
   const smoothZ = useRef(0);
   const smoothY = useRef(0);
@@ -637,15 +1011,22 @@ export default function ReunionTower({
           camera={{ position: [0, 125, 175], fov: 55, near: 0.1, far: 2000 }}
           style={{
             touchAction: "pan-y",
-            maskImage: "linear-gradient(to bottom, black 90%, transparent 100%)",
+            maskImage:
+              "linear-gradient(to bottom, black 90%, transparent 100%)",
             WebkitMaskImage:
               "linear-gradient(to bottom, black 90%, transparent 100%)",
           }}
           frameloop={inView ? "always" : "never"}
         >
-          {/* Toon materials step this into the three cel bands of TOON_RAMP */}
-          <ambientLight intensity={1.8} />
-          <directionalLight position={[-120, 200, 160]} intensity={1.6} />
+          {/* Hemisphere wash + warm key: stone stays soft, phong picks up the sun */}
+          <hemisphereLight args={["#ffffff", "#8f8672", 0.9]} />
+          <ambientLight intensity={0.35} />
+          <directionalLight position={[-120, 200, 160]} intensity={1.5} />
+          <directionalLight
+            position={[140, 40, -100]}
+            intensity={0.4}
+            color="#bfd4e0"
+          />
 
           <TowerModel
             scrollProgressRef={scrollProgressRef}
