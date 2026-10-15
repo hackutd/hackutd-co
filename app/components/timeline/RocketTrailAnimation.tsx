@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import {
   type PointerEvent as ReactPointerEvent,
   useCallback,
@@ -13,7 +14,6 @@ import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
-import BrandShaderBackground from "@/app/components/background/BrandShaderBackground";
 import BrandSvgGradient from "@/app/components/background/BrandSvgGradient";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { useNearViewport } from "@/app/hooks/useNearViewport";
@@ -35,6 +35,11 @@ import {
   TRAIL_WAVE,
   YEAR_MARKERS,
 } from "./sceneConfig";
+
+const BrandShaderBackground = dynamic(
+  () => import("@/app/components/background/BrandShaderBackground"),
+  { ssr: false },
+);
 
 configureScrollTrigger();
 

@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import Script from "next/script";
 import SiteCursor from "./components/cursor/SiteCursor";
 import { Preloader } from "./components/preloader/Preloader";
+import SmoothScroll from "./components/providers/SmoothScroll";
 import {
   SITE_DESCRIPTION,
   SITE_NAME,
@@ -136,7 +137,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <Preloader />
-        {children}
+        <SmoothScroll>{children}</SmoothScroll>
         {/* Last child of <body> on purpose: the drawn cursor blends against
             the backdrop of its own stacking context, so it has to be painted
             from here to invert the whole page rather than one section of it. */}

@@ -37,14 +37,13 @@ export function TeamGroupPhoto({
 
   return (
     <div className={`${TEAM_GROUP_PHOTO.frame} ${className}`}>
-      {photoTeams.map((team, index) => (
+      {photoTeams.map((team) => (
         <Image
           key={team.id}
           src={team.groupPhotoUrl as string}
           alt={`The HackUTD ${team.label} team`}
           fill
           sizes={sizes}
-          priority={index === 0}
           className={`object-cover ${animate ? TEAM_GROUP_PHOTO.crossfade : ""}`}
           style={{ opacity: team.id === activeTeamId ? 1 : 0 }}
         />

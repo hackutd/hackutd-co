@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useId, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -7,7 +8,6 @@ import { useGSAP } from "@gsap/react";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { configureScrollTrigger } from "@/app/lib/scrollTrigger";
-import BrandShaderBackground from "../background/BrandShaderBackground";
 import BrandSvgGradient from "../background/BrandSvgGradient";
 import {
   COMET_TUNING,
@@ -20,6 +20,14 @@ import {
   clamp,
   precomputeSpineSamples,
 } from "./cometGeometry";
+
+// The shader gradient pulls in three.js + R3F (~340 KB gzipped). Loading it
+// after hydration keeps that stack off the critical path, and phones, which
+// render the SVG gradient instead, never download it at all.
+const BrandShaderBackground = dynamic(
+  () => import("../background/BrandShaderBackground"),
+  { ssr: false },
+);
 
 configureScrollTrigger();
 

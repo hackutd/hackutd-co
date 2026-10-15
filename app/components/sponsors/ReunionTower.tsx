@@ -4,7 +4,7 @@ import { Suspense, useRef, useMemo, useEffect, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import type { StaticImageData } from "next/image";
+import { getImageProps, type StaticImageData } from "next/image";
 import { useNearViewport } from "@/app/hooks/useNearViewport";
 
 const MODEL_PATH = "/models/sponsor-globe-flat-4.glb";
@@ -236,6 +236,13 @@ function usePatchedSvgUrls(urls: string[]): string[] | null {
 // the long edge takes the whole set from ~151MB to ~14MB, with no visible
 // difference at the size they are actually rendered.
 const MAX_LOGO_TEX = 256;
+
+// Fetch each raster logo through the image optimizer at the capped width
+// rather than downloading the full-size source only to shrink it. The src
+// getImageProps returns is its 2x candidate, hence half the width. SVGs come
+// back untouched (the optimizer skips them), so the SVG patching still applies.
+const logoTextureUrl = (logo: StaticImageData) =>
+  getImageProps({ src: logo, alt: "", width: MAX_LOGO_TEX / 2 }).props.src;
 
 // Keyed by source URL and never evicted, standing in for the global cache
 // useLoader used to provide: the canvas unmounts and remounts every time the
@@ -470,7 +477,7 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
   }, [clonedScene]);
 
   const validSponsors = useMemo(() => sponsors.filter((s) => s.logo), [sponsors]);
-  const logoUrls = useMemo(() => validSponsors.map((s) => s.logo!.src), [validSponsors]);
+  const logoUrls = useMemo(() => validSponsors.map((s) => logoTextureUrl(s.logo!)), [validSponsors]);
 
   // Patch any SVGs missing explicit width/height before handing URLs to TextureLoader.
   // Without this, viewBox-only SVGs rasterize to a 0x0 bitmap -> WebGL errors.
@@ -556,22 +563,28 @@ function CameraRig({ scrollProgressRef }: { scrollProgressRef: React.RefObject<n
   const smoothLookY = useRef(0);
   const initialized = useRef(false);
 
-  useFrame(() => {
-    const p = scrollProgressRef.current ?? 0;
+  // The fit distance and clip planes depend only on the viewport aspect, so
+  // the projection matrix is rebuilt on resize rather than every frame.
+  const baseZ = useMemo(() => {
     const cam = camera as THREE.PerspectiveCamera;
     const aspect = size.width / size.height;
     const vFov = THREE.MathUtils.degToRad(cam.fov);
-
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect);
     const effectiveFov = Math.min(vFov, hFov);
+    return (GLOBE_BOUNDING_R / Math.sin(effectiveFov / 2)) * CAMERA_FIT_OFFSET;
+  }, [camera, size.width, size.height]);
 
-    const baseZ =
-      (GLOBE_BOUNDING_R / Math.sin(effectiveFov / 2)) * CAMERA_FIT_OFFSET;
+  const appliedBaseZ = useRef<number | null>(null);
 
-    cam.near = baseZ / 100;
-    cam.far = (baseZ + 240) * 3;
-    cam.updateProjectionMatrix();
-
+  useFrame(() => {
+    const p = scrollProgressRef.current ?? 0;
+    if (appliedBaseZ.current !== baseZ) {
+      const cam = camera as THREE.PerspectiveCamera;
+      cam.near = baseZ / 100;
+      cam.far = (baseZ + 240) * 3;
+      cam.updateProjectionMatrix();
+      appliedBaseZ.current = baseZ;
+    }
     const targetZ = baseZ + p * 240;
     const targetY = GLOBE_CENTER_Y + CAMERA_VERTICAL_OFFSET;
     const targetLookY = GLOBE_CENTER_Y + CAMERA_VERTICAL_OFFSET;
@@ -594,8 +607,6 @@ function CameraRig({ scrollProgressRef }: { scrollProgressRef: React.RefObject<n
   return null;
 }
 
-useGLTF.preload(MODEL_PATH);
-
 // ── Exported component ──────────────────────────────────────
 interface ReunionTowerProps {
   scrollProgressRef: React.RefObject<number>;
@@ -616,6 +627,10 @@ export default function ReunionTower({
   // texture in GPU memory. The wide margin remounts it early enough that the
   // scene is rebuilt (from the browser's HTTP cache) before it scrolls in.
   const isNearViewport = useNearViewport(wrapperRef, "200%");
+
+  useEffect(() => {
+    if (isNearViewport) useGLTF.preload(MODEL_PATH);
+  }, [isNearViewport]);
 
   // Render frames only while the tower is on screen
   useEffect(() => {

@@ -1,10 +1,10 @@
 import type { CSSProperties } from "react";
 import type { StaticImageData } from "next/image";
-import skylineArt from "@/app/assets/hero/skyline.png";
-import airplaneArt from "@/app/assets/hero/dallas_airplane_transparent.png";
-import cloudLeftArt from "@/app/assets/hero/dallas_cloud_left_transparent.png";
-import cloudRightArt from "@/app/assets/hero/dallas_cloud_right_transparent.png";
-import balloonArt from "@/app/assets/hero/dallas_hot_air_balloon_transparent.png";
+import skylineArt from "@/app/assets/hero/skyline.webp";
+import airplaneArt from "@/app/assets/hero/dallas_airplane_transparent.webp";
+import cloudLeftArt from "@/app/assets/hero/dallas_cloud_left_transparent.webp";
+import cloudRightArt from "@/app/assets/hero/dallas_cloud_right_transparent.webp";
+import balloonArt from "@/app/assets/hero/dallas_hot_air_balloon_transparent.webp";
 
 export const HERO_SCENE_SCROLL = {
   start: "top top",
