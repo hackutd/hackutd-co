@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import {
   type PointerEvent as ReactPointerEvent,
   useCallback,
@@ -14,6 +13,7 @@ import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
+import BrandGradientVideo from "@/app/components/background/BrandGradientVideo";
 import BrandSvgGradient from "@/app/components/background/BrandSvgGradient";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 import { useNearViewport } from "@/app/hooks/useNearViewport";
@@ -35,11 +35,6 @@ import {
   TRAIL_WAVE,
   YEAR_MARKERS,
 } from "./sceneConfig";
-
-const BrandShaderBackground = dynamic(
-  () => import("@/app/components/background/BrandShaderBackground"),
-  { ssr: false },
-);
 
 configureScrollTrigger();
 
@@ -90,6 +85,7 @@ export default function RocketTrailAnimation() {
   // Last pointer position, in client coordinates. Seeded by the pointerenter
   // that opens the card so its very first frame is already under the cursor.
   const pointerRef = useRef({ x: 0, y: 0 });
+  const [sweepDone, setSweepDone] = useState(false);
 
   const cardHeight =
     CARD_POPOVER.width / CARD_POPOVER.imageAspect + CARD_POPOVER.captionHeight;
@@ -434,6 +430,9 @@ export default function RocketTrailAnimation() {
             start: TIMELINE_SCROLL.start,
             end: TIMELINE_SCROLL.end,
             scrub,
+            onEnter: () => setSweepDone(false),
+            onLeave: () => setSweepDone(true),
+            onEnterBack: () => setSweepDone(false),
             // Re-measure enterX/exitX on resize so the sweep always clears both edges
             invalidateOnRefresh: true,
           },
@@ -572,9 +571,7 @@ export default function RocketTrailAnimation() {
                     transformOrigin: "0 0",
                   }}
                 >
-                  {shaderActive && (
-                    <BrandShaderBackground lazyLoad={false} antialias />
-                  )}
+                  {shaderActive && !sweepDone && <BrandGradientVideo />}
                 </div>
               </foreignObject>
             )}

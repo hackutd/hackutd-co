@@ -647,7 +647,7 @@ export default function ReunionTower({
     <div ref={wrapperRef} className="h-full w-full">
       {shouldMountCanvas && (
         <Canvas
-          dpr={[1, 1.5]}
+          dpr={1}
           gl={{
             antialias: true,
             alpha: true,
