@@ -556,22 +556,28 @@ function CameraRig({ scrollProgressRef }: { scrollProgressRef: React.RefObject<n
   const smoothLookY = useRef(0);
   const initialized = useRef(false);
 
-  useFrame(() => {
-    const p = scrollProgressRef.current ?? 0;
+  // The fit distance and clip planes depend only on the viewport aspect, so
+  // the projection matrix is rebuilt on resize rather than every frame.
+  const baseZ = useMemo(() => {
     const cam = camera as THREE.PerspectiveCamera;
     const aspect = size.width / size.height;
     const vFov = THREE.MathUtils.degToRad(cam.fov);
-
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect);
     const effectiveFov = Math.min(vFov, hFov);
+    return (GLOBE_BOUNDING_R / Math.sin(effectiveFov / 2)) * CAMERA_FIT_OFFSET;
+  }, [camera, size.width, size.height]);
 
-    const baseZ =
-      (GLOBE_BOUNDING_R / Math.sin(effectiveFov / 2)) * CAMERA_FIT_OFFSET;
+  const appliedBaseZ = useRef<number | null>(null);
 
-    cam.near = baseZ / 100;
-    cam.far = (baseZ + 240) * 3;
-    cam.updateProjectionMatrix();
-
+  useFrame(() => {
+    const p = scrollProgressRef.current ?? 0;
+    if (appliedBaseZ.current !== baseZ) {
+      const cam = camera as THREE.PerspectiveCamera;
+      cam.near = baseZ / 100;
+      cam.far = (baseZ + 240) * 3;
+      cam.updateProjectionMatrix();
+      appliedBaseZ.current = baseZ;
+    }
     const targetZ = baseZ + p * 240;
     const targetY = GLOBE_CENTER_Y + CAMERA_VERTICAL_OFFSET;
     const targetLookY = GLOBE_CENTER_Y + CAMERA_VERTICAL_OFFSET;
@@ -594,8 +600,6 @@ function CameraRig({ scrollProgressRef }: { scrollProgressRef: React.RefObject<n
   return null;
 }
 
-useGLTF.preload(MODEL_PATH);
-
 // ── Exported component ──────────────────────────────────────
 interface ReunionTowerProps {
   scrollProgressRef: React.RefObject<number>;
@@ -616,6 +620,10 @@ export default function ReunionTower({
   // texture in GPU memory. The wide margin remounts it early enough that the
   // scene is rebuilt (from the browser's HTTP cache) before it scrolls in.
   const isNearViewport = useNearViewport(wrapperRef, "200%");
+
+  useEffect(() => {
+    if (isNearViewport) useGLTF.preload(MODEL_PATH);
+  }, [isNearViewport]);
 
   // Render frames only while the tower is on screen
   useEffect(() => {

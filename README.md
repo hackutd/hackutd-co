@@ -63,7 +63,7 @@ Most copy and lists live in `app/data/`:
 | Command                                  | Purpose                                                                                                                                           |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `node scripts/brand-assets.mts`          | Regenerates everything in `brand/` (Lottie JSON, alpha WebM, ProRes 4444 MOV, Reels MP4) from `logoPaths.ts`. Needs `google-chrome` and `ffmpeg`. |
-| `python3 scripts/trace-skyline.py`       | Re-traces `app/assets/hero/skyline.png` into `app/components/preloader/skylinePaths.ts`. Needs Pillow + potracer.                                 |
+| `python3 scripts/trace-skyline.py`       | Re-traces `app/assets/hero/skyline.webp` into `app/components/preloader/skylinePaths.ts`. Needs Pillow + potracer.                                 |
 | `node scripts/bake-section-gradient.mjs` | Bakes the section gradient to `app/assets/background/section-gradient.webp`.                                                                      |
 
 See [`brand/README.md`](brand/README.md) for the deliverable list and animation timing.
