@@ -42,8 +42,8 @@ const COLORS = {
   latticeEdge: "#3a3f45", // Outlines on the ball
   column: "#cbb189", // Concrete tan shafts
   columnBrace: "#b39d77", // Cross-braces between the columns
-  drumLight: "#c2bfb4", // Warm gray concrete above/below the window band
-  drumBand: "#2e4a5c", // Deep teal window band the logos ride on
+  drumLight: "#39434d", // Dark glass panels above/below the window band
+  drumBand: "#202a33", // Darker window band the logos ride on
   base: "#a3967f",
   ink: "#1f2226", // Outlines on the body
 };
@@ -894,15 +894,9 @@ function TowerModel({
   useFrame((_, delta) => {
     const scroll = scrollProgressRef.current ?? 0;
 
-    // Parabolic fading: ~0.2 near the start of the scroll, opaque by the end.
-    // Fades the whole lattice (bars, edge lines, node dots) as one material set.
-    const minOpacity = 0.2;
-    const targetOpacity = Math.min(
-      1,
-      4 * (1 - minOpacity) * Math.pow(scroll - 0.1, 2) + minOpacity,
-    );
+    // Globe materials stay at full opacity the whole scroll — no fade-in.
     globeMaterialsRef.current.forEach((mat) => {
-      mat.opacity = targetOpacity;
+      mat.opacity = SPHERE_OPACITY;
     });
 
     if (!globeRef.current) return;
