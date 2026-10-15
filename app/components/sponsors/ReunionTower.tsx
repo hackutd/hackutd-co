@@ -4,7 +4,7 @@ import { Suspense, useRef, useMemo, useEffect, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import type { StaticImageData } from "next/image";
+import { getImageProps, type StaticImageData } from "next/image";
 import { useNearViewport } from "@/app/hooks/useNearViewport";
 
 const MODEL_PATH = "/models/sponsor-globe-flat-4.glb";
@@ -236,6 +236,13 @@ function usePatchedSvgUrls(urls: string[]): string[] | null {
 // the long edge takes the whole set from ~151MB to ~14MB, with no visible
 // difference at the size they are actually rendered.
 const MAX_LOGO_TEX = 256;
+
+// Fetch each raster logo through the image optimizer at the capped width
+// rather than downloading the full-size source only to shrink it. The src
+// getImageProps returns is its 2x candidate, hence half the width. SVGs come
+// back untouched (the optimizer skips them), so the SVG patching still applies.
+const logoTextureUrl = (logo: StaticImageData) =>
+  getImageProps({ src: logo, alt: "", width: MAX_LOGO_TEX / 2 }).props.src;
 
 // Keyed by source URL and never evicted, standing in for the global cache
 // useLoader used to provide: the canvas unmounts and remounts every time the
@@ -470,7 +477,7 @@ function TowerModel({ scrollProgressRef, dragOffsetRef, sponsors }: TowerScenePr
   }, [clonedScene]);
 
   const validSponsors = useMemo(() => sponsors.filter((s) => s.logo), [sponsors]);
-  const logoUrls = useMemo(() => validSponsors.map((s) => s.logo!.src), [validSponsors]);
+  const logoUrls = useMemo(() => validSponsors.map((s) => logoTextureUrl(s.logo!)), [validSponsors]);
 
   // Patch any SVGs missing explicit width/height before handing URLs to TextureLoader.
   // Without this, viewBox-only SVGs rasterize to a 0x0 bitmap -> WebGL errors.
