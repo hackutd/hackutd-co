@@ -55,16 +55,6 @@ export const CURSOR_POINTER = {
  */
 export const CURSOR_POINT_COUNT = 48;
 
-/**
- * How the shape chases the pointer. Short — a cursor that lags reads as a
- * dropped frame rather than as weight — but not zero, which is what keeps the
- * disc feeling like an object being dragged along.
- */
-export const CURSOR_FOLLOW = {
-  duration: 0.22,
-  ease: "power3.out",
-} as const;
-
 /** Disc ⇄ arrowhead. Long enough to be seen as a shape change, not a swap. */
 export const CURSOR_MORPH = {
   duration: 0.34,

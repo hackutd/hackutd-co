@@ -4,14 +4,7 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import gsap from "gsap";
 import { useHasFinePointer } from "@/app/hooks/useHasFinePointer";
-import { usePrefersReducedMotion } from "@/app/hooks/usePrefersReducedMotion";
 import { suppressSiteCursor } from "@/app/components/cursor/siteCursorSuppression";
-
-/**
- * How the disc chases the pointer. Short enough to feel attached to the hand,
- * long enough that the trailing edge reads as weight rather than as lag.
- */
-const FOLLOW = { duration: 0.4, ease: "power3.out" } as const;
 
 /** Above the navbar's z-50 — the disc has to invert whatever it crosses */
 const DISC_CLASS =
@@ -58,7 +51,6 @@ export default function InvertedCursor({
   /** Where the disc mounts — non-null exactly while the pointer is inside the target */
   const [origin, setOrigin] = useState<Point | null>(null);
   const hasFinePointer = useHasFinePointer();
-  const prefersReducedMotion = usePrefersReducedMotion();
 
   // Enter and leave own the disc's lifetime, and the native cursor is hidden
   // for exactly as long as this component is around to draw a replacement.
@@ -99,20 +91,10 @@ export default function InvertedCursor({
       return;
     }
 
-    // Reduced motion gets the disc pinned to the pointer: still a cursor,
-    // with none of the easing that makes it drift on its own.
-    const moveTo = prefersReducedMotion
-      ? (x: number, y: number) => {
-          gsap.set(disc, { x, y });
-        }
-      : (() => {
-          const toX = gsap.quickTo(disc, "x", FOLLOW);
-          const toY = gsap.quickTo(disc, "y", FOLLOW);
-          return (x: number, y: number) => {
-            toX(x);
-            toY(y);
-          };
-        })();
+    // Pinned to the pointer: any follow easing reads as a heavy, lagging mouse.
+    const moveTo = (x: number, y: number) => {
+      gsap.set(disc, { x, y });
+    };
 
     const handleMove = (event: PointerEvent) => {
       moveTo(event.clientX - size / 2, event.clientY - size / 2);
@@ -124,7 +106,7 @@ export default function InvertedCursor({
       window.removeEventListener("pointermove", handleMove);
       gsap.killTweensOf(disc);
     };
-  }, [origin, prefersReducedMotion, size]);
+  }, [origin, size]);
 
   // The site cursor stands down while this disc is up. Both are painted white
   // under `mix-blend-mode: difference`, and stacked they invert each other —
