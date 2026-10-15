@@ -28,6 +28,8 @@ type ShaderGradientProps = ComponentProps<typeof ShaderGradient> & {
 };
 
 type BrandShaderBackgroundProps = {
+  // MSAA matters where the gradient is stretched, since fold edges are upscaled.
+  antialias?: boolean;
   className?: string;
   lazyLoad?: boolean;
   rootMargin?: string;
@@ -80,6 +82,7 @@ const brandShaderGradientProps: Omit<ShaderGradientProps, "animate"> = {
 };
 
 export default function BrandShaderBackground({
+  antialias = false,
   className,
   lazyLoad = true,
   rootMargin = "25%",
@@ -111,7 +114,7 @@ export default function BrandShaderBackground({
     >
       {shouldMountCanvas && (
         <Canvas
-          key={pixelDensity + fov}
+          key={`${pixelDensity + fov}-${antialias}`}
           className="h-full w-full"
           style={{ pointerEvents: "none" }}
           dpr={pixelDensity}
@@ -119,7 +122,7 @@ export default function BrandShaderBackground({
           linear
           flat
           resize={{ offsetSize: true }}
-          gl={{ antialias: false, stencil: false, depth: true }}
+          gl={{ antialias, stencil: false, depth: true }}
         >
           <ShaderGradient
             {...mergedShaderProps}

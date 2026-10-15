@@ -623,9 +623,9 @@ export default function ReunionTower({
   const [inView, setInView] = useState(false);
 
   // Preload the model before it approaches, but defer creating its GPU context
-  // until the canvas is within one viewport.
+  // until the canvas is within half a viewport.
   const shouldPreloadModel = useNearViewport(wrapperRef, "200%");
-  const shouldMountCanvas = useNearViewport(wrapperRef, "100%");
+  const shouldMountCanvas = useNearViewport(wrapperRef, "50%");
 
   useEffect(() => {
     if (shouldPreloadModel) useGLTF.preload(MODEL_PATH);

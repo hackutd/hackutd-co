@@ -572,7 +572,9 @@ export default function RocketTrailAnimation() {
                     transformOrigin: "0 0",
                   }}
                 >
-                  {shaderActive && <BrandShaderBackground lazyLoad={false} />}
+                  {shaderActive && (
+                    <BrandShaderBackground lazyLoad={false} antialias />
+                  )}
                 </div>
               </foreignObject>
             )}
