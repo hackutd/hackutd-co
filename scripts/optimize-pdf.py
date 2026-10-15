@@ -10,6 +10,9 @@ where the memory goes. This script:
   - merges byte-identical images into one shared object
   - downsamples each image to TARGET_DPI at its largest placed size
   - drops alpha masks that are fully opaque
+  - rasterizes each page to a single JPEG so viewers decode one image
+    instead of stroking every vector path and Type3 glyph again
+  - keeps an invisible text layer so search, copy and screen readers still work
   - writes a linearized file so viewers can show page 1 before the rest loads
 
 Usage:  python3 scripts/optimize-pdf.py [in.pdf] [out.pdf]   (needs: pip install pikepdf pymupdf pillow)
@@ -158,14 +161,77 @@ pdf.remove_unreferenced_resources()
 tmp = dst.with_suffix(".tmp.pdf")
 pdf.save(
     tmp,
-    linearize=True,
     compress_streams=True,
     object_stream_mode=pikepdf.ObjectStreamMode.generate,
 )
 pdf.close()
 tmp.replace(dst)
 
+# One JPEG per page, invisible text on top for search and copy. This is what
+# makes the viewer cheap: it decodes a single image per page instead of
+# stroking every Canva path and Type3 glyph on load.
+helv = pymupdf.Font("helv")
+flat = pikepdf.new()
+with pymupdf.open(dst) as doc:
+    for pg in doc:
+        pix = pg.get_pixmap(dpi=TARGET_DPI, alpha=False)
+        rgb = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+        buf = io.BytesIO()
+        rgb.save(buf, "JPEG", quality=JPEG_QUALITY + 3, optimize=True)
+        img = flat.make_stream(buf.getvalue())
+        img.Subtype = pikepdf.Name.Image
+        img.Filter = pikepdf.Name.DCTDecode
+        img.ColorSpace = pikepdf.Name.DeviceRGB
+        img.BitsPerComponent = 8
+        img.Width, img.Height = rgb.size
+        page = pikepdf.Page(
+            flat.make_indirect(
+                pikepdf.Dictionary(Type=pikepdf.Name.Page, MediaBox=list(pg.mediabox))
+            )
+        )
+        flat.pages.append(page)
+        font = flat.make_indirect(
+            pikepdf.Dictionary(
+                Type=pikepdf.Name.Font,
+                Subtype=pikepdf.Name.Type1,
+                BaseFont=pikepdf.Name.Helvetica,
+                Encoding=pikepdf.Name.WinAnsiEncoding,
+            )
+        )
+        page.Resources = pikepdf.Dictionary(
+            XObject=pikepdf.Dictionary(I0=img), Font=pikepdf.Dictionary(F1=font)
+        )
+        ops = [f"q {pg.rect.width} 0 0 {pg.rect.height} 0 0 cm /I0 Do Q".encode()]
+        lines: dict[tuple[int, int], tuple[pymupdf.Rect, list[str]]] = {}
+        for w in pg.get_text("words"):
+            key = (w[5], w[6])
+            rect, words = lines.setdefault(key, (pymupdf.Rect(w[:4]), []))
+            rect |= w[:4]
+            words.append(w[4])
+        for rect, words in lines.values():
+            text = " ".join(words)
+            encoded = text.encode("cp1252", "replace").decode("cp1252")
+            for ch in "\\()":
+                encoded = encoded.replace(ch, "\\" + ch)
+            width = max(helv.text_length(encoded, fontsize=1) or 1e-4, 1e-4)
+            sx, sy = rect.width / width, rect.height * 0.9
+            baseline = rect.y1 - rect.height * 0.1
+            ops.append(
+                f"BT 3 Tr /F1 1 Tf {sx:.3f} 0 0 {sy:.3f} {rect.x0:.3f} {baseline:.3f} Tm ({encoded}) Tj ET".encode()
+            )
+        page.Contents = flat.make_stream(b"\n".join(ops) + b"\n")
+
+flat.save(
+    tmp,
+    linearize=True,
+    compress_streams=True,
+    object_stream_mode=pikepdf.ObjectStreamMode.generate,
+)
+flat.close()
+tmp.replace(dst)
+
 print(
     f"{src.name}: {before / 1e6:.1f} MB -> {dst.stat().st_size / 1e6:.1f} MB, "
-    f"{len(replace)} duplicate images merged, {resized} downsampled, {dropped} opaque masks dropped"
+    f"{len(replace)} duplicate images merged, {resized} downsampled, "
+    f"{dropped} opaque masks dropped, pages rasterized at {TARGET_DPI} dpi"
 )
