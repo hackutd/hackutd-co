@@ -247,7 +247,7 @@ export default function Navbar() {
         />
         <FlowButton
           text="HackUTD 2026"
-          href="https://zeroday.hackutd.co"
+          href="https://acmutd.typeform.com/hofficer27"
           newTab
         />
       </div>
@@ -324,7 +324,7 @@ export default function Navbar() {
         >
           <FlowButton
             text="HackUTD 2026"
-            href="https://zeroday.hackutd.co"
+            href="https://acmutd.typeform.com/hofficer27"
             newTab
             onClick={() => setIsOpen(false)}
           />
