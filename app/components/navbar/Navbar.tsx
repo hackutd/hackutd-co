@@ -246,8 +246,8 @@ export default function Navbar() {
           colorTransition={colorTransition}
         />
         <FlowButton
-          text="HackUTD 2026"
-          href="https://zeroday.hackutd.co"
+          text="Join the Team"
+          href="https://acmutd.typeform.com/hofficer27"
           newTab
         />
       </div>
@@ -323,8 +323,8 @@ export default function Navbar() {
           className={menuItemMotion(isOpen)}
         >
           <FlowButton
-            text="HackUTD 2026"
-            href="https://zeroday.hackutd.co"
+            text="Join the Team"
+            href="https://acmutd.typeform.com/hofficer27"
             newTab
             onClick={() => setIsOpen(false)}
           />
