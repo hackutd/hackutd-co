@@ -31,7 +31,7 @@ export default function FlowButton({
   className,
 }: FlowButtonProps) {
   const classes = joinClasses(
-    "group relative inline-flex cursor-pointer items-center gap-1 overflow-hidden rounded-[100px] border-[1.5px] border-pink bg-pink px-8 py-3 text-sm font-semibold uppercase leading-none tracking-[0.05em] text-white transition-all duration-[600ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:rounded-[12px] hover:text-pink active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+    "group relative inline-flex cursor-pointer items-center gap-1 overflow-hidden whitespace-nowrap rounded-[100px] border-[1.5px] border-pink bg-pink px-8 py-3 text-sm font-semibold uppercase leading-none tracking-[0.05em] text-white transition-all duration-[600ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:rounded-[12px] hover:text-pink active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
     className,
   );
 
